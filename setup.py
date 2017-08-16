@@ -70,6 +70,14 @@ LIBRARY_DIRS = [
     ]
 
 ext_modules = [
+        Extension(
+            'fwdpy11_arg_example.wfarg',
+            ['fwdpy11_arg_example/wfarg.cc'],
+            library_dir=LIBRARY_DIRS,
+            include_dirs=INCLUDES,
+            libraries=['gsl', 'gslcblas'],
+            language='c++'
+            ),
         ]
 
 
