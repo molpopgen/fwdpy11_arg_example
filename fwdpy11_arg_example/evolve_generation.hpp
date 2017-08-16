@@ -4,8 +4,23 @@
 #include <cstddef>
 #include <algorithm>
 #include <type_traits>
+#include <tuple>
+#include <queue>
 #include <fwdpp/diploid.hh>
+#include <fwdpy11/types.hpp>
 #include "ancestry_edge_sets.hpp"
+
+KTfwd::uint_t
+ancestry_recombination_details(
+    fwdpy11::singlepop_t& pop, ancestry_tracker& ancestry,
+    std::queue<std::size_t>& gamete_recycling_bin,
+    const KTfwd::uint_t parental_gamete1, const KTfwd::uint_t parental_gamete2,
+	const std::vector<double> & breakpoints,
+    const std::tuple<ancestry_tracker::integer_type,
+                     ancestry_tracker::integer_type>& pid,
+    const std::tuple<ancestry_tracker::integer_type,
+                     ancestry_tracker::integer_type>& offspring_indexes);
+
 
 // This is a copy/paste + modification of fwdpy11's
 // existing function to evolve a single-deme, single-region
@@ -55,19 +70,27 @@ evolve_generation(const fwdpy11::GSLrng_t& rng, poptype& pop,
             auto p2g2 = pop.diploids[p2].second;
 
             // Mendel
-            if (gsl_rng_uniform(rng.get()) < 0.5)
+            int swap1 = (gsl_rng_uniform(rng.get()) < 0.5) ? 1 : 0;
+            int swap2 = (gsl_rng_uniform(rng.get()) < 0.5) ? 1 : 0;
+            if (swap1)
                 std::swap(p1g1, p1g2);
-            if (gsl_rng_uniform(rng.get()) < 0.5)
+            if (swap2)
                 std::swap(p2g1, p2g2);
 
-            dip.first = KTfwd::recombination(
-                            pop.gametes, gamete_recycling_bin, pop.neutral,
-                            pop.selected, recmodel, p1g1, p1g2, pop.mutations)
-                            .first;
-            dip.second = KTfwd::recombination(
-                             pop.gametes, gamete_recycling_bin, pop.neutral,
-                             pop.selected, recmodel, p2g1, p2g2, pop.mutations)
-                             .first;
+            auto breakpoints = recmodel(pop.gametes[p1g1], pop.gametes[p2g2],
+                                        pop.mutations);
+            auto pid = ancestry.get_parent_ids(p1, swap1);
+            auto offspring_indexes = ancestry.get_next_indexes();
+            dip.first = ancestry_recombination_details(
+                pop, ancestry, gamete_recycling_bin, p1g1, p1g2, breakpoints,
+                pid, offspring_indexes);
+            breakpoints = recmodel(pop.gametes[p1g1], pop.gametes[p2g2],
+                                   pop.mutations);
+            pid = ancestry.get_parent_ids(p2, swap2);
+            offspring_indexes = ancestry.get_next_indexes();
+            dip.second = ancestry_recombination_details(
+                pop, ancestry, gamete_recycling_bin, p2g1, p2g2, breakpoints,
+                pid, offspring_indexes);
 
             pop.gametes[dip.first].n++;
             pop.gametes[dip.second].n++;
@@ -87,7 +110,7 @@ evolve_generation(const fwdpy11::GSLrng_t& rng, poptype& pop,
             dip.label = label++;
             update(rng, dip, pop, p1, p2);
         }
-
+    ancestry.finish_generation();
     KTfwd::fwdpp_internal::process_gametes(pop.gametes, pop.mutations,
                                            pop.mcounts);
     KTfwd::fwdpp_internal::gamete_cleaner(pop.gametes, pop.mutations,

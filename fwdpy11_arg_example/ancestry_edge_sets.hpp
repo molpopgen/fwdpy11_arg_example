@@ -13,6 +13,7 @@
 #include "edge.hpp"
 #include "ancestry_tracker.hpp"
 
+inline
 std::pair<std::vector<std::pair<double, double>>,
           std::vector<std::pair<double, double>>>
 split_breakpoints(const std::vector<double>& breakpoints,
@@ -58,6 +59,7 @@ overlap(const std::tuple<double, double>& lhs,
 }
 
 
+inline
 std::vector<std::tuple<double, double>>
 sorted_tree_edges(const std::vector<edge>& edges)
 {
