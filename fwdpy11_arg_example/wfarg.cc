@@ -2,10 +2,16 @@
 #include <pybind11/stl_bind.h>
 #include <pybind11/numpy.h>
 #include <fwdpy11/types.hpp>
-
+#include <fwdpy11/rng.hpp>
+#include <fwdpp/diploid.hh>
+#include <fwdpp/sugar/infsites.hpp>
+#include <fwdpp/sugar/popgenmut.hpp>
+#include <fwdpp/sugar/singlepop.hpp>
+#include <fwdpp/sugar/GSLrng_t.hpp>
 #include "ancestry_edge_sets.hpp"
-
+#include "evolve_generation.hpp"
 namespace py = pybind11;
+
 
 PYBIND11_PLUGIN(wfarg)
 {
@@ -19,7 +25,7 @@ PYBIND11_PLUGIN(wfarg)
     //Register vectors of nodes and edges as "opaque"
     //types supporting Python's buffer protocol, creating
     //Python classes that are castable to NumPy structured
-    //arrays without a copy.  
+    //arrays without a copy.
     py::bind_vector<std::vector<node>>(
         m, "NodeArray", "Container of nodes. This can be cast to a NumPy "
                         "record array without making a copy.",
