@@ -1,0 +1,30 @@
+name: fwdpy11
+channels: !!python/tuple
+- bioconda
+- conda-forge
+- defaults
+dependencies:
+- conda-forge::blas=1.1=openblas
+- conda-forge::ca-certificates=2017.7.27.1=0
+- conda-forge::certifi=2017.7.27.1=py36_0
+- conda-forge::ncurses=5.9=10
+- conda-forge::numpy=1.13.1=py36_blas_openblas_201
+- conda-forge::openblas=0.2.20=1
+- conda-forge::openssl=1.0.2l=0
+- conda-forge::pip=9.0.1=py36_0
+- conda-forge::python=3.6.2=0
+- conda-forge::readline=6.2=0
+- conda-forge::setuptools=36.2.2=py36_0
+- conda-forge::sqlite=3.13.0=1
+- conda-forge::tk=8.5.19=2
+- conda-forge::wheel=0.29.0=py36_0
+- conda-forge::xz=5.2.3=0
+- conda-forge::zlib=1.2.11=0
+- libgfortran=3.0.0=1
+- pip:
+  - fwdpy11==0.1.2
+  - git+https://github.com/jeromekelleher/msprime.git@master#egg=msprime
+  - pybind11==2.1.1
+  - pyparsing==2.2.0
+  - svgwrite==1.1.11
+prefix: /home/jaime/miniconda3/envs/fwdpy11
