@@ -12,7 +12,6 @@
 #include "evolve_generation.hpp"
 namespace py = pybind11;
 
-
 PYBIND11_PLUGIN(wfarg)
 {
     py::module m("wfarg", "Simple example of Wright-Fisher simulation with "
@@ -35,6 +34,13 @@ PYBIND11_PLUGIN(wfarg)
         m, "EdgeArray", "Container of edges.  This can be cast to a NumPy "
                         "record array without making a copy",
         py::buffer_protocol());
+
+    //Make our C++ function callable from Python.
+    //This is NOT part of a user-facing Python API.
+    //Rather, we need a wrapper to integrate it with
+    //the rest of the fwdpy11 world.
+    m.def("evolve_singlepop_regions_track_ancestry",
+          &evolve_singlepop_regions_track_ancestry);
 
     return m.ptr();
 }

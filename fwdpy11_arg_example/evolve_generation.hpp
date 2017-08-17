@@ -6,10 +6,23 @@
 #include <type_traits>
 #include <tuple>
 #include <queue>
+#include <pybind11/functional.h>
+#include <pybind11/numpy.h>
 #include <fwdpp/diploid.hh>
+#include <fwdpp/extensions/regions.hpp>
 #include <fwdpy11/types.hpp>
+#include <fwdpy11/fitness/fitness.hpp>
+#include <fwdpy11/rng.hpp>
 #include "ancestry_edge_sets.hpp"
 #include "handle_recombination.hpp"
+
+void evolve_singlepop_regions_track_ancestry(
+    const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,
+    pybind11::function ancestry_processor,
+    pybind11::array_t<std::uint32_t> popsizes, const double mu_selected,
+    const double recrate, const KTfwd::extensions::discrete_mut_model& mmodel,
+    const KTfwd::extensions::discrete_rec_model& rmodel,
+    fwdpy11::single_locus_fitness& fitness, const double selfing_rate);
 
 // This is a copy/paste + modification of fwdpy11's
 // existing function to evolve a single-deme, single-region
