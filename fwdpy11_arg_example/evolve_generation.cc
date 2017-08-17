@@ -53,8 +53,10 @@ evolve_singlepop_regions_track_ancestry(
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
+			py::print("generation = ",generation);
 			py::bool_ processor_rv = ancestry_processor(pop.generation,ancestry.nodes,ancestry.edges);
 			bool gc = processor_rv.cast<bool>();
+			py::print("GC = ", gc);
             const auto N_next = popsizes.at(generation);
             evolve_generation(
                 rng, pop, N_next, mu_selected, mmodels, recmap,
@@ -68,6 +70,7 @@ evolve_singlepop_regions_track_ancestry(
                           std::placeholders::_3, std::placeholders::_4,
                           std::placeholders::_5),
                 ancestry, std::true_type());
+			py::print("evolved!");
             pop.N = N_next;
             fwdpy11::update_mutations_wrapper()(
                 pop.mutations, pop.fixations, pop.fixation_times,
