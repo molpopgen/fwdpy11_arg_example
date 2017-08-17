@@ -22,7 +22,7 @@ Install the following dependencies using conda:
     conda install pybind11 gcc
     conda install -c bioconda fwdpy11
 
-Install msprime_ from the current master branch on github.
+Install msprime_ from the current master branch on github. (Right now, you don't even need to do this in order to do a local build).
 
 Make a local build and run the unit tests:
 
