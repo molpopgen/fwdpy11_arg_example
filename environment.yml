@@ -23,9 +23,8 @@ dependencies:
 - libgfortran=3.0.0=1
 - pip:
   - fwdpy11==0.1.2
-  - msprime==0.4.1.dev520+g2586ed5
+  - git+https://github.com/jeromekelleher/msprime.git@master#egg=msprime
   - pybind11==2.1.1
   - pyparsing==2.2.0
   - svgwrite==1.1.11
 prefix: /home/jaime/miniconda3/envs/fwdpy11
-
