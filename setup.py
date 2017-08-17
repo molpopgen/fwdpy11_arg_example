@@ -8,6 +8,7 @@ import pybind11
 import fwdpy11
 import setuptools
 import os
+import glob
 
 if sys.version_info[0] < 3:
     raise ValueError("Python 3 is required!")
@@ -77,6 +78,7 @@ ext_modules = [
                 'fwdpy11_arg_example/ancestry_edge_sets.cc',
                 'fwdpy11_arg_example/handle_recombination.cc'
                 ],
+            depends = glob.glob('fwdpy11_arg_example/*.hpp'),
             library_dirs=LIBRARY_DIRS,
             include_dirs=INCLUDES,
             libraries=['gsl', 'gslcblas'],
