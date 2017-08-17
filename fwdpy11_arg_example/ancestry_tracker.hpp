@@ -168,37 +168,65 @@ struct ancestry_tracker
                                 [](const node& n, const integer_type c) {
                                     return n.id < c;
                                 });
-							//if(x != nodes.end())
-							//{
-							//std::cout << x->id << ' ' << x->generation << ' ' << last_gen << ' ';
-							//}
+                            //if(x != nodes.end())
+                            //{
+                            //std::cout << x->id << ' ' << x->generation << ' ' << last_gen << ' ';
+                            //}
                             if (x == nodes.end() || (x->generation < last_gen
                                                      && x->id != e.child))
                                 {
-                            //        std::cout << "true\n";
+                                    //        std::cout << "true\n";
                                     return true;
                                 }
                             //std::cout << "false\n";
                             return false;
                         }),
                     edges.end());
-		std::unordered_set<integer_type> used_ids_in_edges;
-		for(auto && e : edges)
-		{
-			used_ids_in_edges.insert(e.child);
-			used_ids_in_edges.insert(e.parent);
-		}
-        std::cout << edges.size() << ", and " << nodes.size() << " nodes, and " << used_ids_in_edges.size() << " unique ids in edges\n";
-		std::cout << "these nodes are not in edges:\n";
-		nodes.erase(std::remove_if(nodes.begin(),nodes.end(),[&used_ids_in_edges](const node & n){ return used_ids_in_edges.find(n.id) == used_ids_in_edges.end();}),nodes.end());
-		std::cout << "Down to " << nodes.size() << " nodes\n";
-		//for(auto && n : nodes)
-		//{
-		//	if(used_ids_in_edges.find(n.id) == used_ids_in_edges.end())
-		//	{
-		//		std::cout << n.id << ' ' << n.generation << '\n';
-		//	}
-		//}
+        std::unordered_set<integer_type> used_ids_in_edges;
+        for (auto&& e : edges)
+            {
+                used_ids_in_edges.insert(e.child);
+                used_ids_in_edges.insert(e.parent);
+            }
+        std::cout << edges.size() << ", and " << nodes.size() << " nodes, and "
+                  << used_ids_in_edges.size() << " unique ids in edges\n";
+        std::cout << "these nodes are not in edges:\n";
+        nodes.erase(std::remove_if(nodes.begin(), nodes.end(),
+                                   [&used_ids_in_edges](const node& n) {
+                                       return used_ids_in_edges.find(n.id)
+                                              == used_ids_in_edges.end();
+                                   }),
+                    nodes.end());
+        std::cout << "Down to " << nodes.size() << " nodes\n";
+        //for(auto && n : nodes)
+        //{
+        //	if(used_ids_in_edges.find(n.id) == used_ids_in_edges.end())
+        //	{
+        //		std::cout << n.id << ' ' << n.generation << '\n';
+        //	}
+        //}
+    }
+
+    std::vector<std::tuple<double, double>>
+    sorted_tree_edges(const std::vector<edge>& edges)
+	/// Not sure where this should be, so it is here for now
+    {
+        // Note: not general.
+        // Should have a more flexible left boundary
+        // than this
+        std::unordered_set<double> intervals{ 0.0 };
+        for (auto&& e : edges)
+            {
+                intervals.emplace(e.right);
+            }
+        std::vector<double> temp(intervals.begin(), intervals.end());
+        std::sort(temp.begin(), temp.end());
+        std::vector<std::tuple<double, double>> rv;
+        for (auto i = temp.begin() + 1; i != temp.end(); ++i)
+            {
+                rv.emplace_back(*(i - 1), *i);
+            }
+        return rv;
     }
 };
 
