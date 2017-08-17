@@ -1,4 +1,5 @@
 #include "handle_recombination.hpp"
+#include <fwdpp/debug.hpp>
 #include <fwdpp/recombination.hpp>
 
 std::pair<std::vector<std::pair<double, double>>,
