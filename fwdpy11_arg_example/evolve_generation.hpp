@@ -65,7 +65,6 @@ evolve_generation(const fwdpy11::GSLrng_t& rng, poptype& pop,
         {
             auto p1 = pick1(rng, pop);
             auto p2 = pick2(rng, pop, p1);
-
             auto p1g1 = pop.diploids[p1].first;
             auto p1g2 = pop.diploids[p1].second;
             auto p2g1 = pop.diploids[p2].first;

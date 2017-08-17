@@ -11,9 +11,9 @@ namespace py = pybind11;
 void
 evolve_singlepop_regions_track_ancestry(
     const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,
-	py::function ancestry_processor,
-    py::array_t<std::uint32_t> popsizes, const double mu_selected,
-    const double recrate, const KTfwd::extensions::discrete_mut_model& mmodel,
+    py::function ancestry_processor, py::array_t<std::uint32_t> popsizes,
+    const double mu_selected, const double recrate,
+    const KTfwd::extensions::discrete_mut_model& mmodel,
     const KTfwd::extensions::discrete_rec_model& rmodel,
     fwdpy11::single_locus_fitness& fitness, const double selfing_rate)
 {
@@ -49,14 +49,14 @@ evolve_singlepop_regions_track_ancestry(
 
     auto fitness_callback = fitness.callback();
     fitness.update(pop);
+    auto wbar = rules.w(pop, fitness_callback);
     ancestry_tracker ancestry(pop.N);
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
-			py::print("generation = ",generation);
-			py::bool_ processor_rv = ancestry_processor(pop.generation,ancestry.nodes,ancestry.edges);
-			bool gc = processor_rv.cast<bool>();
-			py::print("GC = ", gc);
+            //py::bool_ processor_rv = ancestry_processor(
+            //    pop.generation, ancestry.nodes, ancestry.edges);
+            //bool gc = processor_rv.cast<bool>();
             const auto N_next = popsizes.at(generation);
             evolve_generation(
                 rng, pop, N_next, mu_selected, mmodels, recmap,
@@ -70,12 +70,14 @@ evolve_singlepop_regions_track_ancestry(
                           std::placeholders::_3, std::placeholders::_4,
                           std::placeholders::_5),
                 ancestry, std::true_type());
-			py::print("evolved!");
             pop.N = N_next;
             fwdpy11::update_mutations_wrapper()(
                 pop.mutations, pop.fixations, pop.fixation_times,
                 pop.mut_lookup, pop.mcounts, pop.generation, 2 * pop.N);
             fitness.update(pop);
+            wbar = rules.w(pop, fitness_callback);
         }
     --pop.generation;
+    py::print("Ending simulation with ", ancestry.nodes.size(), "nodes and ",
+              ancestry.edges.size(), " edges.");
 }
