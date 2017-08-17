@@ -79,14 +79,14 @@ evolve_generation(const fwdpy11::GSLrng_t& rng, poptype& pop,
             if (swap2)
                 std::swap(p2g1, p2g2);
 
-            auto breakpoints = recmodel(pop.gametes[p1g1], pop.gametes[p2g2],
+            auto breakpoints = recmodel(pop.gametes[p1g1], pop.gametes[p1g2],
                                         pop.mutations);
             auto pid = ancestry.get_parent_ids(p1, swap1);
             auto offspring_indexes = ancestry.get_next_indexes();
             dip.first = ancestry_recombination_details(
                 pop, ancestry, gamete_recycling_bin, p1g1, p1g2, breakpoints,
                 pid, offspring_indexes);
-            breakpoints = recmodel(pop.gametes[p1g1], pop.gametes[p2g2],
+            breakpoints = recmodel(pop.gametes[p2g1], pop.gametes[p2g2],
                                    pop.mutations);
             pid = ancestry.get_parent_ids(p2, swap2);
             offspring_indexes = ancestry.get_next_indexes();
