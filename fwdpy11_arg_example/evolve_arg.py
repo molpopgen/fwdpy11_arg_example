@@ -18,3 +18,4 @@ def evolve_track(rng, pop, params):
                                             params.mutrate_s,
                                             params.recrate, mm, rm,
                                             params.gvalue, params.pself)
+    return ancestry
