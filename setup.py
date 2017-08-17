@@ -74,7 +74,9 @@ ext_modules = [
             'fwdpy11_arg_example.wfarg',
             ['fwdpy11_arg_example/wfarg.cc',
                 'fwdpy11_arg_example/evolve_generation.cc',
-                'fwdpy11_arg_example/ancestry_edge_sets.cc'],
+                'fwdpy11_arg_example/ancestry_edge_sets.cc',
+                'fwdpy11_arg_example/handle_recombination.cc'
+                ],
             library_dirs=LIBRARY_DIRS,
             include_dirs=INCLUDES,
             libraries=['gsl', 'gslcblas'],
