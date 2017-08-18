@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class ArgWrapper(object):
     __gc_interval = None
 
@@ -5,6 +8,11 @@ class ArgWrapper(object):
         self.gc_interval = gc_interval
 
     def __call__(self, generation, nodes, edges):
+        if generation > 0 and generation % self.gc_interval == 0.0:
+            na = np.array(memoryview(nodes), copy=False)
+            ea = np.array(memoryview(edges), copy=False)
+            return True
+
         return False
 
     @property

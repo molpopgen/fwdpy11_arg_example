@@ -60,9 +60,14 @@ evolve_singlepop_regions_track_ancestry(
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
-            //py::bool_ processor_rv = ancestry_processor(
-            //    pop.generation, ancestry.nodes, ancestry.edges);
-            //bool gc = processor_rv.cast<bool>();
+            py::bool_ processor_rv = ancestry_processor(
+                pop.generation, ancestry.nodes, ancestry.edges);
+            bool gc = processor_rv.cast<bool>();
+			if(gc)
+			{
+				ancestry.nodes.clear();
+				ancestry.edges.clear();
+			}
             const auto N_next = popsizes.at(generation);
             evolve_generation(
                 rng, pop, N_next, mu_selected, mmodels, recmap,
@@ -88,6 +93,10 @@ evolve_singlepop_regions_track_ancestry(
               ancestry.edges.size(), " edges.");
 }
 
+//Register vectors of nodes and edges as "opaque"
+PYBIND11_MAKE_OPAQUE(std::vector<node>);
+PYBIND11_MAKE_OPAQUE(std::vector<edge>);
+
 PYBIND11_PLUGIN(wfarg)
 {
     py::module m("wfarg", "Simple example of Wright-Fisher simulation with "
@@ -97,8 +106,11 @@ PYBIND11_PLUGIN(wfarg)
     PYBIND11_NUMPY_DTYPE(node, id, generation, deme);
     PYBIND11_NUMPY_DTYPE(edge, left, right, parent, child);
 
-    //Register vectors of nodes and edges as "opaque"
-    //types supporting Python's buffer protocol, creating
+	//py::class_<edge>(m,"Edge");
+	//py::class_<node>(m,"Node");
+
+	//Create Python classes of node/edgec containers.
+    //These types support Python's buffer protocol, creating
     //Python classes that are castable to NumPy structured
     //arrays without a copy.
     py::bind_vector<std::vector<node>>(
