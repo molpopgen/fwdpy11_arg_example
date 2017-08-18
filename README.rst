@@ -19,7 +19,9 @@ Install the following dependencies using conda:
 
 .. code-block:: bash
 
-    conda install pybind11 gcc
+    #hdf5 needed for msprime, which we 
+    #are installing from github
+    conda install pybind11 gcc hdf5
     conda install -c bioconda fwdpy11
 
 Install msprime_ from the current master branch on github. (Right now, you don't even need to do this in order to do a local build).
