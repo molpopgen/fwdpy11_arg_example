@@ -1,9 +1,10 @@
 import numpy as np
-
+import msprime
 
 class ArgWrapper(object):
     __gc_interval = None
-
+    __nodes = msprime.NodeTable()
+    __edges = msprime.EdgesetTable()
     def __init__(self, gc_interval):
         self.gc_interval = gc_interval
 
