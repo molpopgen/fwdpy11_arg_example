@@ -16,15 +16,15 @@ def evolve_track(rng, pop, params, gc_interval):
     rm = makeRecombinationRegions(params.recregions)
 
     from .wfarg import evolve_singlepop_regions_track_ancestry,AncestryTracker
-    from .ArgWrapper import ArgWrapper
-    ancestry = ArgWrapper(gc_interval)
+    from .argsimplifier import ArgSimplifier
+    simplifier = ArgSimplifier(gc_interval)
     atracker = AncestryTracker(pop.N)
-    evolve_singlepop_regions_track_ancestry(rng, pop, atracker,ancestry,
+    evolve_singlepop_regions_track_ancestry(rng, pop, atracker,simplifier,
                                             params.demography,
                                             params.mutrate_s,
                                             params.recrate, mm, rm,
                                             params.gvalue, params.pself)
-    return ancestry
+    return simplifier
 
 
 def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,

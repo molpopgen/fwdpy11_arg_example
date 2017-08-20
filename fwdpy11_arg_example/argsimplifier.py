@@ -1,7 +1,7 @@
 import numpy as np
 import msprime
 
-class ArgWrapper(object):
+class ArgSimplifier(object):
     __gc_interval = None
     __nodes = msprime.NodeTable()
     __edges = msprime.EdgesetTable()

@@ -1,10 +1,10 @@
 import unittest
 
-class tests_ArgWrapper(unittest.TestCase):
+class tests_ArgSimplifier(unittest.TestCase):
     def test_callable(self):
-        from fwdpy11_arg_example.ArgWrapper import ArgWrapper
-        self.assertEqual(callable(ArgWrapper),True)
-        a = ArgWrapper(10)
+        from fwdpy11_arg_example.argsimplifier import ArgSimplifier
+        self.assertEqual(callable(ArgSimplifier),True)
+        a = ArgSimplifier(10)
         self.assertEqual(callable(a),True)
 
 class testAPI(unittest.TestCase):
