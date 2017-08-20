@@ -10,8 +10,8 @@ class ArgWrapper(object):
 
     def __call__(self, generation, ancestry):
         if generation > 0 and generation % self.gc_interval == 0.0:
-            # na = np.array(memoryview(nodes), copy=False)
-            # ea = np.array(memoryview(edges), copy=False)
+            na = np.array(ancestry.nodes, copy=False)
+            ea = np.array(ancestry.edges, copy=False)
             return True
 
         return False

@@ -125,7 +125,9 @@ PYBIND11_PLUGIN(wfarg)
         py::buffer_protocol());
 
 	py::class_<ancestry_tracker>(m,"AncestryTracker")
-		.def(py::init<KTfwd::uint_t>(),py::arg("N"));
+		.def(py::init<KTfwd::uint_t>(),py::arg("N"))
+		.def_readwrite("nodes",&ancestry_tracker::nodes)
+		.def_readwrite("edges",&ancestry_tracker::edges);
 
     //Make our C++ function callable from Python.
     //This is NOT part of a user-facing Python API.
