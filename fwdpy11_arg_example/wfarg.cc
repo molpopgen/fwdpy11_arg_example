@@ -17,6 +17,7 @@ namespace py = pybind11;
 void
 evolve_singlepop_regions_track_ancestry(
     const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,
+	ancestry_tracker & ancestry,
     py::function ancestry_processor, py::array_t<std::uint32_t> popsizes,
     const double mu_selected, const double recrate,
     const KTfwd::extensions::discrete_mut_model& mmodel,
@@ -56,17 +57,17 @@ evolve_singlepop_regions_track_ancestry(
     auto fitness_callback = fitness.callback();
     fitness.update(pop);
     auto wbar = rules.w(pop, fitness_callback);
-    ancestry_tracker ancestry(pop.N);
+    //ancestry_tracker ancestry(pop.N);
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
             py::bool_ processor_rv = ancestry_processor(
-                pop.generation, ancestry.nodes, ancestry.edges);
+                pop.generation, ancestry);//.nodes, ancestry.edges);
             bool gc = processor_rv.cast<bool>();
 			if(gc)
 			{
-				ancestry.nodes.clear();
-				ancestry.edges.clear();
+				// ancestry.nodes.clear();
+				// ancestry.edges.clear();
 			}
             const auto N_next = popsizes.at(generation);
             evolve_generation(
@@ -122,6 +123,9 @@ PYBIND11_PLUGIN(wfarg)
         m, "EdgeArray", "Container of edges.  This can be cast to a NumPy "
                         "record array without making a copy",
         py::buffer_protocol());
+
+	py::class_<ancestry_tracker>(m,"AncestryTracker")
+		.def(py::init<KTfwd::uint_t>(),py::arg("N"));
 
     //Make our C++ function callable from Python.
     //This is NOT part of a user-facing Python API.
