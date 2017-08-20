@@ -60,6 +60,10 @@ evolve_singlepop_regions_track_ancestry(
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
+            //By hacking the API, we can show that it is 
+            //passing nodes/edges into Python that is 
+            //causin a slowdown.  But I *should* be able
+            //to do this w/o a copy.  Must investigate!
             py::bool_ processor_rv = ancestry_processor(
                 pop.generation, ancestry.nodes, ancestry.edges);
             bool gc = processor_rv.cast<bool>();
