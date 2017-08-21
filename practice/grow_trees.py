@@ -166,7 +166,6 @@ for i in edges:
     es.add_row(left=i.left, right=i.right,
                parent=i.parent, children=(i.child,))
 
-# The tables are already sorted...
 msprime.sort_tables(nodes=nt, edgesets=es)
 x = msprime.load_tables(nodes=nt, edgesets=es)
 x = x.simplify(samples=samples)
