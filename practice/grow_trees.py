@@ -1,6 +1,12 @@
 # A VERY simple W-F simulations.
 # Similar to what is in ftprime
-# test suite, but with diploids
+# test suite, but with diploids.
+# The data structures map to what
+# I'm doing on the C++ side.
+# A list[Node] and list[Edge]
+# are built up the same way that
+# I'm populating vector<node> and
+# vector<edge>.
 
 import numpy as np
 import msprime
@@ -84,7 +90,9 @@ def wf(diploids, ngens):
     nodes = [Node(i, 0, 0) for i in diploids]  # Add nodes for ancestors
     edges = []
     for gen in range(ngens):
-        new_diploids = []  # Empty offspring list
+        # Empty offspring list.  We initialize
+        # as a copy just to get the size right
+        new_diploids = np.array(diploids, copy=True)
         for dip in range(N):
             # Pick two parents
             parents = np.random.randint(0, N, 2)
@@ -103,9 +111,11 @@ def wf(diploids, ngens):
 
             # We'll make every mating have 1 x-over
             # in each parent
+
+            # Crossing-over and Edges due to
+            # contribution from parent 1
             breakpoint = xover()
 
-            # Add in edges
             edges.append(Edge(0.0, breakpoint, p1g1, next_id))
             edges.append(Edge(breakpoint, 1.0, p1g2, next_id))
 
@@ -114,8 +124,8 @@ def wf(diploids, ngens):
             edges.append(Edge(0.0, breakpoint, p2g1, next_id + 1))
             edges.append(Edge(breakpoint, 1.0, p2g2, next_id + 1))
 
-            new_diploids.append(next_id)
-            new_diploids.append(next_id + 1)
+            new_diploids[2*dip] = next_id
+            new_diploids[2*dip+1] = next_id+1
             next_id += 2
 
         assert(len(new_diploids) == 2 * N)
@@ -127,12 +137,10 @@ def wf(diploids, ngens):
     return (nodes, edges, diploids)
 
 
-diploids = []
-for i in range(500):
-    diploids.append(2 * i)
-    diploids.append(2 * i + 1)
+popsize = 100
+diploids = np.array([i for i in range(2 * popsize)], dtype=np.uint32)
 np.random.seed(42)
-ne = wf(diploids, 5000)
+ne = wf(diploids, 10*popsize)
 
 nodes = ne[0]
 edges = ne[1]
