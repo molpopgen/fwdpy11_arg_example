@@ -1,7 +1,5 @@
-#mimic more closely what will come out of 
-#the C++ back-end
+# Practice with the simplify API
 import msprime
-import numpy as np
 
 
 n = msprime.NodeTable()
@@ -24,10 +22,10 @@ for l, r, p, c in zip(left, right, parent, children):
     e.add_row(left=l, right=r, parent=p, children=(c,))
 
 print(e)
-msprime.sort_tables(nodes=n,edgesets=e)
-x = msprime.load_tables(nodes=n,edgesets=e)
-x = x.simplify(samples=[0,1,2])
-x.dump_tables(nodes=n,edgesets=e)
+msprime.sort_tables(nodes=n, edgesets=e)
+x = msprime.load_tables(nodes=n, edgesets=e)
+x = x.simplify(samples=[0, 1, 2])
+x.dump_tables(nodes=n, edgesets=e)
 print(n)
 print(e)
-#make some fake nodes 
+# make some fake nodes
