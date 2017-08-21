@@ -7,6 +7,9 @@ import msprime
 
 
 class Node(object):
+    """
+    Tree nodes
+    """
     id = None
     generation = None
     population = None
@@ -25,6 +28,12 @@ class Node(object):
 
 
 class Edge(object):
+    """
+    Simple representation of edges.
+    We expect msprime to "collect"
+    children during the simplification
+    steps.
+    """
     left = None
     right = None
     parent = None
@@ -45,42 +54,71 @@ class Edge(object):
         return rv
 
 
+def xover():
+    breakpoint = np.random.sample()
+    while breakpoint == 0.0 or breakpoint == 1.0:
+        breakpoint = np.random.sample()
+    return breakpoint
+
+
 def wf(diploids, ngens):
+    """
+    For N diploids, the diploids list contains 2N values.
+    For the i-th diploids, diploids[2*i] and diploids[2*i+1]
+    represent the two chromosomes.
+
+    We simulate constant N here, according to a Wright-Fisher
+    scheme:
+
+    1. Pick two parental indexes, each [0,N-1]
+    2. The two chromosome ids are diploids[2*p] and diploids[2*p+1]
+       for each parental index 'p'.
+    3. We pass one parental index on to each offspring, according to
+       Mendel, which means we swap parental chromosome ids 50% of the time.
+    4. We do a single crossover for every mating, just so that there are
+       a lot of breakpoints to handle
+    """
     N = int(len(diploids) / 2)
-    next_id = len(diploids)
+    next_id = len(diploids)  # This will be the next unique ID to use
     assert(max(diploids) < next_id)
-    nodes = [Node(i, 0, 0) for i in diploids]
+    nodes = [Node(i, 0, 0) for i in diploids]  # Add nodes for ancestors
     edges = []
     for gen in range(ngens):
-        new_diploids = []
+        new_diploids = []  # Empty offspring list
         for dip in range(N):
+            # Pick two parents
             parents = np.random.randint(0, N, 2)
+            # p1g1 = parent 1, gamete (chrom) 1, etc.:
             p1g1, p1g2 = diploids[2 * parents[0]], diploids[2 * parents[0] + 1]
-            assert(p1g2-p1g1 == 1)
             p2g1, p2g2 = diploids[2 * parents[1]], diploids[2 * parents[1] + 1]
-            assert(p2g2-p2g1 == 1)
-            mendel = np.random.random_sample(2)
-            switch1, switch2 = 0, 0
-            if mendel[0] < 0.5:
-                switch1 = 1
-            if mendel[1] < 0.5:
-                switch2 = 1
+            assert(p1g2 - p1g1 == 1)
+            assert(p2g2 - p2g1 == 1)
 
-            p1_chrom_label = p1g1 if switch1 == 0 else p1g2
-            p2_chrom_label = p2g1 if switch2 == 0 else p2g2
+            # Apply Mendel to p1g1 et al.
+            mendel = np.random.random_sample(2)
+            if mendel[0] < 0.5:
+                p1g1, p1g2 = p1g2, p1g1
+            if mendel[1] < 0.5:
+                p2g1, p2g2 = p2g2, p2g1
 
             # We'll make every mating have 1 x-over
-            breakpoint = np.random.random_sample()
-            while breakpoint == 0.0 or breakpoint == 1.0:
-                breakpoint = np.random.random_sample()
+            # in each parent
+            breakpoint = xover()
 
-            edges.append(Edge(0.0, breakpoint, p1_chrom_label, next_id))
-            edges.append(Edge(breakpoint, 1.0, p2_chrom_label, next_id + 1))
+            # Add in edges
+            edges.append(Edge(0.0, breakpoint, p1g1, next_id))
+            edges.append(Edge(breakpoint, 1.0, p1g2, next_id))
+
+            # Repeat process for parent 2's contribution
+            breakpoint = xover()
+            edges.append(Edge(0.0, breakpoint, p2g1, next_id + 1))
+            edges.append(Edge(breakpoint, 1.0, p2g2, next_id + 1))
+
             new_diploids.append(next_id)
             new_diploids.append(next_id + 1)
             next_id += 2
 
-        assert(len(new_diploids) == 2*N)
+        assert(len(new_diploids) == 2 * N)
         diploids = new_diploids
         assert(max(diploids) < next_id)
         for i in diploids:
@@ -90,11 +128,11 @@ def wf(diploids, ngens):
 
 
 diploids = []
-for i in range(10):
+for i in range(500):
     diploids.append(2 * i)
     diploids.append(2 * i + 1)
 np.random.seed(42)
-ne = wf(diploids, 10)
+ne = wf(diploids, 5000)
 
 nodes = ne[0]
 edges = ne[1]
@@ -133,5 +171,5 @@ x.dump_tables(nodes=nt_s, edgesets=es_s)
 # print(nt)
 print(nt_s)
 # print(es)
-print(es_s)
+# print(es_s)
 # print(samples)
