@@ -99,21 +99,21 @@ def wf(diploids, ngens):
             breakpoint = xover()
 
             assert(edge_index+3 < 4*N)
-            tedges[edge_index] = ((0.0, breakpoint, p1g1, next_id))
-            tedges[edge_index + 1] = ((breakpoint, 1.0, p1g2, next_id))
+            tedges[edge_index] = (0.0, breakpoint, p1g1, next_id)
+            tedges[edge_index + 1] = (breakpoint, 1.0, p1g2, next_id)
 
             # Repeat process for parent 2's contribution
             breakpoint = xover()
-            tedges[edge_index + 2] = ((0.0, breakpoint, p2g1, next_id + 1))
-            tedges[edge_index + 3] = ((breakpoint, 1.0, p2g2, next_id + 1))
+            tedges[edge_index + 2] = (0.0, breakpoint, p2g1, next_id + 1)
+            tedges[edge_index + 3] = (breakpoint, 1.0, p2g2, next_id + 1)
 
             # Add diploids
             new_diploids[2 * dip] = next_id
             new_diploids[2 * dip + 1] = next_id + 1
 
             # Add new nodes
-            tnodes[2 * dip] = ((next_id, gen + 1, 0))
-            tnodes[2 * dip + 1] = ((next_id + 1, gen + 1, 0))
+            tnodes[2 * dip] = (next_id, gen + 1, 0)
+            tnodes[2 * dip + 1] = (next_id + 1, gen + 1, 0)
 
             next_id += 2
             dip += 1
