@@ -94,8 +94,8 @@ evolve_singlepop_regions_track_ancestry(
             wbar = rules.w(pop, fitness_callback);
         }
     --pop.generation;
-    py::print("Ending simulation with ", ancestry.nodes.size(), "nodes and ",
-              ancestry.edges.size(), " edges.");
+    //py::print("Ending simulation with ", ancestry.nodes.size(), "nodes and ",
+    //          ancestry.edges.size(), " edges.");
 }
 
 //Register vectors of nodes and edges as "opaque"
