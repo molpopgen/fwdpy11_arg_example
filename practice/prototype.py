@@ -62,6 +62,9 @@ def wf(diploids, ngens):
     # to do this once b/c N is constant.
     tnodes = np.empty([2 * N], dtype=node_dt)
 
+    # Our simple WF sim makes 1 xover per parent
+    # in each mating.  Thus, each offspring inherits
+    # two new edges, and 4N new edges are formed each generation.
     tedges = np.empty([4 * N], dtype=edge_dt)
     for gen in range(ngens):
         # Empty offspring list.  We initialize
@@ -95,6 +98,7 @@ def wf(diploids, ngens):
             # contribution from parent 1
             breakpoint = xover()
 
+            assert(edge_index+3 < 4*N)
             tedges[edge_index] = ((0.0, breakpoint, p1g1, next_id))
             tedges[edge_index + 1] = ((breakpoint, 1.0, p1g2, next_id))
 
