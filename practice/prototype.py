@@ -83,7 +83,6 @@ def wf(diploids, tracker, ngens):
     assert(max(diploids) < next_id)
     # nodes = [Node(i, 0, 0) for i in diploids]  # Add nodes for ancestors
     tracker.nodes = np.array([(i, 0, 0) for i in diploids], dtype=node_dt)
-    #edges = np.empty([0], dtype=edge_dt)
 
     # We know there will be 2N new nodes added,
     # so we pre-allocate the space. We only need
@@ -95,8 +94,7 @@ def wf(diploids, tracker, ngens):
     # two new edges, and 4N new edges are formed each generation.
     tedges = np.empty([4 * N], dtype=edge_dt)
     for gen in range(ngens):
-        # Empty offspring list.  We initialize
-        # as a copy just to get the size right
+        # Empty offspring list.
         new_diploids = np.empty([len(diploids)], dtype=diploids.dtype)
 
         # Pick 2N parents:
@@ -166,7 +164,7 @@ stopsim = time.time()
 
 print("sim time took, ", stopsim - startsim)
 nodes = tracker.nodes
-edges = tracker.edges 
+edges = tracker.edges
 
 
 max_gen = max([i['generation'] for i in nodes])
