@@ -66,7 +66,7 @@ def wf(diploids, ngens):
     for gen in range(ngens):
         # Empty offspring list.  We initialize
         # as a copy just to get the size right
-        new_diploids = np.empty([len(diploids)], dtype = diploids.dtype)
+        new_diploids = np.empty([len(diploids)], dtype=diploids.dtype)
 
         # Pick 2N parents:
         parents = np.random.randint(0, N, 2 * N)
