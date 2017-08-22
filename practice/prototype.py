@@ -99,14 +99,17 @@ def wf(diploids, ngens):
     N = int(len(diploids) / 2)
     next_id = len(diploids)  # This will be the next unique ID to use
     assert(max(diploids) < next_id)
-    #nodes = [Node(i, 0, 0) for i in diploids]  # Add nodes for ancestors
+    # nodes = [Node(i, 0, 0) for i in diploids]  # Add nodes for ancestors
     nodes = np.array([(i, 0, 0) for i in diploids], dtype=node_dt)
     edges = []
     for gen in range(ngens):
         # Empty offspring list.  We initialize
         # as a copy just to get the size right
         new_diploids = np.array(diploids, copy=True)
-        tnodes = []
+
+        # We know there will be 2N new nodes added,
+        # so we pre-allocate the space:
+        tnodes = np.empty([2 * N], dtype=node_dt)
         for dip in range(N):
             # Pick two parents
             parents = np.random.randint(0, N, 2)
@@ -138,18 +141,17 @@ def wf(diploids, ngens):
             edges.append(Edge(0.0, breakpoint, p2g1, next_id + 1))
             edges.append(Edge(breakpoint, 1.0, p2g2, next_id + 1))
 
-            new_diploids[2*dip] = next_id
-            new_diploids[2*dip+1] = next_id+1
+            new_diploids[2 * dip] = next_id
+            new_diploids[2 * dip + 1] = next_id + 1
+            tnodes[2 * dip] = ((next_id, gen + 1, 0))
+            tnodes[2 * dip + 1] = ((next_id + 1, gen + 1, 0))
+
             next_id += 2
 
         assert(len(new_diploids) == 2 * N)
         diploids = new_diploids
         assert(max(diploids) < next_id)
-        for i in diploids:
-            tnodes.append((i,gen+1,0))
-            #nodes.append(Node(i, gen + 1, 0))
-        nodes = np.concatenate([nodes, np.array(tnodes, dtype=node_dt)])
-
+        nodes = np.concatenate([nodes, tnodes])
 
     return (nodes, edges, diploids)
 
@@ -157,7 +159,7 @@ def wf(diploids, ngens):
 popsize = 100
 diploids = np.array([i for i in range(2 * popsize)], dtype=np.uint32)
 np.random.seed(42)
-ne = wf(diploids, 10*popsize)
+ne = wf(diploids, 10 * popsize)
 
 nodes = ne[0]
 edges = ne[1]
