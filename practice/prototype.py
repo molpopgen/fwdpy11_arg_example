@@ -12,6 +12,7 @@
 
 import numpy as np
 import msprime
+import time
 
 
 class Node(object):
@@ -68,8 +69,8 @@ node_dt = np.dtype([('id', np.uint32),
 
 edge_dt = np.dtype([('left', np.float),
                     ('right', np.float),
-                    ('parent', np.float),
-                    ('child', np.float)])
+                    ('parent', np.uint32),
+                    ('child', np.uint32)])
 
 
 def xover():
@@ -101,21 +102,29 @@ def wf(diploids, ngens):
     assert(max(diploids) < next_id)
     # nodes = [Node(i, 0, 0) for i in diploids]  # Add nodes for ancestors
     nodes = np.array([(i, 0, 0) for i in diploids], dtype=node_dt)
-    edges = []
+    edges = np.empty([0], dtype=edge_dt)
+
+    # We know there will be 2N new nodes added,
+    # so we pre-allocate the space. We only need
+    # to do this once b/c N is constant.
+    tnodes = np.empty([2 * N], dtype=node_dt)
+
+    tedges = np.empty([4 * N], dtype=edge_dt)
     for gen in range(ngens):
         # Empty offspring list.  We initialize
         # as a copy just to get the size right
         new_diploids = np.array(diploids, copy=True)
 
-        # We know there will be 2N new nodes added,
-        # so we pre-allocate the space:
-        tnodes = np.empty([2 * N], dtype=node_dt)
-        for dip in range(N):
+        # Pick 2N parents:
+        parents = np.random.randint(0, N, 2 * N)
+        dip = int(0)
+        edge_index = int(0)
+        for parent1, parent2 in zip(parents[::2], parents[1::2]):
             # Pick two parents
             parents = np.random.randint(0, N, 2)
             # p1g1 = parent 1, gamete (chrom) 1, etc.:
-            p1g1, p1g2 = diploids[2 * parents[0]], diploids[2 * parents[0] + 1]
-            p2g1, p2g2 = diploids[2 * parents[1]], diploids[2 * parents[1] + 1]
+            p1g1, p1g2 = diploids[2 * parent1], diploids[2 * parent1 + 1]
+            p2g1, p2g2 = diploids[2 * parent2], diploids[2 * parent2 + 1]
             assert(p1g2 - p1g1 == 1)
             assert(p2g2 - p2g1 == 1)
 
@@ -133,36 +142,45 @@ def wf(diploids, ngens):
             # contribution from parent 1
             breakpoint = xover()
 
-            edges.append(Edge(0.0, breakpoint, p1g1, next_id))
-            edges.append(Edge(breakpoint, 1.0, p1g2, next_id))
-
+            # edges.append(Edge(0.0, breakpoint, p1g1, next_id))
+            # edges.append(Edge(breakpoint, 1.0, p1g2, next_id))
+            tedges[edge_index] = ((0.0, breakpoint, p1g1, next_id))
+            tedges[edge_index + 1] = ((breakpoint, 1.0, p1g2, next_id))
             # Repeat process for parent 2's contribution
             breakpoint = xover()
-            edges.append(Edge(0.0, breakpoint, p2g1, next_id + 1))
-            edges.append(Edge(breakpoint, 1.0, p2g2, next_id + 1))
-
+            # edges.append(Edge(0.0, breakpoint, p2g1, next_id + 1))
+            # edges.append(Edge(breakpoint, 1.0, p2g2, next_id + 1))
+            tedges[edge_index + 2] = ((0.0, breakpoint, p2g1, next_id+1))
+            tedges[edge_index + 3] = ((breakpoint, 1.0, p2g2, next_id+1))
             new_diploids[2 * dip] = next_id
             new_diploids[2 * dip + 1] = next_id + 1
             tnodes[2 * dip] = ((next_id, gen + 1, 0))
             tnodes[2 * dip + 1] = ((next_id + 1, gen + 1, 0))
 
             next_id += 2
+            dip += 1
+            edge_index += 4
 
+        assert(edge_index == 4*N)
         assert(len(new_diploids) == 2 * N)
         diploids = new_diploids
         assert(max(diploids) < next_id)
         nodes = np.concatenate([nodes, tnodes])
-
+        edges = np.concatenate([edges, tedges])
     return (nodes, edges, diploids)
 
 
-popsize = 100
+popsize = 500
 diploids = np.array([i for i in range(2 * popsize)], dtype=np.uint32)
 np.random.seed(42)
+startsim = time.time()
 ne = wf(diploids, 10 * popsize)
+stopsim = time.time()
 
+print("sim time took, ",stopsim-startsim)
 nodes = ne[0]
 edges = ne[1]
+
 
 max_gen = max([i['generation'] for i in nodes])
 
@@ -188,8 +206,8 @@ for i in nodes:
 
 es = msprime.EdgesetTable()
 for i in edges:
-    es.add_row(left=i.left, right=i.right,
-               parent=i.parent, children=(i.child,))
+    es.add_row(left=i['left'], right=i['right'],
+               parent=i['parent'], children=(i['child'],))
 
 msprime.sort_tables(nodes=nt, edgesets=es)
 x = msprime.load_tables(nodes=nt, edgesets=es)
@@ -201,7 +219,7 @@ es_s = msprime.EdgesetTable()
 x.dump_tables(nodes=nt_s, edgesets=es_s)
 
 # print(nt)
-print(nt_s)
+# print(nt_s)
 # print(es)
 # print(es_s)
 # print(samples)
