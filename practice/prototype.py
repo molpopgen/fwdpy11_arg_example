@@ -1,4 +1,6 @@
-# A VERY simple W-F simulations.
+# Prototype of our C++ implementation
+# in Python using NumPy arrays and
+# a VERY simple W-F simulations.
 # Similar to what is in ftprime
 # test suite, but with diploids.
 # The data structures map to what
