@@ -182,6 +182,8 @@ nodes['generation'] = nodes['generation'] * -1.0
 startnodes = time.time()
 nt = msprime.NodeTable()
 nt.set_columns(flags=[True for i in range(len(nodes))],
+               # ISSUE: we have a dtype incompatibility here.
+               # The back end is doing uint32
                population=np.array(nodes['population'], dtype=np.int32),
                time=nodes['generation'])
 stopnodes = time.time()
