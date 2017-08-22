@@ -26,6 +26,34 @@ edge_dt = np.dtype([('left', np.float),
                     ('child', np.uint32)])
 
 
+class MockAncestryTracker(object):
+    """
+    Mimicking the public API of AncestryTracker.
+    """
+    __nodes = None
+    __edges = None
+
+    def __init__(self):
+        self.nodes = np.empty([0], dtype=node_dt)
+        self.edges = np.empty([0], dtype=edge_dt)
+
+    @property
+    def nodes(self):
+        return self.__nodes
+
+    @nodes.setter
+    def nodes(self, value):
+        self.__nodes = value
+
+    @property
+    def edges(self):
+        return self.__edges
+
+    @edges.setter
+    def edges(self, value):
+        self.__edges = value
+
+
 def xover():
     breakpoint = np.random.sample()
     while breakpoint == 0.0 or breakpoint == 1.0:
@@ -33,7 +61,7 @@ def xover():
     return breakpoint
 
 
-def wf(diploids, ngens):
+def wf(diploids, tracker, ngens):
     """
     For N diploids, the diploids list contains 2N values.
     For the i-th diploids, diploids[2*i] and diploids[2*i+1]
@@ -54,8 +82,8 @@ def wf(diploids, ngens):
     next_id = len(diploids)  # This will be the next unique ID to use
     assert(max(diploids) < next_id)
     # nodes = [Node(i, 0, 0) for i in diploids]  # Add nodes for ancestors
-    nodes = np.array([(i, 0, 0) for i in diploids], dtype=node_dt)
-    edges = np.empty([0], dtype=edge_dt)
+    tracker.nodes = np.array([(i, 0, 0) for i in diploids], dtype=node_dt)
+    #edges = np.empty([0], dtype=edge_dt)
 
     # We know there will be 2N new nodes added,
     # so we pre-allocate the space. We only need
@@ -98,7 +126,7 @@ def wf(diploids, ngens):
             # contribution from parent 1
             breakpoint = xover()
 
-            assert(edge_index+3 < 4*N)
+            assert(edge_index + 3 < 4 * N)
             tedges[edge_index] = (0.0, breakpoint, p1g1, next_id)
             tedges[edge_index + 1] = (breakpoint, 1.0, p1g2, next_id)
 
@@ -123,21 +151,22 @@ def wf(diploids, ngens):
         assert(len(new_diploids) == 2 * N)
         diploids = new_diploids
         assert(max(diploids) < next_id)
-        nodes = np.concatenate([nodes, tnodes])
-        edges = np.concatenate([edges, tedges])
-    return (nodes, edges, diploids)
+        tracker.nodes = np.concatenate([tracker.nodes, tnodes])
+        tracker.edges = np.concatenate([tracker.edges, tedges])
+    return (diploids)
 
 
 popsize = 100
 diploids = np.array([i for i in range(2 * popsize)], dtype=np.uint32)
 np.random.seed(42)
 startsim = time.time()
-ne = wf(diploids, 10 * popsize)
+tracker = MockAncestryTracker()
+ne = wf(diploids, tracker, 10 * popsize)
 stopsim = time.time()
 
 print("sim time took, ", stopsim - startsim)
-nodes = ne[0]
-edges = ne[1]
+nodes = tracker.nodes
+edges = tracker.edges 
 
 
 max_gen = max([i['generation'] for i in nodes])
