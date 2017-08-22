@@ -5,7 +5,8 @@
 # test suite, but with diploids.
 # The data structures map to what
 # I'm doing on the C++ side.
-# A list[Node] and list[Edge]
+# NumPy arrays containing node_dy
+# and edge_dt
 # are built up the same way that
 # I'm populating vector<node> and
 # vector<edge>.
@@ -13,54 +14,6 @@
 import numpy as np
 import msprime
 import time
-
-
-class Node(object):
-    """
-    Tree nodes
-    """
-    id = None
-    generation = None
-    population = None
-
-    def __init__(self, id, generation, population):
-        self.id = id
-        self.generation = generation
-        self.population = population
-
-    def __repr__(self):
-        rv = "Node("
-        rv += str(self.id) + ','
-        rv += str(self.generation) + ','
-        rv += str(self.population) + ')'
-        return rv
-
-
-class Edge(object):
-    """
-    Simple representation of edges.
-    We expect msprime to "collect"
-    children during the simplification
-    steps.
-    """
-    left = None
-    right = None
-    parent = None
-    child = None
-
-    def __init__(self, left, right, parent, child=None):
-        self.left = left
-        self.right = right
-        self.parent = parent
-        self.child = child
-
-    def __repr__(self):
-        rv = "Edge("
-        rv += str(self.left) + ','
-        rv += str(self.right) + ','
-        rv += str(self.parent) + ','
-        rv += str(self.child) + ')'
-        return rv
 
 
 node_dt = np.dtype([('id', np.uint32),
@@ -113,7 +66,7 @@ def wf(diploids, ngens):
     for gen in range(ngens):
         # Empty offspring list.  We initialize
         # as a copy just to get the size right
-        new_diploids = np.array(diploids, copy=True)
+        new_diploids = np.empty([len(diploids)], dtype = diploids.dtype)
 
         # Pick 2N parents:
         parents = np.random.randint(0, N, 2 * N)
@@ -138,22 +91,23 @@ def wf(diploids, ngens):
             # We'll make every mating have 1 x-over
             # in each parent
 
-            # Crossing-over and Edges due to
+            # Crossing-over and edges due to
             # contribution from parent 1
             breakpoint = xover()
 
-            # edges.append(Edge(0.0, breakpoint, p1g1, next_id))
-            # edges.append(Edge(breakpoint, 1.0, p1g2, next_id))
             tedges[edge_index] = ((0.0, breakpoint, p1g1, next_id))
             tedges[edge_index + 1] = ((breakpoint, 1.0, p1g2, next_id))
+
             # Repeat process for parent 2's contribution
             breakpoint = xover()
-            # edges.append(Edge(0.0, breakpoint, p2g1, next_id + 1))
-            # edges.append(Edge(breakpoint, 1.0, p2g2, next_id + 1))
-            tedges[edge_index + 2] = ((0.0, breakpoint, p2g1, next_id+1))
-            tedges[edge_index + 3] = ((breakpoint, 1.0, p2g2, next_id+1))
+            tedges[edge_index + 2] = ((0.0, breakpoint, p2g1, next_id + 1))
+            tedges[edge_index + 3] = ((breakpoint, 1.0, p2g2, next_id + 1))
+
+            # Add diploids
             new_diploids[2 * dip] = next_id
             new_diploids[2 * dip + 1] = next_id + 1
+
+            # Add new nodes
             tnodes[2 * dip] = ((next_id, gen + 1, 0))
             tnodes[2 * dip + 1] = ((next_id + 1, gen + 1, 0))
 
@@ -161,7 +115,7 @@ def wf(diploids, ngens):
             dip += 1
             edge_index += 4
 
-        assert(edge_index == 4*N)
+        assert(edge_index == 4 * N)
         assert(len(new_diploids) == 2 * N)
         diploids = new_diploids
         assert(max(diploids) < next_id)
@@ -170,14 +124,14 @@ def wf(diploids, ngens):
     return (nodes, edges, diploids)
 
 
-popsize = 500
+popsize = 100
 diploids = np.array([i for i in range(2 * popsize)], dtype=np.uint32)
 np.random.seed(42)
 startsim = time.time()
 ne = wf(diploids, 10 * popsize)
 stopsim = time.time()
 
-print("sim time took, ",stopsim-startsim)
+print("sim time took, ", stopsim - startsim)
 nodes = ne[0]
 edges = ne[1]
 
