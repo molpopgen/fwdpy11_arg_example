@@ -60,6 +60,16 @@ class Edge(object):
         return rv
 
 
+node_dt = np.dtype([('id', np.uint32),
+                    ('generation', np.float),
+                    ('population', np.uint32)])
+
+edge_dt = np.dtype([('left', np.float),
+                    ('right', np.float),
+                    ('parent', np.float),
+                    ('child', np.float)])
+
+
 def xover():
     breakpoint = np.random.sample()
     while breakpoint == 0.0 or breakpoint == 1.0:
@@ -87,12 +97,14 @@ def wf(diploids, ngens):
     N = int(len(diploids) / 2)
     next_id = len(diploids)  # This will be the next unique ID to use
     assert(max(diploids) < next_id)
-    nodes = [Node(i, 0, 0) for i in diploids]  # Add nodes for ancestors
+    #nodes = [Node(i, 0, 0) for i in diploids]  # Add nodes for ancestors
+    nodes = np.array([(i, 0, 0) for i in diploids], dtype=node_dt)
     edges = []
     for gen in range(ngens):
         # Empty offspring list.  We initialize
         # as a copy just to get the size right
         new_diploids = np.array(diploids, copy=True)
+        tnodes = []
         for dip in range(N):
             # Pick two parents
             parents = np.random.randint(0, N, 2)
@@ -132,7 +144,10 @@ def wf(diploids, ngens):
         diploids = new_diploids
         assert(max(diploids) < next_id)
         for i in diploids:
-            nodes.append(Node(i, gen + 1, 0))
+            tnodes.append((i,gen+1,0))
+            #nodes.append(Node(i, gen + 1, 0))
+        nodes = np.concatenate([nodes, np.array(tnodes, dtype=node_dt)])
+
 
     return (nodes, edges, diploids)
 
@@ -145,21 +160,27 @@ ne = wf(diploids, 10*popsize)
 nodes = ne[0]
 edges = ne[1]
 
-max_gen = max([i.generation for i in nodes])
+max_gen = max([i['generation'] for i in nodes])
 
-samples = [i.id for i in nodes if i.generation == max_gen]
+samples = [i['id'] for i in nodes if i['generation'] == max_gen]
 
 print(len(nodes), len(edges), len(samples))
 
-for i in nodes:
-    g = i.generation
-    i.generation -= max_gen
-    i.generation *= -1
+print(nodes[:5])
+print(nodes[-5:])
+nodes['generation'] = nodes['generation'] - max_gen
+nodes['generation'] = nodes['generation'] * -1.0
+print(nodes[:5])
+print(nodes[-5:])
+# for i in nodes:
+#     g = i['generation']
+#     i.generation -= max_gen
+#     i.generation *= -1
 
 nt = msprime.NodeTable()
 for i in nodes:
-    flag = True if i.generation == 0 else False
-    nt.add_row(flags=True, population=i.population, time=i.generation)
+    flag = True if i['generation'] == 0 else False
+    nt.add_row(flags=True, population=i['population'], time=i['generation'])
 
 es = msprime.EdgesetTable()
 for i in edges:
