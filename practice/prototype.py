@@ -87,12 +87,15 @@ def wf(diploids, tracker, ngens):
     # We know there will be 2N new nodes added,
     # so we pre-allocate the space. We only need
     # to do this once b/c N is constant.
-    tnodes = np.empty([2 * N], dtype=node_dt)
-
+    tracker.nodes = np.empty([2 * N * (ngens + 1)], dtype=node_dt)
+    for i in range(len(diploids)):
+        tracker.nodes[i] = (i, 0, 0)
     # Our simple WF sim makes 1 xover per parent
     # in each mating.  Thus, each offspring inherits
     # two new edges, and 4N new edges are formed each generation.
-    tedges = np.empty([4 * N], dtype=edge_dt)
+    tracker.edges = np.empty([ngens * 4 * N], dtype=edge_dt)
+    edge_index = int(0)
+    node_id = int(len(diploids))
     for gen in range(ngens):
         # Empty offspring list.
         new_diploids = np.empty([len(diploids)], dtype=diploids.dtype)
@@ -100,7 +103,6 @@ def wf(diploids, tracker, ngens):
         # Pick 2N parents:
         parents = np.random.randint(0, N, 2 * N)
         dip = int(0)
-        edge_index = int(0)
         for parent1, parent2 in zip(parents[::2], parents[1::2]):
             # Pick two parents
             parents = np.random.randint(0, N, 2)
@@ -124,37 +126,37 @@ def wf(diploids, tracker, ngens):
             # contribution from parent 1
             breakpoint = xover()
 
-            assert(edge_index + 3 < 4 * N)
-            tedges[edge_index] = (0.0, breakpoint, p1g1, next_id)
-            tedges[edge_index + 1] = (breakpoint, 1.0, p1g2, next_id)
+            # assert(edge_index + 3 < 4 * N)
+            tracker.edges[edge_index] = (0.0, breakpoint, p1g1, next_id)
+            tracker.edges[edge_index + 1] = (breakpoint, 1.0, p1g2, next_id)
 
             # Repeat process for parent 2's contribution
             breakpoint = xover()
-            tedges[edge_index + 2] = (0.0, breakpoint, p2g1, next_id + 1)
-            tedges[edge_index + 3] = (breakpoint, 1.0, p2g2, next_id + 1)
+            tracker.edges[edge_index +
+                          2] = (0.0, breakpoint, p2g1, next_id + 1)
+            tracker.edges[edge_index +
+                          3] = (breakpoint, 1.0, p2g2, next_id + 1)
 
             # Add diploids
             new_diploids[2 * dip] = next_id
             new_diploids[2 * dip + 1] = next_id + 1
 
             # Add new nodes
-            tnodes[2 * dip] = (next_id, gen + 1, 0)
-            tnodes[2 * dip + 1] = (next_id + 1, gen + 1, 0)
+            tracker.nodes[node_id] = (next_id, gen + 1, 0)
+            tracker.nodes[node_id + 1] = (next_id + 1, gen + 1, 0)
 
+            node_id += 2
             next_id += 2
             dip += 1
             edge_index += 4
 
-        assert(edge_index == 4 * N)
         assert(len(new_diploids) == 2 * N)
         diploids = new_diploids
         assert(max(diploids) < next_id)
-        tracker.nodes = np.concatenate([tracker.nodes, tnodes])
-        tracker.edges = np.concatenate([tracker.edges, tedges])
     return (diploids)
 
 
-popsize = 100
+popsize = 1000
 diploids = np.array([i for i in range(2 * popsize)], dtype=np.uint32)
 np.random.seed(42)
 startsim = time.time()
@@ -162,7 +164,6 @@ tracker = MockAncestryTracker()
 ne = wf(diploids, tracker, 10 * popsize)
 stopsim = time.time()
 
-print("sim time took, ", stopsim - startsim)
 nodes = tracker.nodes
 edges = tracker.edges
 
@@ -171,38 +172,56 @@ max_gen = max([i['generation'] for i in nodes])
 
 samples = [i['id'] for i in nodes if i['generation'] == max_gen]
 
-print(len(nodes), len(edges), len(samples))
-
-print(nodes[:5])
-print(nodes[-5:])
 nodes['generation'] = nodes['generation'] - max_gen
 nodes['generation'] = nodes['generation'] * -1.0
-print(nodes[:5])
-print(nodes[-5:])
 # for i in nodes:
 #     g = i['generation']
 #     i.generation -= max_gen
 #     i.generation *= -1
 
+startnodes = time.time()
 nt = msprime.NodeTable()
-for i in nodes:
-    flag = True if i['generation'] == 0 else False
-    nt.add_row(flags=True, population=i['population'], time=i['generation'])
+nt.set_columns(flags=[True for i in range(len(nodes))],
+               population=np.array(nodes['population'], dtype=np.int32),
+               time=nodes['generation'])
+stopnodes = time.time()
+# for i in nodes:
+#     flag = True if i['generation'] == 0 else False
+#     nt.add_row(flags=True, population=i['population'], time=i['generation'])
 
+startedges = time.time()
 es = msprime.EdgesetTable()
 for i in edges:
     es.add_row(left=i['left'], right=i['right'],
                parent=i['parent'], children=(i['child'],))
+stopedges = time.time()
 
+startsort = time.time()
 msprime.sort_tables(nodes=nt, edgesets=es)
-x = msprime.load_tables(nodes=nt, edgesets=es)
-x = x.simplify(samples=samples)
+stopsort = time.time()
 
+startload = time.time()
+x = msprime.load_tables(nodes=nt, edgesets=es)
+stopload = time.time()
+
+startsimplify = time.time()
+x = x.simplify(samples=samples)
+stopsimplify = time.time()
+
+startdump = time.time()
 nt_s = msprime.NodeTable()
 es_s = msprime.EdgesetTable()
 
 x.dump_tables(nodes=nt_s, edgesets=es_s)
+stopdump = time.time()
 
+print("Time to simulate = ", stopsim - startsim)
+print("Time to populate node table = ", stopnodes - startnodes)
+print("Time to populate edges = ", stopedges - startedges)
+print("Time to sort = ", stopsort - startsort)
+print("Time to load = ", stopload - startload)
+print("Time to simplify = ", stopsimplify - startsimplify)
+print("Time to dump = ", stopdump - startdump)
 # print(nt)
 # print(nt_s)
 # print(es)
