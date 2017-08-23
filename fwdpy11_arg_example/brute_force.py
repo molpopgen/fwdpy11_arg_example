@@ -4,7 +4,6 @@ import fwdpy11.model_params
 import numpy as np
 import msprime
 import time
-import sys
 
 
 def evolve_track(rng, pop, params, gc_interval):
@@ -34,6 +33,9 @@ def evolve_track(rng, pop, params, gc_interval):
 def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
                          gc_interval=10,
                          dfe=fwdpy11.ConstantS(0, 1, 1, -0.025, 1.0)):
+    """
+    gc_interval does nothing :)
+    """
     if isinstance(dfe, fwdpy11.Sregion) is False:
         raise TypeError("dfe must be a fwdpy11.Sregion")
 
@@ -57,44 +59,49 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
     atracker = evolve_track(rng, pop, params, gc_interval)
     stop_sim = time.time()
 
+    # Get our nodes and edges from C++ directly
     sim_nodes = np.array(atracker.nodes, copy=False)
     sim_edges = np.array(atracker.edges, copy=False)
-    start_fudge = time.time()
+
     # Get the node times, convert to float,
-    # then convert to backwards in time
-    coal_time = np.array(sim_nodes['generation'], dtype=np.float)
-    max_gen = coal_time.max()
+    # then convert to backwards in time.
+    # This is DUMB and should be handled on the C++
+    # side.
+    start_fudge = time.time()
+    max_gen = sim_nodes['generation'].max()
+    sim_nodes['generation'] -= max_gen
+    sim_nodes['generation'] *= -1.0
+    # Get sample ids.  Again, better done
+    # on the C++ side
     samples = [i['id'] for i in sim_nodes if i['generation'] == max_gen]
-    coal_time -= max_gen
-    coal_time *= -1.0
     stop_fudge = time.time()
 
     start_msprime = time.time()
     n = msprime.NodeTable()
-    n.set_columns(flags=[True for i in range(len(coal_time))],
+    n.set_columns(flags=[True for i in range(len(sim_nodes))],
                   # gives type conversion error from uint32 to int32
-                  # without this COPY:
-                  population=np.array(sim_nodes['population'], dtype=np.int32),
-                  time=coal_time)
-    print("nodes added")
+                  # without this CAST:
+                  population=sim_nodes['population'].astype(np.int32),
+                  time=sim_nodes['generation'])
     e = msprime.EdgesetTable()
-    for se in sim_edges:
-        e.add_row(left=se['left'],
-                  right=se['right'],
-                  parent=se['parent'],
-                  children=(se['child'],))
 
-    # children = [(int(i),) for i in sim_edges['child']]
-    # e.set_columns(left=sim_edges['left'],
-    #               right=sim_edges['right'],
-    #               parent=np.array(sim_edges['parent'], dtype=np.int32),
-    #               children=children,
-    #               children_length=len(children))
-    print("edges added")
-    print(n)
+    # This is slow:
+    # for se in sim_edges:
+    #     e.add_row(left=se['left'],
+    #               right=se['right'],
+    #               parent=se['parent'],
+    #               children=(se['child'],))
+
+    e.set_columns(left=sim_edges['left'],
+                  right=sim_edges['right'],
+                  # CAST
+                  parent=sim_edges['parent'].astype(np.int32),
+                  # CAST
+                  children=sim_edges['child'].astype(np.int32),
+                  children_length=[1]*len(sim_edges))
     msprime.sort_tables(nodes=n, edgesets=e)
     x = msprime.load_tables(nodes=n, edgesets=e)
-    x = x.simplify(sample=samples)
+    x = x.simplify(samples=samples)
     stop_msprime = time.time()
     return {'sim_time': stop_sim - start_sim,
             'msprime_time': stop_msprime - start_msprime,

@@ -54,3 +54,15 @@ ts = msprime.load_tables(nodes=n, edgesets=e)
 print(ts)
 
 print(ts.samples())
+
+# Let's make an example that looks more like what comes out of 
+# forward sims
+
+left = [0.0, 0.5, 0.0, 0.2]
+right = [0.5, 1.0 , 0.2, 1.0]
+parent = [0, 0, 1, 1]
+children = [2, 2, 3, 3]
+children_length = [1]*4
+
+e.set_columns(left=left,right=right,parent=parent,children=children,children_length=children_length)
+print(e)

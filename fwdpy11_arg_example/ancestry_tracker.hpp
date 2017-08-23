@@ -31,6 +31,13 @@ struct ancestry_tracker
         nodes.reserve(2 * N);
         edges.reserve(2 * N);
         temp.reserve(N);
+		
+		//Initialize 2N nodes for the generation 0
+		for(integer_type i = 0 ; i < 2*N ; ++i)
+		{
+			//ID, time 0, population 0
+			nodes.emplace_back(make_node(i, 0.0, 0));
+		}
     }
 
     void
@@ -74,20 +81,20 @@ struct ancestry_tracker
             }
     }
 
-    void
-    add_nodes()
-    {
-        std::unordered_set<integer_type> used;
-        for (auto& e : temp)
-            {
-                if (used.find(e.parent) == used.end())
-                    {
-                        nodes.emplace_back(
-                            make_node(e.parent, generation - 1, 0));
-                        used.insert(e.parent);
-                    }
-            }
-    }
+    // void
+    // add_nodes()
+    // {
+    //     std::unordered_set<integer_type> used;
+    //     for (auto& e : temp)
+    //         {
+    //             if (used.find(e.parent) == used.end())
+    //                 {
+    //                     nodes.emplace_back(
+    //                         make_node(e.parent, generation - 1, 0));
+    //                     used.insert(e.parent);
+    //                 }
+    //         }
+    // }
 
     void
     finish_generation()
@@ -120,7 +127,11 @@ struct ancestry_tracker
         //	}
         //}
         // std::cout << extinct << " extinct lineages\n";
-        add_nodes();
+        //add_nodes();
+		for(auto && oi : offspring_indexes)
+		{
+			nodes.emplace_back(make_node(oi,generation,0));
+		}
         std::sort(temp.begin(), temp.end());
         edges.insert(edges.end(), temp.begin(), temp.end());
         parental_indexes.swap(offspring_indexes);

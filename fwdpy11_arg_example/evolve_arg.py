@@ -44,7 +44,7 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
              'sregions': [dfe],
              'recregions': [fwdpy11.Region(0, 1, 1)],
              'gvalue': fwdpy11.fitness.SlocusMult(2.0),
-             'demography': np.array([popsize]*10*popsize, dtype = np.uint32)
+             'demography': np.array([popsize]*10, dtype = np.uint32)
              }
 
     params = fwdpy11.model_params.SlocusParams(**pdict)

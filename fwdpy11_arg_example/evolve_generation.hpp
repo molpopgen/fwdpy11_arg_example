@@ -2,6 +2,7 @@
 #define FWDPY11_ARG_EXAMPLE_EVOLVE_GENERATION_HPP__
 
 #include <cstddef>
+#include <iostream>
 #include <algorithm>
 #include <type_traits>
 #include <tuple>
@@ -104,6 +105,19 @@ evolve_generation(const fwdpy11::GSLrng_t& rng, poptype& pop,
             update(rng, dip, pop, p1, p2);
         }
     ancestry.finish_generation();
+    /
+	std::cout << "node ids: ( " << ancestry.generation << ") :";
+    //for (auto&& n : ancestry.nodes)
+    //    {
+    //        std::cout << n.id << ' ';
+    //    }
+    //std::cout << '\n';
+    //std::cout << "edge data: ";
+    //for (auto&& e : ancestry.edges)
+    //    {
+    //        std::cout << "(" << e.parent << ',' << e.child << ") ";
+    //    }
+    //std::cout << '\n';
     KTfwd::fwdpp_internal::process_gametes(pop.gametes, pop.mutations,
                                            pop.mcounts);
     KTfwd::fwdpp_internal::gamete_cleaner(pop.gametes, pop.mutations,
