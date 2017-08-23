@@ -105,8 +105,7 @@ evolve_generation(const fwdpy11::GSLrng_t& rng, poptype& pop,
             update(rng, dip, pop, p1, p2);
         }
     ancestry.finish_generation();
-    /
-	std::cout << "node ids: ( " << ancestry.generation << ") :";
+    //std::cout << "node ids: ( " << ancestry.generation << ") :";
     //for (auto&& n : ancestry.nodes)
     //    {
     //        std::cout << n.id << ' ';
