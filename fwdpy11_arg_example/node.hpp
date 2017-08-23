@@ -6,30 +6,30 @@
 
 struct node
 {
-    std::uint32_t id, generation;
-    std::uint32_t deme;
+    std::uint32_t id, population;
+	double generation;
 };
 
 inline node
-make_node(std::uint32_t id, std::uint32_t generation, std::uint32_t deme)
+make_node(std::uint32_t id, double generation, std::uint32_t population)
 {
     node n;
     n.id = id;
     n.generation = generation;
-    n.deme = deme;
+    n.population = population;
     return n;
 }
 
 inline auto
-get_tied_node(const node& n) -> decltype(std::tie(n.generation, n.deme, n.id))
+get_tied_node(const node& n) -> decltype(std::tie(n.generation, n.population, n.id))
 {
-    return std::tie(n.generation, n.id, n.deme);
+    return std::tie(n.generation, n.id, n.population);
 }
 
 inline bool
 operator<(const node& lhs, const node& rhs)
 {
-    // sort order is generation, then deme, then id
+    // sort order is generation, then population, then id
     return get_tied_node(lhs) < get_tied_node(rhs);
 }
 

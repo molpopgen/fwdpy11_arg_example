@@ -108,7 +108,7 @@ PYBIND11_PLUGIN(wfarg)
                           "selection and ARG tracking");
 
     //Register nodes and edges as NumPy dtypes:
-    PYBIND11_NUMPY_DTYPE(node, id, generation, deme);
+    PYBIND11_NUMPY_DTYPE(node, id, population, generation); 
     PYBIND11_NUMPY_DTYPE(edge, left, right, parent, child);
 
 	//py::class_<edge>(m,"Edge");
