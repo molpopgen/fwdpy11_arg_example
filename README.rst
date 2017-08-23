@@ -47,6 +47,21 @@ Make a local build and run the unit tests:
 
 The unit test runs N = 1e3, 4Nr = 1e4, and some sites under selection, for 10N generations.  It takes about 20 seconds on my Linux box.  
 
+"Brute-force" simulation
++++++++++++++++++++++++++++++++++
+
+To run a proof-of-principle example where we do an entire simulation and then have msprime clean up the mess:
+
+.. code-block:: bash
+
+    python test_brute_force.py N 4Nr seed
+
+The output will be the times spent in various steps.
+
+.. warning::
+
+    There is an issue with very large 4Nr, resulting in _msprime.LibraryError: Bad record interval where right <= left.  This is almost certainly due to two identical recombination breakpoints being drawn, which does happen.  I need to think of a fix.
+
 .. _fwdpy11: http://molpopgen.github.io/fwdpy11
 .. _fwdpp: http://molpopgen.github.io/fwdpp
 .. _pybind11: http://github.com/pybind/pybind11
