@@ -74,7 +74,7 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
     n.set_columns(flags=[True for i in range(len(coal_time))],
                   # gives type conversion error from uint32 to int32
                   # without this COPY:
-                  population=np.array(sim_nodes['deme'], dtype=np.int32),
+                  population=np.array(sim_nodes['population'], dtype=np.int32),
                   time=coal_time)
     print("nodes added")
     e = msprime.EdgesetTable()
