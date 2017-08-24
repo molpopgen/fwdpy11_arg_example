@@ -58,9 +58,6 @@ To run a proof-of-principle example where we do an entire simulation and then ha
 
 The output will be the times spent in various steps.
 
-.. warning::
-
-    There is an issue with very large 4Nr, resulting in _msprime.LibraryError: Bad record interval where right <= left.  This is almost certainly due to two identical recombination breakpoints being drawn, which does happen.  I need to think of a fix.
 
 .. _fwdpy11: http://molpopgen.github.io/fwdpy11
 .. _fwdpp: http://molpopgen.github.io/fwdpp
