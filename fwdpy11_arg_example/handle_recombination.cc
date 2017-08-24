@@ -46,6 +46,8 @@ ancestry_recombination_details(
             return parental_gamete1;
         }
     auto breakpoints_per_parental_chrom = split_breakpoints(breakpoints);
+	//BUG: shallow tree issue probably here.  Need to do some py::print
+	//debugging :)
     ancestry.add_edges(breakpoints_per_parental_chrom.first, std::get<0>(pid),
                        std::get<0>(offspring_indexes));
 
