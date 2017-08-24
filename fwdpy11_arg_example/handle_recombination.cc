@@ -2,6 +2,8 @@
 #include <fwdpp/debug.hpp>
 #include <fwdpp/recombination.hpp>
 
+namespace py = pybind11;
+
 std::pair<std::vector<std::pair<double, double>>,
           std::vector<std::pair<double, double>>>
 split_breakpoints(const std::vector<double>& breakpoints, const double start,
@@ -34,25 +36,21 @@ ancestry_recombination_details(
     std::vector<double>& breakpoints,
     const std::tuple<ancestry_tracker::integer_type,
                      ancestry_tracker::integer_type>& pid,
-    const std::tuple<ancestry_tracker::integer_type,
-                     ancestry_tracker::integer_type>& offspring_indexes)
+    const ancestry_tracker::integer_type offspring_index)
 {
     breakpoints.erase(std::unique(breakpoints.begin(), breakpoints.end()),
                       breakpoints.end());
     if (breakpoints.empty())
         {
-            ancestry.temp.emplace_back(make_edge(
-                0., 1., std::get<0>(pid), std::get<0>(offspring_indexes)));
+            ancestry.temp.emplace_back(
+                make_edge(0., 1., std::get<0>(pid), offspring_index));
             return parental_gamete1;
         }
     auto breakpoints_per_parental_chrom = split_breakpoints(breakpoints);
-	//BUG: shallow tree issue probably here.  Need to do some py::print
-	//debugging :)
     ancestry.add_edges(breakpoints_per_parental_chrom.first, std::get<0>(pid),
-                       std::get<0>(offspring_indexes));
-
+                       offspring_index);
     ancestry.add_edges(breakpoints_per_parental_chrom.second, std::get<1>(pid),
-                       std::get<0>(offspring_indexes));
+                       offspring_index);
     return KTfwd::recombine_gametes(
         breakpoints, pop.gametes, pop.mutations, parental_gamete1,
         parental_gamete2, gamete_recycling_bin, pop.neutral, pop.selected);

@@ -21,7 +21,6 @@ KTfwd::uint_t ancestry_recombination_details(
     std::vector<double>& breakpoints,
     const std::tuple<ancestry_tracker::integer_type,
                      ancestry_tracker::integer_type>& pid,
-    const std::tuple<ancestry_tracker::integer_type,
-                     ancestry_tracker::integer_type>& offspring_indexes);
+    const ancestry_tracker::integer_type offspring_index);
 
 #endif

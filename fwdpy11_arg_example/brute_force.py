@@ -50,7 +50,7 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
              'sregions': [dfe],
              'recregions': [fwdpy11.Region(0, 1, 1)],
              'gvalue': fwdpy11.fitness.SlocusMult(2.0),
-             'demography': np.array([popsize] *  popsize, dtype=np.uint32)
+             'demography': np.array([popsize] * 10 * popsize, dtype=np.uint32)
              }
 
     params = fwdpy11.model_params.SlocusParams(**pdict)
@@ -67,7 +67,7 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
     # Get sample ids.  Again, better done
     # on the C++ side
     max_gen = sim_nodes['generation'].max()
-    samples = [i['id'] for i in sim_nodes if i['generation'] == max_gen]
+    samples = sim_nodes['id'][np.where(sim_nodes['generation']==max_gen)]
     # Get the node times, convert to float,
     # then convert to backwards in time.
     # This is DUMB and should be handled on the C++
@@ -101,7 +101,9 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
                   children_length=[1]*len(sim_edges))
     msprime.sort_tables(nodes=n, edgesets=e)
     x = msprime.load_tables(nodes=n, edgesets=e)
-    x = x.simplify(samples=samples)
+    x = x.simplify(samples=samples.tolist())
+    x.dump_tables(nodes=n,edgesets=e)
+    #print(n)
     stop_msprime = time.time()
     return {'sim_time': stop_sim - start_sim,
             'msprime_time': stop_msprime - start_msprime,

@@ -58,11 +58,6 @@ To run a proof-of-principle example where we do an entire simulation and then ha
 
 The output will be the times spent in various steps.
 
-.. warning::
-    The resulting node sets are very "shallow", going back just few generations.
-    I ran into this in my Python prototype, too.  The issue is that I'm not correctly
-    populating my vector of edges.  Will fix soon....
-
 .. _fwdpy11: http://molpopgen.github.io/fwdpy11
 .. _fwdpp: http://molpopgen.github.io/fwdpp
 .. _pybind11: http://github.com/pybind/pybind11
