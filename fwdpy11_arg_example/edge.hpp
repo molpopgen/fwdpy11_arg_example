@@ -7,11 +7,11 @@
 struct edge
 {
     double left, right;
-    std::uint32_t parent, child;
+    std::int32_t parent, child;
 };
 
 inline edge
-make_edge(double left, double right, std::uint32_t parent, std::uint32_t child)
+make_edge(double left, double right, std::int32_t parent, std::int32_t child)
 {
     edge e;
     e.left = left;

@@ -6,12 +6,13 @@
 
 struct node
 {
-    std::uint32_t id, population;
+    std::uint32_t id;
+	std::int32_t population;
 	double generation;
 };
 
 inline node
-make_node(std::uint32_t id, double generation, std::uint32_t population)
+make_node(std::uint32_t id, double generation, std::int32_t population)
 {
     node n;
     n.id = id;

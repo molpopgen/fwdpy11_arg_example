@@ -31,13 +31,13 @@ struct ancestry_tracker
         nodes.reserve(2 * N);
         edges.reserve(2 * N);
         temp.reserve(N);
-		
-		//Initialize 2N nodes for the generation 0
-		for(integer_type i = 0 ; i < 2*N ; ++i)
-		{
-			//ID, time 0, population 0
-			nodes.emplace_back(make_node(i, 0.0, 0));
-		}
+
+        //Initialize 2N nodes for the generation 0
+        for (integer_type i = 0; i < 2 * N; ++i)
+            {
+                //ID, time 0, population 0
+                nodes.emplace_back(make_node(i, 0.0, 0));
+            }
     }
 
     void
@@ -128,10 +128,10 @@ struct ancestry_tracker
         //}
         // std::cout << extinct << " extinct lineages\n";
         //add_nodes();
-		for(auto && oi : offspring_indexes)
-		{
-			nodes.emplace_back(make_node(oi,generation,0));
-		}
+        for (auto&& oi : offspring_indexes)
+            {
+                nodes.emplace_back(make_node(oi, generation, 0));
+            }
         std::sort(temp.begin(), temp.end());
         edges.insert(edges.end(), temp.begin(), temp.end());
         parental_indexes.swap(offspring_indexes);
@@ -170,29 +170,31 @@ struct ancestry_tracker
         // remove all edges where child IDs are not listed as parents in nodes
         // and the node time is < last_gen
         std::cout << "Number of edges: " << edges.size() << " -> ";
-        edges.erase(std::remove_if(
-                        edges.begin(), edges.end(),
-                        [this, last_gen](const edge& e) {
-                            //std::cout << e.parent << ' ' << e.child << ": ";
-                            auto x = std::lower_bound(
-                                nodes.begin(), nodes.end(), e.child,
-                                [](const node& n, const integer_type c) {
-                                    return n.id < c;
-                                });
-                            //if(x != nodes.end())
-                            //{
-                            //std::cout << x->id << ' ' << x->generation << ' ' << last_gen << ' ';
-                            //}
-                            if (x == nodes.end() || (x->generation < last_gen
-                                                     && x->id != e.child))
-                                {
-                                    //        std::cout << "true\n";
-                                    return true;
-                                }
-                            //std::cout << "false\n";
-                            return false;
-                        }),
-                    edges.end());
+        edges.erase(
+            std::remove_if(
+                edges.begin(), edges.end(),
+                [this, last_gen](const edge& e) {
+                    //std::cout << e.parent << ' ' << e.child << ": ";
+                    auto x = std::lower_bound(
+                        nodes.begin(), nodes.end(), e.child,
+                        [](const node& n, const integer_type c) {
+                            return n.id < static_cast<decltype(n.id)>(c);
+                        });
+                    //if(x != nodes.end())
+                    //{
+                    //std::cout << x->id << ' ' << x->generation << ' ' << last_gen << ' ';
+                    //}
+                    if (x == nodes.end()
+                        || (x->generation < last_gen
+                            && x->id != static_cast<decltype(x->id)>(e.child)))
+                        {
+                            //        std::cout << "true\n";
+                            return true;
+                        }
+                    //std::cout << "false\n";
+                    return false;
+                }),
+            edges.end());
         std::unordered_set<integer_type> used_ids_in_edges;
         for (auto&& e : edges)
             {
@@ -220,7 +222,7 @@ struct ancestry_tracker
 
     std::vector<std::tuple<double, double>>
     sorted_tree_edges(const std::vector<edge>& edges)
-	/// Not sure where this should be, so it is here for now
+    /// Not sure where this should be, so it is here for now
     {
         // Note: not general.
         // Should have a more flexible left boundary

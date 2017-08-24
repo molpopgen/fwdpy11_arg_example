@@ -81,7 +81,7 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
     n.set_columns(flags=[True for i in range(len(sim_nodes))],
                   # gives type conversion error from uint32 to int32
                   # without this CAST:
-                  population=sim_nodes['population'].astype(np.int32),
+                  population=sim_nodes['population'], #.astype(np.int32),
                   time=sim_nodes['generation'])
     e = msprime.EdgesetTable()
 
@@ -95,9 +95,9 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
     e.set_columns(left=sim_edges['left'],
                   right=sim_edges['right'],
                   # CAST
-                  parent=sim_edges['parent'].astype(np.int32),
+                  parent=sim_edges['parent'], #.astype(np.int32),
                   # CAST
-                  children=sim_edges['child'].astype(np.int32),
+                  children=sim_edges['child'], #.astype(np.int32),
                   children_length=[1]*len(sim_edges))
     msprime.sort_tables(nodes=n, edgesets=e)
     x = msprime.load_tables(nodes=n, edgesets=e)
