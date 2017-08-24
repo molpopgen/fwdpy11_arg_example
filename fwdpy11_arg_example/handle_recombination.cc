@@ -31,12 +31,14 @@ ancestry_recombination_details(
     fwdpy11::singlepop_t& pop, ancestry_tracker& ancestry,
     std::queue<std::size_t>& gamete_recycling_bin,
     const KTfwd::uint_t parental_gamete1, const KTfwd::uint_t parental_gamete2,
-	const std::vector<double> & breakpoints,
+    std::vector<double>& breakpoints,
     const std::tuple<ancestry_tracker::integer_type,
                      ancestry_tracker::integer_type>& pid,
     const std::tuple<ancestry_tracker::integer_type,
                      ancestry_tracker::integer_type>& offspring_indexes)
 {
+    breakpoints.erase(std::unique(breakpoints.begin(), breakpoints.end()),
+                      breakpoints.end());
     if (breakpoints.empty())
         {
             ancestry.temp.emplace_back(make_edge(
