@@ -63,17 +63,17 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
     sim_nodes = np.array(atracker.nodes, copy=False)
     sim_edges = np.array(atracker.edges, copy=False)
 
+    start_fudge = time.time()
+    # side.
+    # Get sample ids.  Again, better done
+    # on the C++ side
+    max_gen = sim_nodes['generation'].max()
+    samples = [i['id'] for i in sim_nodes if i['generation'] == max_gen]
     # Get the node times, convert to float,
     # then convert to backwards in time.
     # This is DUMB and should be handled on the C++
-    # side.
-    start_fudge = time.time()
-    max_gen = sim_nodes['generation'].max()
     sim_nodes['generation'] -= max_gen
     sim_nodes['generation'] *= -1.0
-    # Get sample ids.  Again, better done
-    # on the C++ side
-    samples = [i['id'] for i in sim_nodes if i['generation'] == max_gen]
     stop_fudge = time.time()
 
     start_msprime = time.time()
