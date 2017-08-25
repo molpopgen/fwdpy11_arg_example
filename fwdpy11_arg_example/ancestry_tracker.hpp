@@ -6,6 +6,7 @@
 #include <vector>
 #include <unordered_set>
 #include <cstdint>
+#include <pybind11/pybind11.h>
 
 #include "node.hpp"
 #include "edge.hpp"
@@ -18,15 +19,19 @@ struct ancestry_tracker
     std::vector<edge> edges;
     /// Just in case.
     std::vector<edge> temp;
-    std::vector<integer_type> parental_indexes, offspring_indexes;
+    //std::vector<integer_type> parental_indexes, offspring_indexes;
     std::pair<std::vector<edge>::iterator, std::vector<edge>::iterator> prange;
-    integer_type generation, lastN, next_index, last_index_used;
+    integer_type generation, next_index, first_parental_index,
+        first_child_index;
+	std::uint32_t lastN;
     ancestry_tracker(const integer_type N)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() },
-          parental_indexes{ std::vector<integer_type>() },
-          offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
-          lastN{ N }, next_index{ 2 * N }, last_index_used{ 0 }
+          //parental_indexes{ std::vector<integer_type>() },
+          //offspring_indexes{ std::vector<integer_type>() },
+		  generation{ 1 },
+          lastN{ N }, next_index{ 2 * N }, first_parental_index{ 0 },
+          first_child_index{ 2 * N }
     {
         nodes.reserve(2 * N);
         edges.reserve(2 * N);
@@ -43,30 +48,34 @@ struct ancestry_tracker
     void
     initialize_generation()
     {
-        last_index_used = next_index;
+        //last_index_used = next_index;
     }
 
     std::tuple<integer_type, integer_type>
     get_parent_ids(const std::uint32_t p, const int did_swap)
     {
-        if (parental_indexes.empty())
-            {
-                return std::make_tuple(2 * p + did_swap, 2 * p + !did_swap);
-            }
-        return std::make_tuple(parental_indexes[2 * p + did_swap],
-                               parental_indexes[2 * p + !did_swap]);
+        return std::make_tuple(
+            first_parental_index + 2 * static_cast<integer_type>(p) + did_swap,
+            first_parental_index + 2 * static_cast<integer_type>(p)
+                + !did_swap);
+        // if (parental_indexes.empty())
+        //     {
+        //         return std::make_tuple(2 * p + did_swap, 2 * p + !did_swap);
+        //     }
+        // return std::make_tuple(parental_indexes[2 * p + did_swap],
+        //                        parental_indexes[2 * p + !did_swap]);
     }
 
     std::tuple<integer_type, integer_type>
-    get_next_indexes(const bool update_offspring_indexes = true)
+    get_next_indexes()
     {
         auto rv = std::make_tuple(next_index, next_index + 1);
         next_index += 2;
-        if (update_offspring_indexes)
-            {
-                offspring_indexes.push_back(std::get<0>(rv));
-                offspring_indexes.push_back(std::get<1>(rv));
-            }
+        //if (update_offspring_indexes)
+        //    {
+        //        offspring_indexes.push_back(std::get<0>(rv));
+        //        offspring_indexes.push_back(std::get<1>(rv));
+        //    }
         return rv;
     }
 
@@ -128,97 +137,30 @@ struct ancestry_tracker
         //}
         // std::cout << extinct << " extinct lineages\n";
         //add_nodes();
-        for (auto&& oi : offspring_indexes)
-            {
-                nodes.emplace_back(make_node(oi, generation, 0));
-            }
+		
+        //for (auto&& oi : offspring_indexes)
+        //    {
+        //        nodes.emplace_back(make_node(oi, generation, 0));
+        //    }
+		for(auto i = first_child_index ; i < next_index ; ++i)
+		{
+			nodes.emplace_back(make_node(i,generation,0));
+		}
         std::sort(temp.begin(), temp.end());
         edges.insert(edges.end(), temp.begin(), temp.end());
-        parental_indexes.swap(offspring_indexes);
-        offspring_indexes.clear();
+		lastN = next_index - first_parental_index;
+		first_parental_index = first_child_index;
+		first_child_index = next_index;
+
+        //parental_indexes.swap(offspring_indexes);
+        //offspring_indexes.clear();
         temp.clear();
         ++generation;
     }
 
     void
     reconcile_for_msprime()
-    {
-        std::cout << "some checking: " << generation << ' ' << last_index_used
-                  << '\n';
-        std::sort(nodes.begin(), nodes.end());
-        auto last_size = nodes.size();
-        auto last_gen = generation - 1;
-        std::unordered_set<integer_type> used;
-        for (auto i = edges.rbegin(); i != edges.rend(); ++i)
-            {
-                if (i->child >= last_index_used)
-                    {
-                        if (used.find(i->child) == used.end())
-                            {
-                                nodes.emplace_back(
-                                    make_node(i->child, last_gen, 0));
-                                used.insert(i->child);
-                            }
-                    }
-                else
-                    {
-                        break;
-                    }
-            }
-        std::sort(nodes.begin() + last_size, nodes.end());
-        std::cout << last_gen << '\n';
-        // remove all edges where child IDs are not listed as parents in nodes
-        // and the node time is < last_gen
-        std::cout << "Number of edges: " << edges.size() << " -> ";
-        edges.erase(
-            std::remove_if(
-                edges.begin(), edges.end(),
-                [this, last_gen](const edge& e) {
-                    //std::cout << e.parent << ' ' << e.child << ": ";
-                    auto x = std::lower_bound(
-                        nodes.begin(), nodes.end(), e.child,
-                        [](const node& n, const integer_type c) {
-                            return n.id < static_cast<decltype(n.id)>(c);
-                        });
-                    //if(x != nodes.end())
-                    //{
-                    //std::cout << x->id << ' ' << x->generation << ' ' << last_gen << ' ';
-                    //}
-                    if (x == nodes.end()
-                        || (x->generation < last_gen
-                            && x->id != static_cast<decltype(x->id)>(e.child)))
-                        {
-                            //        std::cout << "true\n";
-                            return true;
-                        }
-                    //std::cout << "false\n";
-                    return false;
-                }),
-            edges.end());
-        std::unordered_set<integer_type> used_ids_in_edges;
-        for (auto&& e : edges)
-            {
-                used_ids_in_edges.insert(e.child);
-                used_ids_in_edges.insert(e.parent);
-            }
-        std::cout << edges.size() << ", and " << nodes.size() << " nodes, and "
-                  << used_ids_in_edges.size() << " unique ids in edges\n";
-        std::cout << "these nodes are not in edges:\n";
-        nodes.erase(std::remove_if(nodes.begin(), nodes.end(),
-                                   [&used_ids_in_edges](const node& n) {
-                                       return used_ids_in_edges.find(n.id)
-                                              == used_ids_in_edges.end();
-                                   }),
-                    nodes.end());
-        std::cout << "Down to " << nodes.size() << " nodes\n";
-        //for(auto && n : nodes)
-        //{
-        //	if(used_ids_in_edges.find(n.id) == used_ids_in_edges.end())
-        //	{
-        //		std::cout << n.id << ' ' << n.generation << '\n';
-        //	}
-        //}
-    }
+	{} 
 
     std::vector<std::tuple<double, double>>
     sorted_tree_edges(const std::vector<edge>& edges)
