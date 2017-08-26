@@ -20,16 +20,16 @@ struct ancestry_tracker
     /// Just in case.
     std::vector<edge> temp;
     //std::vector<integer_type> parental_indexes, offspring_indexes;
+    std::vector<integer_type> offspring_indexes;
     std::pair<std::vector<edge>::iterator, std::vector<edge>::iterator> prange;
     integer_type generation, next_index, first_parental_index,
         first_child_index;
-	std::uint32_t lastN;
+    std::uint32_t lastN;
     ancestry_tracker(const integer_type N)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() },
           //parental_indexes{ std::vector<integer_type>() },
-          //offspring_indexes{ std::vector<integer_type>() },
-		  generation{ 1 },
+          offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
           lastN{ N }, next_index{ 2 * N }, first_parental_index{ 0 },
           first_child_index{ 2 * N }
     {
@@ -71,11 +71,8 @@ struct ancestry_tracker
     {
         auto rv = std::make_tuple(next_index, next_index + 1);
         next_index += 2;
-        //if (update_offspring_indexes)
-        //    {
-        //        offspring_indexes.push_back(std::get<0>(rv));
-        //        offspring_indexes.push_back(std::get<1>(rv));
-        //    }
+        offspring_indexes.push_back(std::get<0>(rv));
+        offspring_indexes.push_back(std::get<1>(rv));
         return rv;
     }
 
@@ -137,20 +134,16 @@ struct ancestry_tracker
         //}
         // std::cout << extinct << " extinct lineages\n";
         //add_nodes();
-		
-        //for (auto&& oi : offspring_indexes)
-        //    {
-        //        nodes.emplace_back(make_node(oi, generation, 0));
-        //    }
-		for(auto i = first_child_index ; i < next_index ; ++i)
-		{
-			nodes.emplace_back(make_node(i,generation,0));
-		}
+
+        for (auto&& oi : offspring_indexes)
+            {
+                nodes.emplace_back(make_node(oi, generation, 0));
+            }
         std::sort(temp.begin(), temp.end());
         edges.insert(edges.end(), temp.begin(), temp.end());
-		lastN = next_index - first_parental_index;
-		first_parental_index = first_child_index;
-		first_child_index = next_index;
+        lastN = next_index - first_parental_index;
+        first_parental_index = first_child_index;
+        first_child_index = next_index;
 
         //parental_indexes.swap(offspring_indexes);
         //offspring_indexes.clear();
@@ -160,7 +153,8 @@ struct ancestry_tracker
 
     void
     reconcile_for_msprime()
-	{} 
+    {
+    }
 
     std::vector<std::tuple<double, double>>
     sorted_tree_edges(const std::vector<edge>& edges)

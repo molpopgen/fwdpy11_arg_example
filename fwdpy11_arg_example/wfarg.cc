@@ -73,6 +73,7 @@ evolve_singlepop_regions_track_ancestry(
 				// ancestry.nodes.clear();
 				// ancestry.edges.clear();
 			}
+			ancestry.offspring_indexes.clear();
             const auto N_next = popsizes.at(generation);
             evolve_generation(
                 rng, pop, N_next, mu_selected, mmodels, recmap,
