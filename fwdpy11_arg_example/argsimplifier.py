@@ -1,10 +1,12 @@
 import numpy as np
 import msprime
 
+
 class ArgSimplifier(object):
     __gc_interval = None
     __nodes = msprime.NodeTable()
     __edges = msprime.EdgesetTable()
+
     def __init__(self, gc_interval):
         self.gc_interval = gc_interval
 
@@ -12,6 +14,7 @@ class ArgSimplifier(object):
         if generation > 0 and generation % self.gc_interval == 0.0:
             na = np.array(ancestry.nodes, copy=False)
             ea = np.array(ancestry.edges, copy=False)
+            samples = np.array(ancestry.samples, copy=False)
             return True
 
         return False
