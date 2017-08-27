@@ -106,7 +106,14 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
     x = msprime.load_tables(nodes=n, edgesets=e)
     x = x.simplify(samples=samples.tolist())
     x.dump_tables(nodes=n,edgesets=e)
-    # print(n)
+    # Based on Peter Ralph's example
+    # at https://github.com/petrelharp/local_pca/blob/master/sims/msp/msp-add-mutation.py
+    msp_rng = msprime.RandomGenerator(seed)
+    mutations = msprime.MutationTable()
+    sites = msprime.SiteTable()
+    mutgen = msprime.MutationGenerator(msp_rng, recrate) # rho = theta
+    mutgen.generate(n, e, sites, mutations)
+    x = msprime.load_tables(nodes=n, edgesets=e, sites=sites, mutations=mutations)
     stop_msprime = time.time()
     return {'sim_time': stop_sim - start_sim,
             'msprime_time': stop_msprime - start_msprime,
