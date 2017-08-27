@@ -48,6 +48,7 @@ def make_tree_add_mutations(nodes, edges, mutrate):
 e = make_EdgesetTable(left, right, parent, children)
 e2 = make_EdgesetTable(left2, right2, parent, children2)
 
+print(n)
 print(e)
 print(e2)
 
