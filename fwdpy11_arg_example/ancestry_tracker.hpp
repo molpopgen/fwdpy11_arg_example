@@ -154,6 +154,12 @@ struct ancestry_tracker
     void
     prep_for_gc()
     {
+		//Sorting the nodes is easy.
+		//For the edges, I should sort on parent id in
+		//decreasing order and then increasing child id
+		//within that.  That means there's not a "natural"
+		//operator> or < that would work, and I should farm
+		//it off to a new struct.
         if (nodes.empty())
             return;
 
