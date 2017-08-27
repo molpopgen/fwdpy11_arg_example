@@ -60,20 +60,22 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
     stop_sim = time.time()
 
     # Get our nodes and edges from C++ directly
-    sim_nodes = np.array(atracker.nodes, copy=False)
-    sim_edges = np.array(atracker.edges, copy=False)
 
     start_fudge = time.time()
+    atracker.prep_for_gc();
+    sim_nodes = np.array(atracker.nodes, copy=False)
+    sim_edges = np.array(atracker.edges, copy=False)
+    samples = np.array(atracker.samples, copy=False)
     # Get sample ids.  Again, better done
     # on the C++ side
-    max_gen = sim_nodes['generation'].max()
-    samples = sim_nodes['id'][np.where(sim_nodes['generation']==max_gen)]
+    # max_gen = sim_nodes['generation'].max()
+    # samples = sim_nodes['id'][np.where(sim_nodes['generation']==max_gen)]
     # Get the node times, convert to float,
     # then convert to backwards in time.
     # This is DUMB and should be handled on the C++
     # side.
-    sim_nodes['generation'] -= max_gen
-    sim_nodes['generation'] *= -1.0
+    # sim_nodes['generation'] -= max_gen
+    # sim_nodes['generation'] *= -1.0
     stop_fudge = time.time()
 
     start_msprime = time.time()
@@ -83,6 +85,7 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
                   # without this CAST:
                   population=sim_nodes['population'], #.astype(np.int32),
                   time=sim_nodes['generation'])
+    # print(n)
     e = msprime.EdgesetTable()
 
     # This is slow:

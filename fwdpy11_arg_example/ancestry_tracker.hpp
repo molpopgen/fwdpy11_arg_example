@@ -152,8 +152,20 @@ struct ancestry_tracker
     }
 
     void
-    reconcile_for_msprime()
+    prep_for_gc()
     {
+        if (nodes.empty())
+            return;
+
+        auto max_gen = nodes.back().generation;
+        //std::sort(nodes.begin(), nodes.end());
+        for (auto& n : nodes)
+            {
+                n.generation -= max_gen;
+                n.generation *= -1.0;
+            }
+        //std::sort(edges.begin(), edges.end(),
+        //          [](const edge& lhs, const edge& rhs) { return lhs > rhs; });
     }
 
     std::vector<std::tuple<double, double>>

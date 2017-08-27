@@ -141,7 +141,9 @@ PYBIND11_PLUGIN(wfarg)
         .def_readwrite("edges", &ancestry_tracker::edges,
                        "Data for msprime.EdgesetTable.")
         .def_readwrite("samples", &ancestry_tracker::offspring_indexes,
-                       "Sample indexes.");
+                       "Sample indexes.")
+        .def("prep_for_gc", &ancestry_tracker::prep_for_gc,
+             "Call this immediately before you are going to simplify.");
     //Make our C++ function callable from Python.
     //This is NOT part of a user-facing Python API.
     //Rather, we need a wrapper to integrate it with
