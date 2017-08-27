@@ -154,12 +154,12 @@ struct ancestry_tracker
     void
     prep_for_gc()
     {
-		//Sorting the nodes is easy.
-		//For the edges, I should sort on parent id in
-		//decreasing order and then increasing child id
-		//within that.  That means there's not a "natural"
-		//operator> or < that would work, and I should farm
-		//it off to a new struct.
+        //Sorting the nodes is easy.
+        //For the edges, I should sort on parent id in
+        //decreasing order and then increasing child id
+        //within that.  That means there's not a "natural"
+        //operator> or < that would work, and I should farm
+        //it off to a new struct.
         if (nodes.empty())
             return;
 
@@ -171,7 +171,18 @@ struct ancestry_tracker
                 n.generation *= -1.0;
             }
         //std::sort(edges.begin(), edges.end(),
-        //          [](const edge& lhs, const edge& rhs) { return lhs > rhs; });
+        //          [](const edge& lhs, const edge& rhs) {
+        //              if (lhs.parent != rhs.parent)
+        //                  {
+        //                      return lhs.parent > rhs.parent;
+        //                  }
+        //              if (lhs.child != rhs.child)
+        //                  {
+        //                      return lhs.child > rhs.child;
+        //                  }
+		//			  return true;
+        //              //return lhs.right < rhs.right;
+        //          });
     }
 
     std::vector<std::tuple<double, double>>
