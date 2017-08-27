@@ -17,10 +17,9 @@ namespace py = pybind11;
 void
 evolve_singlepop_regions_track_ancestry(
     const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,
-	ancestry_tracker & ancestry,
-    py::function ancestry_processor, py::array_t<std::uint32_t> popsizes,
-    const double mu_selected, const double recrate,
-    const KTfwd::extensions::discrete_mut_model& mmodel,
+    ancestry_tracker& ancestry, py::function ancestry_processor,
+    py::array_t<std::uint32_t> popsizes, const double mu_selected,
+    const double recrate, const KTfwd::extensions::discrete_mut_model& mmodel,
     const KTfwd::extensions::discrete_rec_model& rmodel,
     fwdpy11::single_locus_fitness& fitness, const double selfing_rate)
 {
@@ -61,19 +60,19 @@ evolve_singlepop_regions_track_ancestry(
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
-            //By hacking the API, we can show that it is 
-            //passing nodes/edges into Python that is 
+            //By hacking the API, we can show that it is
+            //passing nodes/edges into Python that is
             //causin a slowdown.  But I *should* be able
             //to do this w/o a copy.  Must investigate!
             py::bool_ processor_rv = ancestry_processor(
-                pop.generation, ancestry);//.nodes, ancestry.edges);
+                pop.generation, ancestry); //.nodes, ancestry.edges);
             bool gc = processor_rv.cast<bool>();
-			if(gc)
-			{
-				// ancestry.nodes.clear();
-				// ancestry.edges.clear();
-			}
-			ancestry.offspring_indexes.clear();
+            if (gc)
+                {
+                    // ancestry.nodes.clear();
+                    // ancestry.edges.clear();
+                }
+            ancestry.offspring_indexes.clear();
             const auto N_next = popsizes.at(generation);
             evolve_generation(
                 rng, pop, N_next, mu_selected, mmodels, recmap,
@@ -102,6 +101,7 @@ evolve_singlepop_regions_track_ancestry(
 //Register vectors of nodes and edges as "opaque"
 PYBIND11_MAKE_OPAQUE(std::vector<node>);
 PYBIND11_MAKE_OPAQUE(std::vector<edge>);
+PYBIND11_MAKE_OPAQUE(std::vector<ancestry_tracker::integer_type>);
 
 PYBIND11_PLUGIN(wfarg)
 {
@@ -109,13 +109,13 @@ PYBIND11_PLUGIN(wfarg)
                           "selection and ARG tracking");
 
     //Register nodes and edges as NumPy dtypes:
-    PYBIND11_NUMPY_DTYPE(node, id, population, generation); 
+    PYBIND11_NUMPY_DTYPE(node, id, population, generation);
     PYBIND11_NUMPY_DTYPE(edge, left, right, parent, child);
 
-	//py::class_<edge>(m,"Edge");
-	//py::class_<node>(m,"Node");
+    //py::class_<edge>(m,"Edge");
+    //py::class_<node>(m,"Node");
 
-	//Create Python classes of node/edgec containers.
+    //Create Python classes of node/edgec containers.
     //These types support Python's buffer protocol, creating
     //Python classes that are castable to NumPy structured
     //arrays without a copy.
@@ -129,11 +129,19 @@ PYBIND11_PLUGIN(wfarg)
                         "record array without making a copy",
         py::buffer_protocol());
 
-	py::class_<ancestry_tracker>(m,"AncestryTracker")
-		.def(py::init<KTfwd::uint_t>(),py::arg("N"))
-		.def_readwrite("nodes",&ancestry_tracker::nodes)
-		.def_readwrite("edges",&ancestry_tracker::edges);
+    py::bind_vector<std::vector<ancestry_tracker::integer_type>>(
+        m, "VecInt32", "Vector of 32-bit, signed integers.  Castable to Numpy "
+                       "array without copy.",
+        py::buffer_protocol());
 
+    py::class_<ancestry_tracker>(m, "AncestryTracker")
+        .def(py::init<KTfwd::uint_t>(), py::arg("N"))
+        .def_readwrite("nodes", &ancestry_tracker::nodes,
+                       "Data for msprime.NodeTable.")
+        .def_readwrite("edges", &ancestry_tracker::edges,
+                       "Data for msprime.EdgesetTable.")
+        .def_readwrite("samples", &ancestry_tracker::offspring_indexes,
+                       "Sample indexes.");
     //Make our C++ function callable from Python.
     //This is NOT part of a user-facing Python API.
     //Rather, we need a wrapper to integrate it with
