@@ -80,7 +80,9 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
 
     start_msprime = time.time()
     n = msprime.NodeTable()
-    n.set_columns(flags=[True for i in range(len(sim_nodes))],
+    flags=[False for i in range(len(sim_nodes))]
+    flags[-len(samples):]=[True]*len(samples)
+    n.set_columns(flags=flags,
                   # gives type conversion error from uint32 to int32
                   # without this CAST:
                   population=sim_nodes['population'], #.astype(np.int32),

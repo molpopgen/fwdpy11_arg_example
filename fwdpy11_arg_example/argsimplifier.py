@@ -16,7 +16,9 @@ class ArgSimplifier(object):
             na = np.array(ancestry.nodes, copy=False)
             ea = np.array(ancestry.edges, copy=False)
             samples = np.array(ancestry.samples, copy=False)
-            self.__nodes.set_columns(flags=[True for i in range(len(na))],
+            flags=[False for i in range(len(sim_nodes))]
+            flags[-len(samples):]=[True]*len(samples)
+            self.__nodes.set_columns(flags=flags,
                     population=na['population'],
                     time=na['generation'])
             self.__edges.append_columns(left=ea['left'],
