@@ -139,7 +139,7 @@ struct ancestry_tracker
             {
                 nodes.emplace_back(make_node(oi, generation, 0));
             }
-        std::sort(temp.begin(), temp.end());
+        //std::sort(temp.begin(), temp.end());
         edges.insert(edges.end(), temp.begin(), temp.end());
         lastN = next_index - first_parental_index;
         first_parental_index = first_child_index;
@@ -198,7 +198,7 @@ struct ancestry_tracker
                 intervals.emplace(e.right);
             }
         std::vector<double> temp(intervals.begin(), intervals.end());
-        std::sort(temp.begin(), temp.end());
+        //std::sort(temp.begin(), temp.end());
         std::vector<std::tuple<double, double>> rv;
         for (auto i = temp.begin() + 1; i != temp.end(); ++i)
             {
