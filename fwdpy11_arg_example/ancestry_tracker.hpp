@@ -4,9 +4,11 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <limits>
 #include <unordered_set>
 #include <cstdint>
 #include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
 
 #include "node.hpp"
 #include "edge.hpp"
@@ -25,13 +27,15 @@ struct ancestry_tracker
     integer_type generation, next_index, first_parental_index,
         first_child_index;
     std::uint32_t lastN;
+    decltype(node::generation) last_gc_time;
     ancestry_tracker(const integer_type N)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() },
           //parental_indexes{ std::vector<integer_type>() },
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
           next_index{ 2 * N }, first_parental_index{ 0 },
-          first_child_index{ 2 * N }, lastN{ static_cast<std::uint32_t>(N) }
+          first_child_index{ 2 * N }, lastN{ static_cast<std::uint32_t>(N) },
+          last_gc_time{ std::numeric_limits<decltype(last_gc_time)>::max() }
     {
         nodes.reserve(2 * N);
         edges.reserve(2 * N);
@@ -151,8 +155,27 @@ struct ancestry_tracker
         ++generation;
     }
 
+    std::vector<node>
+    update_nodes(pybind11::array_t<double> generations_from_msprime)
+    //We need to get node info back from msprime
+    //and update some data, like the node times.
+    //more generally, we need to copy population, too,
+    //but this is not a general updater...
+    {
+        auto g = generations_from_msprime.unchecked<1>();
+        std::vector<node> tnodes;
+        tnodes.reserve(g.shape(0));
+        double delta = static_cast<double>(generation) - last_gc_time;
+        for (std::size_t i = 0; i < g.shape(0); ++i)
+            {
+				//pybind11::print(g(i),last_gc_time,delta);
+                tnodes.emplace_back(make_node(i, g(i) + delta, 0));
+            }
+        return tnodes;
+    }
+
     void
-    prep_for_gc()
+    prep_for_gc(pybind11::array_t<double> generations_from_msprime)
     {
         //Sorting the nodes is easy.
         //To sort edges, we need to add parental
@@ -170,6 +193,19 @@ struct ancestry_tracker
                 n.generation -= max_gen;
                 n.generation *= -1.0;
             }
+        auto tnodes = update_nodes(generations_from_msprime);
+		auto x = tnodes.size();
+        tnodes.insert(tnodes.end(), std::make_move_iterator(nodes.begin()),
+                      std::make_move_iterator(nodes.end()));
+		if(x)
+		{
+			for(auto && n : tnodes)
+			{
+				pybind11::print(n.id,n.generation);
+			}
+		}
+        nodes.swap(tnodes);
+        tnodes.clear();
         //std::sort(edges.begin(), edges.end(),
         //          [](const edge& lhs, const edge& rhs) {
         //              if (lhs.parent != rhs.parent)
@@ -183,6 +219,19 @@ struct ancestry_tracker
         //			  return true;
         //              //return lhs.right < rhs.right;
         //          });
+    }
+
+    void
+    post_process_gc(pybind11::tuple t)
+    {
+		pybind11::bool_ gc = t[0].cast<bool>();
+        if (!gc)
+            return;
+
+        last_gc_time = generation;
+        next_index = t[1].cast<integer_type>();
+		nodes.clear();
+		edges.clear();
     }
 
     std::vector<std::tuple<double, double>>

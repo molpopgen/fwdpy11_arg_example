@@ -64,14 +64,9 @@ evolve_singlepop_regions_track_ancestry(
             //passing nodes/edges into Python that is
             //causin a slowdown.  But I *should* be able
             //to do this w/o a copy.  Must investigate!
-            py::bool_ processor_rv = ancestry_processor(
+            py::tuple processor_rv = ancestry_processor(
                 pop.generation, ancestry); //.nodes, ancestry.edges);
-            bool gc = processor_rv.cast<bool>();
-            if (gc)
-                {
-                    // ancestry.nodes.clear();
-                    // ancestry.edges.clear();
-                }
+            ancestry.post_process_gc(processor_rv);
             ancestry.offspring_indexes.clear();
             const auto N_next = popsizes.at(generation);
             evolve_generation(
@@ -142,8 +137,9 @@ PYBIND11_PLUGIN(wfarg)
                        "Data for msprime.EdgesetTable.")
         .def_readwrite("samples", &ancestry_tracker::offspring_indexes,
                        "Sample indexes.")
-		.def_readonly("offpsring_generation",&ancestry_tracker::generation,
-				"Read-only access to current offspring/children generation.")
+        .def_readonly(
+            "offspring_generation", &ancestry_tracker::generation,
+            "Read-only access to current offspring/children generation.")
         .def("prep_for_gc", &ancestry_tracker::prep_for_gc,
              "Call this immediately before you are going to simplify.");
     //Make our C++ function callable from Python.
