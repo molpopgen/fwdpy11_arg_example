@@ -30,8 +30,8 @@ struct ancestry_tracker
           temp{ std::vector<edge>() },
           //parental_indexes{ std::vector<integer_type>() },
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
-          lastN{ N }, next_index{ 2 * N }, first_parental_index{ 0 },
-          first_child_index{ 2 * N }
+          next_index{ 2 * N }, first_parental_index{ 0 },
+          first_child_index{ 2 * N }, lastN{ static_cast<std::uint32_t>(N) }
     {
         nodes.reserve(2 * N);
         edges.reserve(2 * N);
@@ -155,11 +155,11 @@ struct ancestry_tracker
     prep_for_gc()
     {
         //Sorting the nodes is easy.
-		//To sort edges, we need to add parental
-		//time to edge struct and update functions 
-		//accordingly.  Then, we can define a closure
-		//that will give same results as msprime.sort_tables().
-		//We may go this route to improve performance.
+        //To sort edges, we need to add parental
+        //time to edge struct and update functions
+        //accordingly.  Then, we can define a closure
+        //that will give same results as msprime.sort_tables().
+        //We may go this route to improve performance.
         if (nodes.empty())
             return;
 
@@ -180,7 +180,7 @@ struct ancestry_tracker
         //                  {
         //                      return lhs.child > rhs.child;
         //                  }
-		//			  return true;
+        //			  return true;
         //              //return lhs.right < rhs.right;
         //          });
     }
