@@ -4,10 +4,12 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <map>
 #include <limits>
 #include <unordered_set>
 #include <cstdint>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
 #include "node.hpp"
@@ -28,6 +30,7 @@ struct ancestry_tracker
         first_child_index;
     std::uint32_t lastN;
     decltype(node::generation) last_gc_time;
+	std::unordered_map<integer_type,integer_type> sample_map;
     ancestry_tracker(const integer_type N)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() },
@@ -230,6 +233,7 @@ struct ancestry_tracker
 
         last_gc_time = generation;
         next_index = t[1].cast<integer_type>();
+		sample_map = t[2].cast<decltype(sample_map)>();
 		nodes.clear();
 		edges.clear();
     }

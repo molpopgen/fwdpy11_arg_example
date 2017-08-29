@@ -16,7 +16,7 @@ class ArgSimplifier(object):
             na = np.array(ancestry.nodes, copy=False)
             ea = np.array(ancestry.edges, copy=False)
             samples = np.array(ancestry.samples, copy=False)
-            flags=np.empty([len(sim_nodes)], dtype=np.uint32)
+            flags=np.empty([len(na)], dtype=np.uint32)
             flags.fill(0)
             is_sample=np.empty([len(samples)], dtype = flags.dtype)
             is_sample.fill(1)
@@ -36,7 +36,9 @@ class ArgSimplifier(object):
             x=msprime.load_tables(nodes=self.__nodes, edgesets=self.__edges)
             x=x.simplify(samples=samples.tolist())
             x.dump_tables(nodes=self.__nodes, edgesets=self.__edges)
-            return (True,len(self.__nodes.time))
+            sample_map = {i:j for i,j in zip(samples,x.samples())}
+            print(sample_map)
+            return (True,len(self.__nodes.time),sample_map)
 
         return (False,None)
 
