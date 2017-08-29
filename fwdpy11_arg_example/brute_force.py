@@ -82,7 +82,9 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
     n = msprime.NodeTable()
     flags=np.empty([len(sim_nodes)], dtype=np.uint32)
     flags.fill(0)
-    flags[-len(samples):]=[True]*len(samples)
+    is_sample=np.empty([len(samples)], dtype = flags.dtype)
+    is_sample.fill(1)
+    flags[-len(samples):]=is_sample
     n.set_columns(flags=flags,
                   # gives type conversion error from uint32 to int32
                   # without this CAST:
