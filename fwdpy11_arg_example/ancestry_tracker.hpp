@@ -30,7 +30,7 @@ struct ancestry_tracker
         first_child_index;
     std::uint32_t lastN;
     decltype(node::generation) last_gc_time;
-	std::unordered_map<integer_type,integer_type> sample_map;
+    std::unordered_map<integer_type, integer_type> sample_map;
     ancestry_tracker(const integer_type N)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() },
@@ -38,7 +38,7 @@ struct ancestry_tracker
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
           next_index{ 2 * N }, first_parental_index{ 0 },
           first_child_index{ 2 * N }, lastN{ static_cast<std::uint32_t>(N) },
-          last_gc_time{ std::numeric_limits<decltype(last_gc_time)>::max() }
+          last_gc_time{ 0.0 }
     {
         nodes.reserve(2 * N);
         edges.reserve(2 * N);
@@ -112,36 +112,6 @@ struct ancestry_tracker
     void
     finish_generation()
     {
-        // for(auto && i : reproduced)
-        //{
-        //	std::cout << i << ' ';
-        //}
-        // std::cout << " -> ";
-        // std::cerr << "G = " << generation << '\n';
-        // prange
-        //    = std::equal_range(edges.begin(), edges.end(), temp.front().pgen,
-        //                       get_parental_generation());
-        // edges.erase(std::remove_if(prange.first, prange.second,
-        //                           [this](const edge& e) {
-        //                               return reproduced.find(e.cid)
-        //                                      == reproduced.end();
-        //                           }),
-        //            prange.second);
-        // std::cout << generation << ' '<< edges.size() << ' ' <<
-        // std::distance(prange.first,prange.second) << '\n';
-        // integer_type extinct=0;
-        // std::cout << reproduced.size() << " reproduced, " <<
-        //	std::distance(prange.first,prange.second) << '\n';
-        // for(auto i = prange.first;i!=prange.second;++i)
-        //{
-        //	if(reproduced.find(i->cid) == reproduced.end())
-        //	{
-        //		++extinct;
-        //	}
-        //}
-        // std::cout << extinct << " extinct lineages\n";
-        //add_nodes();
-
         for (auto&& oi : offspring_indexes)
             {
                 nodes.emplace_back(make_node(oi, generation, 0));
@@ -149,8 +119,10 @@ struct ancestry_tracker
         //std::sort(temp.begin(), temp.end());
         edges.insert(edges.end(), temp.begin(), temp.end());
         lastN = next_index - first_parental_index;
+		pybind11::print("changing indexes from: ", first_parental_index, first_child_index, next_index);
         first_parental_index = first_child_index;
         first_child_index = next_index;
+		pybind11::print("changing indexes to: ", first_parental_index, first_child_index, next_index);
 
         //parental_indexes.swap(offspring_indexes);
         //offspring_indexes.clear();
@@ -171,14 +143,14 @@ struct ancestry_tracker
         double delta = static_cast<double>(generation) - last_gc_time;
         for (std::size_t i = 0; i < g.shape(0); ++i)
             {
-				//pybind11::print(g(i),last_gc_time,delta);
+                //pybind11::print(g(i),last_gc_time,delta);
                 tnodes.emplace_back(make_node(i, g(i) + delta, 0));
             }
         return tnodes;
     }
 
     void
-    prep_for_gc(pybind11::array_t<double> generations_from_msprime)
+    prep_for_gc()
     {
         //Sorting the nodes is easy.
         //To sort edges, we need to add parental
@@ -196,19 +168,19 @@ struct ancestry_tracker
                 n.generation -= max_gen;
                 n.generation *= -1.0;
             }
-        auto tnodes = update_nodes(generations_from_msprime);
-		auto x = tnodes.size();
-        tnodes.insert(tnodes.end(), std::make_move_iterator(nodes.begin()),
-                      std::make_move_iterator(nodes.end()));
-		if(x)
-		{
-			for(auto && n : tnodes)
-			{
-				pybind11::print(n.id,n.generation);
-			}
-		}
-        nodes.swap(tnodes);
-        tnodes.clear();
+        //auto tnodes = update_nodes(generations_from_msprime);
+        //auto x = tnodes.size();
+        //tnodes.insert(tnodes.end(), std::make_move_iterator(nodes.begin()),
+        //              std::make_move_iterator(nodes.end()));
+        //if (x)
+        //    {
+        //        for (auto&& n : tnodes)
+        //            {
+        //                pybind11::print(n.id, n.generation);
+        //            }
+        //    }
+        //nodes.swap(tnodes);
+        //tnodes.clear();
         //std::sort(edges.begin(), edges.end(),
         //          [](const edge& lhs, const edge& rhs) {
         //              if (lhs.parent != rhs.parent)
@@ -227,15 +199,18 @@ struct ancestry_tracker
     void
     post_process_gc(pybind11::tuple t)
     {
-		pybind11::bool_ gc = t[0].cast<bool>();
+        pybind11::bool_ gc = t[0].cast<bool>();
         if (!gc)
             return;
 
         last_gc_time = generation;
+		pybind11::print("post_process_gc: ", generation);
         next_index = t[1].cast<integer_type>();
-		sample_map = t[2].cast<decltype(sample_map)>();
-		nodes.clear();
-		edges.clear();
+        sample_map = t[2].cast<decltype(sample_map)>();
+        // establish last parental index:
+		first_parental_index = 0;
+        nodes.clear();
+        edges.clear();
     }
 
     std::vector<std::tuple<double, double>>

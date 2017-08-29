@@ -140,6 +140,8 @@ PYBIND11_PLUGIN(wfarg)
         .def_readonly(
             "offspring_generation", &ancestry_tracker::generation,
             "Read-only access to current offspring/children generation.")
+        .def_readonly("last_gc_time", &ancestry_tracker::last_gc_time,
+                      "Last time point where garbage collection happened.")
         .def("prep_for_gc", &ancestry_tracker::prep_for_gc,
              "Call this immediately before you are going to simplify.");
     //Make our C++ function callable from Python.
