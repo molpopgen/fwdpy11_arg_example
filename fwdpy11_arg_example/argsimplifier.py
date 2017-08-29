@@ -76,7 +76,10 @@ class ArgSimplifier(object):
             x=x.simplify(samples=samples.tolist())
             x.dump_tables(nodes=self.__nodes, edgesets=self.__edges)
             #print(self.__nodes)
+            print("simplified edges:")
             print(self.__edges)
+            print("simplified nodes:")
+            print(self.__nodes)
             print(self.__nodes.num_rows)
             #Do we really need this, or is min/max ok:
             # a map of input to output nodes for the last generation

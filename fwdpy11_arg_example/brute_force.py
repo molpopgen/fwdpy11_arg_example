@@ -57,6 +57,7 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
     rng = fwdpy11.GSLrng(seed)
     start_sim = time.time()
     atracker = evolve_track(rng, pop, params, gc_interval)
+    print("got atracker at gen:",atracker.offspring_generation)
     stop_sim = time.time()
 
     # Get our nodes and edges from C++ directly

@@ -26,8 +26,7 @@ struct ancestry_tracker
     //std::vector<integer_type> parental_indexes, offspring_indexes;
     std::vector<integer_type> offspring_indexes;
     std::pair<std::vector<edge>::iterator, std::vector<edge>::iterator> prange;
-    integer_type generation, next_index, first_parental_index,
-        first_child_index;
+    integer_type generation, next_index, first_parental_index;
     std::uint32_t lastN;
     decltype(node::generation) last_gc_time;
     std::unordered_map<integer_type, integer_type> sample_map;
@@ -37,7 +36,7 @@ struct ancestry_tracker
           //parental_indexes{ std::vector<integer_type>() },
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
           next_index{ 2 * N }, first_parental_index{ 0 },
-          first_child_index{ 2 * N }, lastN{ static_cast<std::uint32_t>(N) },
+ lastN{ static_cast<std::uint32_t>(N) },
           last_gc_time{ 0.0 }
     {
         nodes.reserve(2 * N);
@@ -119,10 +118,9 @@ struct ancestry_tracker
         //std::sort(temp.begin(), temp.end());
         edges.insert(edges.end(), temp.begin(), temp.end());
         lastN = next_index - first_parental_index;
-		pybind11::print("changing indexes from: ", first_parental_index, first_child_index, next_index);
-        first_parental_index = first_child_index;
-        first_child_index = next_index;
-		pybind11::print("changing indexes to: ", first_parental_index, first_child_index, next_index);
+		pybind11::print("changing indexes from: ", first_parental_index, next_index);
+        first_parental_index = offspring_indexes.front(); 
+		pybind11::print("changing indexes to: ", first_parental_index, next_index);
 
         //parental_indexes.swap(offspring_indexes);
         //offspring_indexes.clear();
