@@ -80,14 +80,13 @@ def wf(diploids, tracker, ngens):
     N = int(len(diploids) / 2)
     next_id = len(diploids)  # This will be the next unique ID to use
     assert(max(diploids) < next_id)
-    tracker.nodes = np.array([(i, 0, 0) for i in diploids], dtype=node_dt)
-
     # We know there will be 2N new nodes added,
     # so we pre-allocate the space. We only need
     # to do this once b/c N is constant.
     tracker.nodes = np.empty([2 * N * (ngens + 1)], dtype=node_dt)
-    for i in range(len(diploids)):
-        tracker.nodes[i] = (i, 0, 0)
+    tracker.nodes['id'][:len(diploids)] = diploids
+    #for i in range(len(diploids)):
+    #    tracker.nodes[i] = (i, 0, 0)
     # Our simple WF sim makes 1 xover per parent
     # in each mating.  Thus, each offspring inherits
     # two new edges, and 4N new edges are formed each generation.
