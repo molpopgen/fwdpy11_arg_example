@@ -151,9 +151,9 @@ def wf(N, tracker, ngens):
             tracker.nodes[node_id + 1] = (next_id + 1, gen + 1, 0)
 
             # python -O to turn this stuff off
-            if __debug__:
-                print("generation ", gen, diploids.min(), diploids.max(),
-                      tracker.edges[edge_index:edge_index + 4])
+            # if __debug__:
+            #     print("generation ", gen, diploids.min(), diploids.max(),
+            #           tracker.edges[edge_index:edge_index + 4])
 
             # Update our dummy variables.
             # We have two new nodes,
@@ -173,6 +173,53 @@ def wf(N, tracker, ngens):
     return (diploids)
 
 
+def expensive_check(popsize, edges, nodes):
+    """
+    A brute-force post-hoc check of the
+    nodes and edges that we generated
+    in the simulation
+    """
+    assert(len(edges) == 10 * popsize * 4 * popsize)
+
+    # Check that all parent/child IDs are
+    # in expected range.
+    for gen in range(1, 10 * popsize + 1):
+        min_parental_id = 2 * popsize * (gen - 1)
+        max_parental_id = 2 * popsize * (gen - 1) + 2 * popsize
+        min_child_id = max_parental_id
+        max_child_id = min_child_id + 2 * popsize
+
+        node_gen_m1 = nodes[np.argwhere(
+            nodes['generation'] == float(gen - 1)).flatten()]
+        assert(len(node_gen_m1) == 2 * popsize)
+        if any(i < min_parental_id or i >= max_parental_id for i in node_gen_m1['id']) is True:
+            raise RuntimeError("generation", gen - 1, "confused")
+
+        node_gen = nodes[np.argwhere(
+            nodes['generation'] == float(gen)).flatten()]
+        assert(len(node_gen) == 2 * popsize)
+        if any(i < min_child_id or i >= max_child_id for i in node_gen['id']) is True:
+            raise RuntimeError("generation", gen, "confused")
+
+        edges_gen = edges[(gen - 1) * 4 * popsize:(gen - 1)
+                          * 4 * popsize + 4 * popsize]
+
+        if any(i not in node_gen_m1['id'] for i in edges_gen['parent']) is True:
+            raise RuntimeError(
+                "parent not found in expected slice of node table")
+
+        if any(i not in node_gen['id'] for i in edges_gen['child']) is True:
+            raise RuntimeError(
+                "child not found in expected slice of node table")
+
+        if any(i < min_parental_id or i >= max_parental_id for i in edges_gen['parent']) is True:
+            raise RuntimeError("Bad parent")
+
+        if any(i < min_child_id or i >= max_child_id for i in edges_gen['child']) is True:
+            raise RuntimeError("Bad child")
+    assert(float(gen) == nodes['generation'].max())
+
+
 if __name__ == "__main__":
     popsize = int(sys.argv[1])
     theta = float(sys.argv[2])
@@ -185,14 +232,18 @@ if __name__ == "__main__":
     samples = wf(popsize, tracker, 10 * popsize)
 
     # Check that our sample IDs are as expected:
-    min_sample = 10 * popsize * 2 * popsize
-    max_sample = 10 * popsize * 2 * popsize + 2 * popsize
-    if any(i < min_sample or i >= max_sample for i in samples) is True:
-        raise RuntimeError("Houston, we have a problem.")
+    if __debug__:
+        min_sample = 10 * popsize * 2 * popsize
+        max_sample = 10 * popsize * 2 * popsize + 2 * popsize
+        if any(i < min_sample or i >= max_sample for i in samples) is True:
+            raise RuntimeError("Houston, we have a problem.")
 
     # Make local names for convenience
     nodes = tracker.nodes
     edges = tracker.edges
+
+    if __debug__:
+        expensive_check(popsize, edges, nodes)
 
     max_gen = nodes['generation'].max()
     assert(int(max_gen) == 10 * popsize)
@@ -211,10 +262,10 @@ if __name__ == "__main__":
 
     es = msprime.EdgesetTable()
     es.set_columns(left=edges['left'],
-                      right=edges['right'],
-                      parent=edges['parent'],
-                      children=edges['child'],
-                      children_length=[1] * len(edges))
+                   right=edges['right'],
+                   parent=edges['parent'],
+                   children=edges['child'],
+                   children_length=[1] * len(edges))
 
     # Sort
     msprime.sort_tables(nodes=nt, edgesets=es)
@@ -224,6 +275,12 @@ if __name__ == "__main__":
 
     # Simplify: this is where the magic happens
     x = x.simplify(samples=samples.tolist())
+
+    # Lets look at the MRCAS.
+    # This is where things go badly:
+    # MRCAS=[t.get_time(t.get_root()) for t in x.trees()]
+    # print(MRCAS)
+
 
     # Throw down some mutations
     # onto a sample of size nsam
