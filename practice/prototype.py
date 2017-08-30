@@ -160,21 +160,27 @@ if __name__ == "__main__":
     nsam = int(sys.argv[3])
     seed = int(sys.argv[4])
     diploids = np.array([i for i in range(2 * popsize)], dtype=np.uint32)
+
     np.random.seed(seed)
 
     tracker = MockAncestryTracker()
     ne = wf(diploids, tracker, 10 * popsize)
 
+    # Make local names for convenience
     nodes = tracker.nodes
     edges = tracker.edges
 
     max_gen = max([i['generation'] for i in nodes])
 
+    # Get sample ids
     samples = nodes['id'][np.argwhere(
         nodes['generation'] == max_gen)].flatten()
+    
+    # Convert node times from forwards to backwards
     nodes['generation'] = nodes['generation'] - max_gen
     nodes['generation'] = nodes['generation'] * -1.0
 
+    # Construct and population msprime's tables
     nt = msprime.NodeTable()
     nt.set_columns(flags=[True for i in range(len(nodes))],
                    population=np.array(nodes['population'], dtype=np.int32),
@@ -187,10 +193,13 @@ if __name__ == "__main__":
                       children=edges['child'],
                       children_length=[1] * len(edges))
 
+    # Sort
     msprime.sort_tables(nodes=nt, edgesets=es)
 
+    # Create a tree sequence
     x = msprime.load_tables(nodes=nt, edgesets=es)
 
+    # Simplify: this is where the magic happens
     x = x.simplify(samples=samples.tolist())
 
     # Throw down some mutations
