@@ -118,9 +118,9 @@ struct ancestry_tracker
         //std::sort(temp.begin(), temp.end());
         edges.insert(edges.end(), temp.begin(), temp.end());
         lastN = next_index - first_parental_index;
-		pybind11::print("changing indexes from: ", first_parental_index, next_index);
+		//pybind11::print("changing indexes from: ", first_parental_index, next_index);
         first_parental_index = offspring_indexes.front(); 
-		pybind11::print("changing indexes to: ", first_parental_index, next_index);
+		//pybind11::print("changing indexes to: ", first_parental_index, next_index);
 
         //parental_indexes.swap(offspring_indexes);
         //offspring_indexes.clear();
@@ -202,7 +202,7 @@ struct ancestry_tracker
             return;
 
         last_gc_time = generation;
-		pybind11::print("post_process_gc: ", generation);
+		// pybind11::print("post_process_gc: ", generation);
         next_index = t[1].cast<integer_type>();
         sample_map = t[2].cast<decltype(sample_map)>();
         // establish last parental index:
