@@ -78,8 +78,6 @@ def wf(diploids, tracker, ngens):
        a lot of breakpoints to handle
     """
     N = int(len(diploids) / 2)
-    next_id = len(diploids)  # This will be the next unique ID to use
-    assert(max(diploids) < next_id)
     # We know there will be 2N new nodes added,
     # so we pre-allocate the space. We only need
     # to do this once b/c N is constant.
@@ -93,16 +91,17 @@ def wf(diploids, tracker, ngens):
     tracker.edges = np.empty([ngens * 4 * N], dtype=edge_dt)
     edge_index = int(0)
     node_id = int(len(diploids))
+    next_id = len(diploids)  # This will be the next unique ID to use
+    assert(max(diploids) < next_id)
     for gen in range(ngens):
         # Empty offspring list.
+        # We also use this to mark the "samples" for simplify
         new_diploids = np.empty([len(diploids)], dtype=diploids.dtype)
 
         # Pick 2N parents:
         parents = np.random.randint(0, N, 2 * N)
         dip = int(0)
         for parent1, parent2 in zip(parents[::2], parents[1::2]):
-            # Pick two parents
-            parents = np.random.randint(0, N, 2)
             # p1g1 = parent 1, gamete (chrom) 1, etc.:
             p1g1, p1g2 = diploids[2 * parent1], diploids[2 * parent1 + 1]
             p2g1, p2g2 = diploids[2 * parent2], diploids[2 * parent2 + 1]
@@ -163,7 +162,7 @@ if __name__ == "__main__":
     np.random.seed(seed)
 
     tracker = MockAncestryTracker()
-    ne = wf(diploids, tracker, 10 * popsize)
+    samples = wf(diploids, tracker, 10 * popsize)
 
     # Make local names for convenience
     nodes = tracker.nodes
@@ -171,10 +170,6 @@ if __name__ == "__main__":
 
     max_gen = max([i['generation'] for i in nodes])
 
-    # Get sample ids
-    samples = nodes['id'][np.argwhere(
-        nodes['generation'] == max_gen)].flatten()
-    
     # Convert node times from forwards to backwards
     nodes['generation'] = nodes['generation'] - max_gen
     nodes['generation'] = nodes['generation'] * -1.0
