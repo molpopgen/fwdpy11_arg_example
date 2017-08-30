@@ -17,7 +17,7 @@ import sys
 
 node_dt = np.dtype([('id', np.uint32),
                     ('generation', np.float),
-                    ('population', np.uint32)])
+                    ('population', np.int32)])
 
 edge_dt = np.dtype([('left', np.float),
                     ('right', np.float),
@@ -138,7 +138,8 @@ def wf(N, tracker, ngens):
             # Add new node for offpsring dip, chrom 1
             tracker.nodes[node_id] = (next_id, gen + 1, 0)
 
-            # Repeat process for parent 2's contribution
+            # Repeat process for parent 2's contribution.
+            # Stuff is now being inherited by node next_id + 1
             breakpoint = xover()
             tracker.edges[edge_index +
                           2] = (0.0, breakpoint, p2g1, next_id + 1)
@@ -187,16 +188,19 @@ if __name__ == "__main__":
     nodes = tracker.nodes
     edges = tracker.edges
 
-    max_gen = max([i['generation'] for i in nodes])
+    max_gen = nodes['generation'].max() 
+    assert(int(max_gen) == 10*popsize)
 
     # Convert node times from forwards to backwards
     nodes['generation'] = nodes['generation'] - max_gen
     nodes['generation'] = nodes['generation'] * -1.0
 
     # Construct and population msprime's tables
+    flags = np.empty([len(nodes)], dtype = np.uint32)
+    flags.fill(1)
     nt = msprime.NodeTable()
-    nt.set_columns(flags=[True for i in range(len(nodes))],
-                   population=np.array(nodes['population'], dtype=np.int32),
+    nt.set_columns(flags=flags,
+                   population=nodes['population'],
                    time=nodes['generation'])
 
     es = msprime.EdgesetTable()
