@@ -13,8 +13,7 @@
 
 import numpy as np
 import msprime
-import time
-
+import sys
 
 node_dt = np.dtype([('id', np.uint32),
                     ('generation', np.float),
@@ -22,8 +21,8 @@ node_dt = np.dtype([('id', np.uint32),
 
 edge_dt = np.dtype([('left', np.float),
                     ('right', np.float),
-                    ('parent', np.uint32),
-                    ('child', np.uint32)])
+                    ('parent', np.int32),
+                    ('child', np.int32)])
 
 
 class MockAncestryTracker(object):
@@ -81,7 +80,6 @@ def wf(diploids, tracker, ngens):
     N = int(len(diploids) / 2)
     next_id = len(diploids)  # This will be the next unique ID to use
     assert(max(diploids) < next_id)
-    # nodes = [Node(i, 0, 0) for i in diploids]  # Add nodes for ancestors
     tracker.nodes = np.array([(i, 0, 0) for i in diploids], dtype=node_dt)
 
     # We know there will be 2N new nodes added,
@@ -156,76 +154,63 @@ def wf(diploids, tracker, ngens):
     return (diploids)
 
 
-popsize = 1000
-diploids = np.array([i for i in range(2 * popsize)], dtype=np.uint32)
-np.random.seed(42)
-startsim = time.time()
-tracker = MockAncestryTracker()
-ne = wf(diploids, tracker, 10 * popsize)
-stopsim = time.time()
+if __name__ == "__main__":
+    popsize = int(sys.argv[1])
+    theta = float(sys.argv[2])
+    nsam = int(sys.argv[3])
+    seed = int(sys.argv[4])
+    diploids = np.array([i for i in range(2 * popsize)], dtype=np.uint32)
+    np.random.seed(seed)
 
-nodes = tracker.nodes
-edges = tracker.edges
+    tracker = MockAncestryTracker()
+    ne = wf(diploids, tracker, 10 * popsize)
 
+    nodes = tracker.nodes
+    edges = tracker.edges
 
-max_gen = max([i['generation'] for i in nodes])
+    max_gen = max([i['generation'] for i in nodes])
 
-samples = [i['id'] for i in nodes if i['generation'] == max_gen]
+    samples = nodes['id'][np.argwhere(
+        nodes['generation'] == max_gen)].flatten()
+    nodes['generation'] = nodes['generation'] - max_gen
+    nodes['generation'] = nodes['generation'] * -1.0
 
-nodes['generation'] = nodes['generation'] - max_gen
-nodes['generation'] = nodes['generation'] * -1.0
-# for i in nodes:
-#     g = i['generation']
-#     i.generation -= max_gen
-#     i.generation *= -1
+    nt = msprime.NodeTable()
+    nt.set_columns(flags=[True for i in range(len(nodes))],
+                   population=np.array(nodes['population'], dtype=np.int32),
+                   time=nodes['generation'])
 
-startnodes = time.time()
-nt = msprime.NodeTable()
-nt.set_columns(flags=[True for i in range(len(nodes))],
-               # ISSUE: we have a dtype incompatibility here.
-               # The back end is doing uint32
-               population=np.array(nodes['population'], dtype=np.int32),
-               time=nodes['generation'])
-stopnodes = time.time()
-# for i in nodes:
-#     flag = True if i['generation'] == 0 else False
-#     nt.add_row(flags=True, population=i['population'], time=i['generation'])
+    es = msprime.EdgesetTable()
+    es.append_columns(left=edges['left'],
+                      right=edges['right'],
+                      parent=edges['parent'],
+                      children=edges['child'],
+                      children_length=[1] * len(edges))
 
-startedges = time.time()
-es = msprime.EdgesetTable()
-for i in edges:
-    es.add_row(left=i['left'], right=i['right'],
-               parent=i['parent'], children=(i['child'],))
-stopedges = time.time()
+    msprime.sort_tables(nodes=nt, edgesets=es)
 
-startsort = time.time()
-msprime.sort_tables(nodes=nt, edgesets=es)
-stopsort = time.time()
+    x = msprime.load_tables(nodes=nt, edgesets=es)
 
-startload = time.time()
-x = msprime.load_tables(nodes=nt, edgesets=es)
-stopload = time.time()
+    x = x.simplify(samples=samples.tolist())
 
-startsimplify = time.time()
-x = x.simplify(samples=samples)
-stopsimplify = time.time()
+    # Throw down some mutations
+    # onto a sample of size nsam
+    # We'll copy tables here,
+    # just to see what happens.
+    nt_s = nt.copy() 
+    es_s = es.copy() 
 
-startdump = time.time()
-nt_s = msprime.NodeTable()
-es_s = msprime.EdgesetTable()
+    # x.dump_tables(nodes=nt_s, edgesets=es_s)
 
-x.dump_tables(nodes=nt_s, edgesets=es_s)
-stopdump = time.time()
-
-print("Time to simulate = ", stopsim - startsim)
-print("Time to populate node table = ", stopnodes - startnodes)
-print("Time to populate edges = ", stopedges - startedges)
-print("Time to sort = ", stopsort - startsort)
-print("Time to load = ", stopload - startload)
-print("Time to simplify = ", stopsimplify - startsimplify)
-print("Time to dump = ", stopdump - startdump)
-# print(nt)
-# print(nt_s)
-# print(es)
-# print(es_s)
-# print(samples)
+    nsam_samples = np.random.choice(2 * popsize, nsam, replace=False)
+    nt_c_copy = nt_s.copy()
+    x.simplify(nsam_samples.tolist())
+    x.dump_tables(nodes=nt_s, edgesets=es_s)
+    msp_rng = msprime.RandomGenerator(seed)
+    mutations = msprime.MutationTable()
+    sites = msprime.SiteTable()
+    mutgen = msprime.MutationGenerator(msp_rng, theta / float(4 * popsize))
+    mutgen.generate(nt_s, es_s, sites, mutations)
+    x = msprime.load_tables(nodes=nt_s, edgesets=es_s,
+                            sites=sites, mutations=mutations)
+    print(sites.num_rows)
