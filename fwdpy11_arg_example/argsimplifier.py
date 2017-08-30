@@ -63,7 +63,7 @@ class ArgSimplifier(object):
         msprime.sort_tables(nodes=self.__nodes, edgesets=self.__edges)
         # print(len(self.__nodes.time))
         # print("here")
-        sample_map = {j:i for i,j in enumerate(samples)}
+        # sample_map = {j:i for i,j in enumerate(samples)}
         #print(sample_map)
         # The rv tuple is : (we did GC, the next index to use for nodes,
         x=msprime.load_tables(nodes=self.__nodes, edgesets=self.__edges)
@@ -82,7 +82,7 @@ class ArgSimplifier(object):
         #print(self.__nodes.num_rows)
         #Do we really need this, or is min/max ok:
         # a map of input to output nodes for the last generation
-        return (True,self.__nodes.num_rows,sample_map)
+        return (True,self.__nodes.num_rows)# ,sample_map)
 
     def __call__(self, generation, ancestry):
         if generation > 0 and generation % self.gc_interval == 0.0:
@@ -97,7 +97,7 @@ class ArgSimplifier(object):
 
     @property
     def edgesets(self):
-        return sef.edges
+        return self.__edges
 
     @property
     def gc_interval(self):

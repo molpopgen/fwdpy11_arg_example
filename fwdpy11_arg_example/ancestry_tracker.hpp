@@ -29,7 +29,7 @@ struct ancestry_tracker
     integer_type generation, next_index, first_parental_index;
     std::uint32_t lastN;
     decltype(node::generation) last_gc_time;
-    std::unordered_map<integer_type, integer_type> sample_map;
+    //std::unordered_map<integer_type, integer_type> sample_map;
     ancestry_tracker(const integer_type N)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() },
@@ -204,7 +204,7 @@ struct ancestry_tracker
         last_gc_time = generation;
 		// pybind11::print("post_process_gc: ", generation);
         next_index = t[1].cast<integer_type>();
-        sample_map = t[2].cast<decltype(sample_map)>();
+        //sample_map = t[2].cast<decltype(sample_map)>();
         // establish last parental index:
 		first_parental_index = 0;
         nodes.clear();
