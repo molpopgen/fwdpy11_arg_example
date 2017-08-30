@@ -184,19 +184,25 @@ if __name__ == "__main__":
     tracker = MockAncestryTracker()
     samples = wf(popsize, tracker, 10 * popsize)
 
+    # Check that our sample IDs are as expected:
+    min_sample = 10 * popsize * 2 * popsize
+    max_sample = 10 * popsize * 2 * popsize + 2 * popsize
+    if any(i < min_sample or i >= max_sample for i in samples) is True:
+        raise RuntimeError("Houston, we have a problem.")
+
     # Make local names for convenience
     nodes = tracker.nodes
     edges = tracker.edges
 
-    max_gen = nodes['generation'].max() 
-    assert(int(max_gen) == 10*popsize)
+    max_gen = nodes['generation'].max()
+    assert(int(max_gen) == 10 * popsize)
 
     # Convert node times from forwards to backwards
     nodes['generation'] = nodes['generation'] - max_gen
     nodes['generation'] = nodes['generation'] * -1.0
 
-    # Construct and population msprime's tables
-    flags = np.empty([len(nodes)], dtype = np.uint32)
+    # Construct and populate msprime's tables
+    flags = np.empty([len(nodes)], dtype=np.uint32)
     flags.fill(1)
     nt = msprime.NodeTable()
     nt.set_columns(flags=flags,
@@ -204,7 +210,7 @@ if __name__ == "__main__":
                    time=nodes['generation'])
 
     es = msprime.EdgesetTable()
-    es.append_columns(left=edges['left'],
+    es.set_columns(left=edges['left'],
                       right=edges['right'],
                       parent=edges['parent'],
                       children=edges['child'],
@@ -225,8 +231,6 @@ if __name__ == "__main__":
     # just to see what happens.
     nt_s = nt.copy()
     es_s = es.copy()
-
-    # x.dump_tables(nodes=nt_s, edgesets=es_s)
 
     nsam_samples = np.random.choice(2 * popsize, nsam, replace=False)
     nt_c_copy = nt_s.copy()
