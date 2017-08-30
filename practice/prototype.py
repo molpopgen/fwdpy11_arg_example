@@ -60,7 +60,7 @@ def xover():
     return breakpoint
 
 
-def wf(diploids, tracker, ngens):
+def wf(N, tracker, ngens):
     """
     For N diploids, the diploids list contains 2N values.
     For the i-th diploids, diploids[2*i] and diploids[2*i+1]
@@ -77,8 +77,7 @@ def wf(diploids, tracker, ngens):
     4. We do a single crossover for every mating, just so that there are
        a lot of breakpoints to handle
     """
-    N = int(len(diploids) / 2)
-    # We know there will be 2N new nodes added,
+    diploids = np.arange(2 * N, dtype=np.uint32)
     # so we pre-allocate the space. We only need
     # to do this once b/c N is constant.
     tracker.nodes = np.empty([2 * N * (ngens + 1)], dtype=node_dt)
@@ -99,7 +98,10 @@ def wf(diploids, tracker, ngens):
 
         # Pick 2N parents:
         parents = np.random.randint(0, N, 2 * N)
-        dip = int(0)
+        assert(parents.max() < N)
+        dip = int(0)  # dummy index for filling contents of new_diploids
+
+        # Iterate over our chosen parents via fancy indexing.
         for parent1, parent2 in zip(parents[::2], parents[1::2]):
             # p1g1 = parent 1, gamete (chrom) 1, etc.:
             p1g1, p1g2 = diploids[2 * parent1], diploids[2 * parent1 + 1]
@@ -121,9 +123,20 @@ def wf(diploids, tracker, ngens):
             # contribution from parent 1
             breakpoint = xover()
 
-            # assert(edge_index + 3 < 4 * N)
+            # Add the edges. Parent 1 will contribute [0,breakpoint)
+            # from p1g1 and [breakpoint,1.0) from p1g2. Note that
+            # we've already done the Mendel thing above. Both of these
+            # segments are inherited by the next diploid, whose value
+            # is next_id
             tracker.edges[edge_index] = (0.0, breakpoint, p1g1, next_id)
             tracker.edges[edge_index + 1] = (breakpoint, 1.0, p1g2, next_id)
+
+            # Update offspring container for
+            # offspring dip, chrom 1:
+            new_diploids[2 * dip] = next_id
+
+            # Add new node for offpsring dip, chrom 1
+            tracker.nodes[node_id] = (next_id, gen + 1, 0)
 
             # Repeat process for parent 2's contribution
             breakpoint = xover()
@@ -132,14 +145,20 @@ def wf(diploids, tracker, ngens):
             tracker.edges[edge_index +
                           3] = (breakpoint, 1.0, p2g2, next_id + 1)
 
-            # Add diploids
-            new_diploids[2 * dip] = next_id
             new_diploids[2 * dip + 1] = next_id + 1
 
-            # Add new nodes
-            tracker.nodes[node_id] = (next_id, gen + 1, 0)
             tracker.nodes[node_id + 1] = (next_id + 1, gen + 1, 0)
 
+            # python -O to turn this stuff off
+            if __debug__:
+                print("generation ", gen, diploids.min(), diploids.max(),
+                      tracker.edges[edge_index:edge_index + 4])
+
+            # Update our dummy variables.
+            # We have two new nodes,
+            # have used up two ids,
+            # processed one diploid (offspring),
+            # and added 4 edges
             node_id += 2
             next_id += 2
             dip += 1
@@ -156,14 +175,13 @@ def wf(diploids, tracker, ngens):
 if __name__ == "__main__":
     popsize = int(sys.argv[1])
     theta = float(sys.argv[2])
-    nsam = int(sys.argv[3])
+    nsam = int(sys.argv[3])  # sample size to take and add mutations to
     seed = int(sys.argv[4])
-    diploids = np.array([i for i in range(2 * popsize)], dtype=np.uint32)
 
     np.random.seed(seed)
 
     tracker = MockAncestryTracker()
-    samples = wf(diploids, tracker, 10 * popsize)
+    samples = wf(popsize, tracker, 10 * popsize)
 
     # Make local names for convenience
     nodes = tracker.nodes
@@ -201,8 +219,8 @@ if __name__ == "__main__":
     # onto a sample of size nsam
     # We'll copy tables here,
     # just to see what happens.
-    nt_s = nt.copy() 
-    es_s = es.copy() 
+    nt_s = nt.copy()
+    es_s = es.copy()
 
     # x.dump_tables(nodes=nt_s, edgesets=es_s)
 
