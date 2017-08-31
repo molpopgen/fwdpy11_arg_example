@@ -24,6 +24,8 @@ edge_dt = np.dtype([('left', np.float),
                     ('parent', np.int32),
                     ('child', np.int32)])
 
+# Simulation with be popsize*SIMLEN generations
+SIMLEN=10
 
 class MockAncestryTracker(object):
     """
@@ -179,11 +181,11 @@ def expensive_check(popsize, edges, nodes):
     nodes and edges that we generated
     in the simulation
     """
-    assert(len(edges) == 10 * popsize * 4 * popsize)
+    assert(len(edges) == SIMLEN * popsize * 4 * popsize)
 
     # Check that all parent/child IDs are
     # in expected range.
-    for gen in range(1, 10 * popsize + 1):
+    for gen in range(1, SIMLEN * popsize + 1):
         min_parental_id = 2 * popsize * (gen - 1)
         max_parental_id = 2 * popsize * (gen - 1) + 2 * popsize
         min_child_id = max_parental_id
@@ -229,12 +231,12 @@ if __name__ == "__main__":
     np.random.seed(seed)
 
     tracker = MockAncestryTracker()
-    samples = wf(popsize, tracker, 10 * popsize)
+    samples = wf(popsize, tracker, SIMLEN * popsize)
 
     # Check that our sample IDs are as expected:
     if __debug__:
-        min_sample = 10 * popsize * 2 * popsize
-        max_sample = 10 * popsize * 2 * popsize + 2 * popsize
+        min_sample = SIMLEN * popsize * 2 * popsize
+        max_sample = SIMLEN * popsize * 2 * popsize + 2 * popsize
         if any(i < min_sample or i >= max_sample for i in samples) is True:
             raise RuntimeError("Houston, we have a problem.")
     assert(np.array_equal(samples,np.arange(min_sample,max_sample,dtype=samples.dtype)))
@@ -247,7 +249,7 @@ if __name__ == "__main__":
         expensive_check(popsize, edges, nodes)
 
     max_gen = nodes['generation'].max()
-    assert(int(max_gen) == 10 * popsize)
+    assert(int(max_gen) == SIMLEN * popsize)
 
     # Convert node times from forwards to backwards
     nodes['generation'] = nodes['generation'] - max_gen
@@ -281,8 +283,6 @@ if __name__ == "__main__":
     # Lets look at the MRCAS.
     # This is where things go badly:
     MRCAS=[t.get_time(t.get_root()) for t in x.trees()]
-    print(MRCAS)
-
 
     # Throw down some mutations
     # onto a sample of size nsam
