@@ -237,7 +237,7 @@ if __name__ == "__main__":
         max_sample = 10 * popsize * 2 * popsize + 2 * popsize
         if any(i < min_sample or i >= max_sample for i in samples) is True:
             raise RuntimeError("Houston, we have a problem.")
-    assert(samples == np.arange(min_sample,max_sample+1,dtype = samples.dtype))
+    assert(np.array_equal(samples,np.arange(min_sample,max_sample,dtype=samples.dtype)))
 
     # Make local names for convenience
     nodes = tracker.nodes
