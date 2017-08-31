@@ -25,7 +25,7 @@ edge_dt = np.dtype([('left', np.float),
                     ('child', np.int32)])
 
 # Simulation with be popsize*SIMLEN generations
-SIMLEN=10
+SIMLEN=20
 
 class MockAncestryTracker(object):
     """
