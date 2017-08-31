@@ -171,6 +171,8 @@ def wf(N, tracker, ngens, args):
             next_id += 2
             dip += 1
             edge_index += 4
+            print("dips:", diploids)
+            print("next dips:", new_diploids)
 
         assert(dip == N)
         assert(len(new_diploids) == 2 * N)
@@ -236,13 +238,15 @@ if __name__ == "__main__":
     np.random.seed(seed)
 
     tracker = MockAncestryTracker()
-    args = ftprime.ARGrecorder(node_ids=enumerate(range(2*popsize)))
+    args = ftprime.ARGrecorder(node_ids=enumerate(range(2*popsize)), ts=msprime.simulate(2*popsize))
     samples = wf(popsize, tracker, 10 * popsize, args)
 
     args.simplify(samples=range(10*popsize*2*popsize, (10*popsize+1)*2*popsize))
     ts = args.tree_sequence()
     for x in ts.dump_tables():
         print(x)
+    MRCAS=[t.get_time(t.get_root()) for t in ts.trees()]
+    print("ARGrecorder MRCAS:", MRCAS)
 
     # Check that our sample IDs are as expected:
     if __debug__:
@@ -292,7 +296,7 @@ if __name__ == "__main__":
     # Lets look at the MRCAS.
     # This is where things go badly:
     MRCAS=[t.get_time(t.get_root()) for t in x.trees()]
-    print(MRCAS)
+    print("other MRCAS", MRCAS)
 
 
     # Throw down some mutations
