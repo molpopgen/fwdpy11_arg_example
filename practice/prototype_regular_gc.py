@@ -59,6 +59,14 @@ class MockAncestryTracker(object):
         self.nodes = np.insert(self.nodes, len(self.nodes), new_nodes)
         self.edges = np.insert(self.edges, len(self.edges), new_edges)
 
+    def reset_data(self):
+        """
+        Call this after garbage collection.
+        Any necessary post-processing is done here.
+        """
+        self.nodes = np.empty([0], dtype=node_dt)
+        self.edges = np.empty([0], dtype=edge_dt)
+
 
 class ARGsimplifier(object):
     """
@@ -114,17 +122,20 @@ def split_breakpoints(breakpoints):
 def handle_recombination_update(offspring_index, parental_id1,
                                 parental_id2, edges, breakpoints):
     if len(breakpoints) == 0:
-        edges = np.insert(edges, len(edges),
-                          (0.0, 1.0, parental_id1, offspring_index))
+        edges.append((0.0, 1.0, parental_id1, offspring_index))
+        #edges = np.insert(edges, len(edges),
+        #                  (0.0, 1.0, parental_id1, offspring_index))
         return edges
 
     split = split_breakpoints(breakpoints)
     for i, j in split[0]:
-        edges = np.insert(edges, len(edges),
-                          (i, j, parental_id1, offspring_index))
+        edges.append((i, j, parental_id1, offspring_index))
+        # edges = np.insert(edges, len(edges),
+        #                   (i, j, parental_id1, offspring_index))
     for i, j in split[1]:
-        edges = np.insert(edges, len(edges),
-                          (i, j, parental_id2, offspring_index))
+        edges.append((i, j, parental_id2, offspring_index))
+        # edges = np.insert(edges, len(edges),
+        #                   (i, j, parental_id2, offspring_index))
     return edges
 
 
@@ -171,7 +182,7 @@ def wf(N, tracker, recrate, ngens):
             start=next_id, stop=next_id + 2 * N, dtype=nodes['id'].dtype)
 
         # Store temp edges for this generation
-        edges = np.empty([0], dtype=edge_dt)
+        edges = [] # np.empty([0], dtype=edge_dt)
         # Pick 2N parents:
         parents = np.random.randint(0, N, 2 * N)
         assert(parents.max() < N)
@@ -195,7 +206,7 @@ def wf(N, tracker, recrate, ngens):
             breakpoints = xover(recrate)
 
             edges = handle_recombination_update(
-                next_id, p1g1, p1g1, edges, breakpoints)
+                next_id, p1g1, p1g2, edges, breakpoints)
 
             # Update offspring container for
             # offspring dip, chrom 1:
@@ -209,7 +220,7 @@ def wf(N, tracker, recrate, ngens):
             # Stuff is now being inherited by node next_id + 1
             breakpoints = xover(recrate)
             edges = handle_recombination_update(
-                next_id + 1, p2g1, p2g1, edges, breakpoints)
+                next_id + 1, p2g1, p2g2, edges, breakpoints)
 
             new_diploids[2 * dip + 1] = next_id + 1
 
@@ -300,7 +311,7 @@ if __name__ == "__main__":
     # Make local names for convenience
     nodes = tracker.nodes
     edges = tracker.edges
-
+    # print(len(edges))
     # if __debug__:
     #     expensive_check(popsize, edges, nodes)
 
@@ -339,7 +350,7 @@ if __name__ == "__main__":
     # Lets look at the MRCAS.
     # This is where things go badly:
     MRCAS = [t.get_time(t.get_root()) for t in x.trees()]
-
+    # print(MRCAS)
     # Throw down some mutations
     # onto a sample of size nsam
     # We'll copy tables here,
