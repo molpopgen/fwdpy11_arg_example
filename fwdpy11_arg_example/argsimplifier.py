@@ -66,14 +66,14 @@ class ArgSimplifier(object):
         # sample_map = {j:i for i,j in enumerate(samples)}
         #print(sample_map)
         # The rv tuple is : (we did GC, the next index to use for nodes,
-        x=msprime.load_tables(nodes=self.__nodes, edgesets=self.__edges)
         # if self.__nodes.num_rows > 0:
         #     print("what are we putting in:")
         #     print(self.__nodes)
         #     print(self.__edges)
         #     print("input done")
-        x=x.simplify(samples=samples.tolist())
-        x.dump_tables(nodes=self.__nodes, edgesets=self.__edges)
+        msprime.simplify_tables(samples=samples.tolist(), nodes = self.__nodes, edgesets = self.__edges)
+        # x=msprime.load_tables(nodes=self.__nodes, edgesets=self.__edges)
+        # x.dump_tables(nodes=self.__nodes, edgesets=self.__edges)
         #print(self.__nodes)
         #print("simplified edges:")
         #print(self.__edges)
