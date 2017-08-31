@@ -55,9 +55,9 @@ class MockAncestryTracker(object):
     def edges(self, value):
         self.__edges = value
 
-    def update_data(self,new_nodes, new_edges):
-        self.nodes = np.insert(self.nodes,len(self.nodes),new_nodes)
-        self.edges = np.insert(self.edges,len(self.edges),new_edges)
+    def update_data(self, new_nodes, new_edges):
+        self.nodes = np.insert(self.nodes, len(self.nodes), new_nodes)
+        self.edges = np.insert(self.edges, len(self.edges), new_edges)
 
 
 class ARGsimplifier(object):
@@ -103,7 +103,7 @@ def split_breakpoints(breakpoints):
     for i in range(1, len(breakpoints)):
         a = breakpoints[i - 1]
         b = breakpoints[i] if i < len(breakpoints) - 1 else 1.0
-        assert(a!=b)
+        assert(a != b)
         if i % 2 == 0.:
             s1 = np.insert(s1, len(s1), (a, b))
         else:
@@ -161,8 +161,15 @@ def wf(N, tracker, recrate, ngens):
         # We also use this to mark the "samples" for simplify
         new_diploids = np.empty([len(diploids)], dtype=diploids.dtype)
 
-        # Store temp nodes for this generation
-        nodes = np.empty([0], dtype=node_dt)
+        # Store temp nodes for this generation.
+        # b/c we add 2N nodes each geneartion,
+        # We can allocate it all at once.
+        nodes = np.empty([2 * N], dtype=node_dt)
+        nodes['population'].fill(0)
+        nodes['generation'] = gen + 1
+        nodes['id'] = np.arange(
+            start=next_id, stop=next_id + 2 * N, dtype=nodes['id'].dtype)
+
         # Store temp edges for this generation
         edges = np.empty([0], dtype=edge_dt)
         # Pick 2N parents:
@@ -187,14 +194,15 @@ def wf(N, tracker, recrate, ngens):
 
             breakpoints = xover(recrate)
 
-            edges = handle_recombination_update(next_id, p1g1, p1g1, edges, breakpoints)
+            edges = handle_recombination_update(
+                next_id, p1g1, p1g1, edges, breakpoints)
 
             # Update offspring container for
             # offspring dip, chrom 1:
             new_diploids[2 * dip] = next_id
 
             # Add new node for offpsring dip, chrom 1
-            nodes = np.insert(nodes, len(nodes), (next_id, gen + 1, 0))
+            # nodes = np.insert(nodes, len(nodes), (next_id, gen + 1, 0))
             #tracker.nodes[node_id] = (next_id, gen + 1, 0)
 
             # Repeat process for parent 2's contribution.
@@ -205,13 +213,13 @@ def wf(N, tracker, recrate, ngens):
 
             new_diploids[2 * dip + 1] = next_id + 1
 
-            nodes = np.insert(nodes, len(nodes), (next_id + 1, gen + 1, 0))
+            # nodes = np.insert(nodes, len(nodes), (next_id + 1, gen + 1, 0))
 
             # Update our dummy variables.
             next_id += 2
             dip += 1
 
-        tracker.update_data(nodes,edges)
+        tracker.update_data(nodes, edges)
         # print(len(tracker.nodes),len(tracker.edges))
         assert(dip == N)
         assert(len(new_diploids) == 2 * N)
@@ -277,7 +285,7 @@ if __name__ == "__main__":
     np.random.seed(seed)
 
     tracker = MockAncestryTracker()
-    recrate = rho/float(4*popsize)
+    recrate = rho / float(4 * popsize)
     samples = wf(popsize, tracker, recrate, SIMLEN * popsize)
 
     # Check that our sample IDs are as expected:
