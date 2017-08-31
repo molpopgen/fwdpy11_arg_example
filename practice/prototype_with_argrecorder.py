@@ -14,6 +14,7 @@
 import numpy as np
 import msprime
 import sys
+import ftprime
 
 node_dt = np.dtype([('id', np.uint32),
                     ('generation', np.float),
@@ -60,7 +61,7 @@ def xover():
     return breakpoint
 
 
-def wf(N, tracker, ngens):
+def wf(N, tracker, ngens, args):
     """
     For N diploids, the diploids list contains 2N values.
     For the i-th diploids, diploids[2*i] and diploids[2*i+1]
@@ -103,6 +104,7 @@ def wf(N, tracker, ngens):
 
         # Iterate over our chosen parents via fancy indexing.
         for parent1, parent2 in zip(parents[::2], parents[1::2]):
+            args.add_individual(input_id=next_id, time=gen+1)
             # p1g1 = parent 1, gamete (chrom) 1, etc.:
             p1g1, p1g2 = diploids[2 * parent1], diploids[2 * parent1 + 1]
             p2g1, p2g2 = diploids[2 * parent2], diploids[2 * parent2 + 1]
@@ -130,6 +132,8 @@ def wf(N, tracker, ngens):
             # is next_id
             tracker.edges[edge_index] = (0.0, breakpoint, p1g1, next_id)
             tracker.edges[edge_index + 1] = (breakpoint, 1.0, p1g2, next_id)
+            args.add_record(left=0.0, right=breakpoint, parent=p1g1, children=(next_id,))
+            args.add_record(left=breakpoint, right=1.0, parent=p1g2, children=(next_id,))
 
             # Update offspring container for
             # offspring dip, chrom 1:
@@ -139,12 +143,15 @@ def wf(N, tracker, ngens):
             tracker.nodes[node_id] = (next_id, gen + 1, 0)
 
             # Repeat process for parent 2's contribution.
+            args.add_individual(input_id=next_id+1, time=gen+1)
             # Stuff is now being inherited by node next_id + 1
             breakpoint = xover()
             tracker.edges[edge_index +
                           2] = (0.0, breakpoint, p2g1, next_id + 1)
             tracker.edges[edge_index +
                           3] = (breakpoint, 1.0, p2g2, next_id + 1)
+            args.add_record(left=0.0, right=breakpoint, parent=p2g1, children=(next_id+1,))
+            args.add_record(left=breakpoint, right=1.0, parent=p2g2, children=(next_id+1,))
 
             new_diploids[2 * dip + 1] = next_id + 1
 
@@ -229,7 +236,13 @@ if __name__ == "__main__":
     np.random.seed(seed)
 
     tracker = MockAncestryTracker()
-    samples = wf(popsize, tracker, 10 * popsize)
+    args = ftprime.ARGrecorder(node_ids=enumerate(range(2*popsize)))
+    samples = wf(popsize, tracker, 10 * popsize, args)
+
+    args.simplify(samples=range(10*popsize*2*popsize, (10*popsize+1)*2*popsize))
+    ts = args.tree_sequence()
+    for x in ts.dump_tables():
+        print(x)
 
     # Check that our sample IDs are as expected:
     if __debug__:
@@ -271,7 +284,6 @@ if __name__ == "__main__":
     msprime.sort_tables(nodes=nt, edgesets=es)
 
     # Simplify: this is where the magic happens
-    ## PLR: since these tables aren't valid, you gotta use simplify_tables, not load them into a tree sequence
     msprime.simplify_tables(samples=samples.tolist(), nodes=nt, edgesets=es)
 
     # Create a tree sequence
@@ -285,15 +297,10 @@ if __name__ == "__main__":
 
     # Throw down some mutations
     # onto a sample of size nsam
-    # We'll copy tables here,
-    # just to see what happens.
-    ## PLR: these .copy()s aren't doing anything: just overwritten before
-    nt_s = nt.copy()
-    es_s = es.copy()
+    nt_s = msprime.NodeTable()
+    es_s = msprime.EdgesetTable()
 
     nsam_samples = np.random.choice(2 * popsize, nsam, replace=False)
-    ## PLR: TreeSequence.simplify() *returns* the modified tree sequence, leaving x unmodified
-    ## you could alternatively do everything here with tables
     xs = x.simplify(nsam_samples.tolist())
     xs.dump_tables(nodes=nt_s, edgesets=es_s)
     msp_rng = msprime.RandomGenerator(seed)
@@ -304,3 +311,4 @@ if __name__ == "__main__":
     x = msprime.load_tables(nodes=nt_s, edgesets=es_s,
                             sites=sites, mutations=mutations)
     print(sites.num_rows)
+
