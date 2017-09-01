@@ -56,14 +56,26 @@ class MockAncestryTracker(object):
 
     @samples.setter
     def samples(self, value):
-        self.__samples = value
+        self.__samples = np.array(value, copy=True)
 
     def update_data(self, new_nodes, new_edges, new_samples):
+        """
+        Takes the new nodes and edges simulated each generation
+        and appends them to the class data.  new_samples is the list
+        of node IDs corresponding to the current children.
+        """
         self.nodes = np.insert(self.nodes, len(self.nodes), new_nodes)
         self.edges = np.insert(self.edges, len(self.edges), new_edges)
         self.samples = new_samples
 
     def convert_time(self):
+        """
+        Convert from forwards time to backwards time.
+        
+        This results in self.nodes['generation'].min() 
+        equal to -0.0 (e.g, 0.0 with the negative bit set),
+        but msprime does not seem to mind.
+        """
         self.nodes['generation'] -= self.nodes['generation'].max()
         self.nodes['generation'] *= -1.0
 
@@ -76,6 +88,11 @@ class MockAncestryTracker(object):
         self.edges = np.empty([0], dtype=edge_dt)
 
     def post_gc_cleanup(self, gc_rv):
+        """
+        Pass in the return value from ARGsimplifier.__call__.
+
+        We clean up internal data if needed.
+        """
         if gc_rv[0] is True:
             self.reset_data()
 
@@ -116,8 +133,10 @@ class ARGsimplifier(object):
         flags = np.empty([len(tracker.nodes)], dtype=np.uint32)
         flags.fill(1)
 
+        # Convert time from forwards to backwards
         tracker.convert_time()
 
+        # Update internal *Tables
         self.nodes.append_columns(flags=flags,
                                   population=tracker.nodes['population'],
                                   time=tracker.nodes['generation'])
@@ -127,9 +146,12 @@ class ARGsimplifier(object):
                                   children=tracker.edges['child'],
                                   children_length=[1] * len(tracker.edges))
 
+        # Sort and simplify
         msprime.sort_tables(nodes=self.nodes, edgesets=self.edges)
         msprime.simplify_tables(samples=tracker.samples.tolist(),
                                 nodes=self.nodes, edgesets=self.edges)
+        # Return length of NodeTable,
+        # which can be used as next offspring ID
         return self.nodes.num_rows
 
     def __call__(self, generation, tracker):
@@ -174,16 +196,27 @@ class ARGsimplifier(object):
 
 
 def xover(rate):
+    """ 
+    This is a mimic of a fwdpp
+    recombination policy.
+
+    We return a sorted list of breakpoints 
+    on the interval [0,1).  The list is capped
+    with the max value of a float (C/C++ double),
+    which is a trick fwdpp uses.
+
+    It happens that we generate the exact same value
+    from time to time.  Internall, fwdpp doesn't care,
+    and recoginizes that as a "double x-over".  However,
+    msprime cares, b/c it results in an edge with
+    left == right and an Exception gets raised.  So,
+    we purge out double x-overs via np.unique.
+    """
     nbreaks = np.random.poisson(rate)
     if nbreaks == 0:
         return np.empty([0], dtype=np.float)
     rv = np.random.random_sample(nbreaks)
-    # np.unique both sorts and purges
-    # duplicate values. (Duplicate values
-    # are functionally a double x-over)
     rv = np.unique(rv)
-    # We "cap" the set of breakpoints
-    # as in fwdpp:
     rv = np.insert(rv, len(rv), np.finfo(np.float).max)
     return rv
 
@@ -194,7 +227,9 @@ def split_breakpoints(breakpoints):
     and return them as segments contributed
     by gamete 1 and gamete 2
 
-    Note: bug source could be here, if breakpoints[0] == 0.0
+    Note: bug source could be here. If breakpoints[0] == 0.0,
+    we will insert stuff 2x into s1. This needs updating, 
+    and so does the C++ version that this is copied from...
     """
     s1 = np.array([(0.0, breakpoints[0])], dtype=[
                   ('left', np.float), ('right', np.float)])
@@ -212,21 +247,24 @@ def split_breakpoints(breakpoints):
 
 def handle_recombination_update(offspring_index, parental_id1,
                                 parental_id2, edges, breakpoints):
+    """
+    Handle the coversion of recombination events into edges.
+
+    :param offspring_index: The index of our child
+    :param parental_id1: The index of parental chrom 1
+    :param parental_id2: The index of parental chrom 2
+    :param edges: The list of edges we are growing this generation.
+    :param breakpoints: The output from the xover function
+    """
     if len(breakpoints) == 0:
         edges.append((0.0, 1.0, parental_id1, offspring_index))
-        # edges = np.insert(edges, len(edges),
-        #                  (0.0, 1.0, parental_id1, offspring_index))
         return edges
 
     split = split_breakpoints(breakpoints)
     for i, j in split[0]:
         edges.append((i, j, parental_id1, offspring_index))
-        # edges = np.insert(edges, len(edges),
-        #                   (i, j, parental_id1, offspring_index))
     for i, j in split[1]:
         edges.append((i, j, parental_id2, offspring_index))
-        # edges = np.insert(edges, len(edges),
-        #                   (i, j, parental_id2, offspring_index))
     return edges
 
 
