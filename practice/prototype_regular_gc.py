@@ -260,17 +260,17 @@ def wf(N, simplifier, tracker, recrate, ngens):
         # If so, let the tracker clean up:
         tracker.post_gc_cleanup(gc_rv)
         if gc_rv[0] is True:
-            assert(len(tracker.nodes)==0)
-            assert(len(tracker.edges)==0)
+            assert(len(tracker.nodes) == 0)
+            assert(len(tracker.edges) == 0)
             # If we did GC, we need to reset
             # some variables.  Internally,
             # when msprime simplifies tables,
             # the 2N tips are entries 0 to 2*N-1
-            # in the NodeTable, hence the 
+            # in the NodeTable, hence the
             # re-assignment if diploids.
             # We can also reset next_id to the
             # length of the current NodeTable,
-            # keeping risk of integer overflow 
+            # keeping risk of integer overflow
             # to a minimum.
             next_id = int(gc_rv[1])
             diploids = np.arange(2 * N, dtype=np.uint32)
@@ -370,7 +370,7 @@ if __name__ == "__main__":
                  recrate, SIMLEN * args.popsize)
 
     if len(tracker.nodes) > 0:  # Then there's stuff that didn't get GC'd
-        simplifier.simplify(SIMLEN*args.popsize, tracker)
+        simplifier.simplify(SIMLEN * args.popsize, tracker)
 
     # Local names for convenience.
     # I copy the tables here, too,
