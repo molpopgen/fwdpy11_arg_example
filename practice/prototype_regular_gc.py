@@ -3,13 +3,6 @@
 # Random number of edges due to modeling
 # recombination as a Poisson process.
 
-# I think there's a huge clue here as to where my bug lies.
-# Different GC intervals should all give the exact same output.
-# However, that is currently not the case.  For N = 100 and 
-# all other default params, most GC intervals result in 28 mutations
-# in the sample.  This command line does not, and I can find others 
-# that also do not:
-# python practice/prototype_regular_gc.py -N 100 --gc 55
 import numpy as np
 import msprime
 import sys
@@ -96,13 +89,15 @@ class ARGsimplifier(object):
     __nodes = None
     __edges = None
     __gc_interval = None
+    __last_gc_time = None
 
     def __init__(self, gc_interval=None):
         self.__nodes = msprime.NodeTable()
         self.__edges = msprime.EdgesetTable()
         self.gc_interval = gc_interval
+        self.last_gc_time = 0
 
-    def simplify(self, tracker):
+    def simplify(self, generation, tracker):
         """
         Details of taking new data, appending, and
         simplifying.
@@ -111,9 +106,10 @@ class ARGsimplifier(object):
         """
         # Update time in current nodes.
         # Is this most effficient method?
+        dt = generation - self.last_gc_time
         self.nodes.set_columns(flags=self.nodes.flags,
                                population=self.nodes.population,
-                               time=self.nodes.time + self.gc_interval)
+                               time=self.nodes.time + dt)
 
         # Create "flags" for new nodes.
         # This is much faster than making a list
@@ -138,7 +134,9 @@ class ARGsimplifier(object):
 
     def __call__(self, generation, tracker):
         if generation > 0 and generation % self.gc_interval == 0:
-            return (True, self.simplify(tracker))
+            next_id = self.simplify(generation, tracker)
+            self.last_gc_time = generation
+            return (True, next_id)
 
         return (False, None)
 
@@ -149,6 +147,14 @@ class ARGsimplifier(object):
     @gc_interval.setter
     def gc_interval(self, value):
         self.__gc_interval = int(value)
+
+    @property
+    def last_gc_time(self):
+        return self.__last_gc_time
+
+    @last_gc_time.setter
+    def last_gc_time(self, value):
+        self.__last_gc_time = int(value)
 
     @property
     def nodes(self):
@@ -364,7 +370,7 @@ if __name__ == "__main__":
                  recrate, SIMLEN * args.popsize)
 
     if len(tracker.nodes) > 0:  # Then there's stuff that didn't get GC'd
-        simplifier.simplify(tracker)
+        simplifier.simplify(SIMLEN*args.popsize, tracker)
 
     # Local names for convenience.
     # I copy the tables here, too,
