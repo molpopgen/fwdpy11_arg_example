@@ -1,6 +1,6 @@
 # To get msprime integration working:
 
-When I'm back from Tahoe, I need to check that the final GC at the end of a sim is doing the right thing.  I have a feeling that this commit, which fixed the Python prototype, is relevant: https://github.com/molpopgen/fwdpy11_arg_example/commit/36525a234bef612871260d23802d3698bbeb2c04
+When I'm back from Tahoe, there is an issue resulting in left == right.  I think I know what is causing it: the rng is generating exactly 0 for the first breakpoint. 
 
 The C++ side can/should do more to help
 

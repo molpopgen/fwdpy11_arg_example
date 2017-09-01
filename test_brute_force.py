@@ -6,8 +6,8 @@ import sys
 N = int(sys.argv[1])
 rho = float(sys.argv[2])
 theta = float(sys.argv[3])
-# nreps = int(sys.argv[4])
-seed = int(sys.argv[4])
+gc_interval = int(sys.argv[4])
+seed = int(sys.argv[5])
 simplifier,atracker = bf.evolve_track_wrapper(popsize=N, rho=rho, seed = seed, gc_interval=100, mu = 0.0)
 
 np.random.seed(seed)
