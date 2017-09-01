@@ -1,16 +1,15 @@
-# Prototype of our C++ implementation
-# in Python using NumPy arrays and
-# a VERY simple W-F simulations.
-# Similar to what is in ftprime
-# test suite, but with diploids.
-# The data structures map to what
-# I'm doing on the C++ side.
-# NumPy arrays containing node_dy
-# and edge_dt
-# are built up the same way that
-# I'm populating vector<node> and
-# vector<edge>.
+# Advanced prototype:
+# Does GC at user-specified intervals
+# Random number of edges due to modeling
+# recombination as a Poisson process.
 
+# I think there's a huge clue here as to where my bug lies.
+# Different GC intervals should all give the exact same output.
+# However, that is currently not the case.  For N = 100 and 
+# all other default params, most GC intervals result in 28 mutations
+# in the sample.  This command line does not, and I can find others 
+# that also do not:
+# python practice/prototype_regular_gc.py -N 100 --gc 55
 import numpy as np
 import msprime
 import sys
@@ -239,8 +238,8 @@ def wf(N, simplifier, tracker, recrate, ngens):
        for each parental index 'p'.
     3. We pass one parental index on to each offspring, according to
        Mendel, which means we swap parental chromosome ids 50% of the time.
-    4. We do a single crossover for every mating, just so that there are
-       a lot of breakpoints to handle
+    4. Crossing over is a Poisson process, and the code used here (above)
+       is modeled after that in our C++ implementation.
     """
     diploids = np.arange(2 * N, dtype=np.uint32)
     # so we pre-allocate the space. We only need
@@ -250,9 +249,23 @@ def wf(N, simplifier, tracker, recrate, ngens):
     next_id = len(diploids)  # This will be the next unique ID to use
     assert(max(diploids) < next_id)
     for gen in range(ngens):
+        # Let's see if we will do some GC:
         gc_rv = simplifier(gen, tracker)
+        # If so, let the tracker clean up:
         tracker.post_gc_cleanup(gc_rv)
         if gc_rv[0] is True:
+            assert(len(tracker.nodes)==0)
+            assert(len(tracker.edges)==0)
+            # If we did GC, we need to reset
+            # some variables.  Internally,
+            # when msprime simplifies tables,
+            # the 2N tips are entries 0 to 2*N-1
+            # in the NodeTable, hence the 
+            # re-assignment if diploids.
+            # We can also reset next_id to the
+            # length of the current NodeTable,
+            # keeping risk of integer overflow 
+            # to a minimum.
             next_id = int(gc_rv[1])
             diploids = np.arange(2 * N, dtype=np.uint32)
 
