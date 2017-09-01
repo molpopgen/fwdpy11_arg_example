@@ -67,6 +67,21 @@ evolve_singlepop_regions_track_ancestry(
             py::tuple processor_rv = ancestry_processor(
                 pop.generation, ancestry); //.nodes, ancestry.edges);
             ancestry.post_process_gc(processor_rv);
+			bool did_gc = processor_rv[0].cast<bool>();
+			// TODO: remove this next block.
+			// It is not necessary.
+			if(did_gc)
+			{
+				//py::print("did gc at generation, ",generation, pop.generation);
+				if (ancestry.nodes.size())
+				{
+					throw std::runtime_error("nodes not empty after GC");
+				}
+				if (ancestry.edges.size())
+				{
+					throw std::runtime_error("edges not empty after GC");
+				}
+			}
             ancestry.offspring_indexes.clear();
             const auto N_next = popsizes.at(generation);
             evolve_generation(

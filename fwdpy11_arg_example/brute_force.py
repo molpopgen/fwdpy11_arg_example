@@ -30,7 +30,11 @@ def evolve_track(rng, pop, params, gc_interval):
     # TODO: need a way to make sure that this
     # is necessary AND to make sure atracker
     # is post-processed!
-    simplifier.simplify(atracker)
+    if len(atracker.nodes) > 0:
+        # TODO
+        # The + 1 is b/c we have a bit of a book-keeping
+        # thing that we need to document...
+        simplifier.simplify(pop.generation+1,atracker)
     return (simplifier,atracker)
 
 
@@ -54,7 +58,7 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
              'sregions': [dfe],
              'recregions': [fwdpy11.Region(0, 1, 1)],
              'gvalue': fwdpy11.fitness.SlocusMult(2.0),
-             'demography': np.array([popsize] * 10 * popsize, dtype=np.uint32)
+             'demography': np.array([popsize] * 20 * popsize, dtype=np.uint32)
              }
 
     params = fwdpy11.model_params.SlocusParams(**pdict)

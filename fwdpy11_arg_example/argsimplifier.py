@@ -4,18 +4,21 @@ import msprime
 
 class ArgSimplifier(object):
     __gc_interval = None
+    __last_gc_time = None
     __nodes = msprime.NodeTable()
     __edges = msprime.EdgesetTable()
 
     def __init__(self, gc_interval):
         self.gc_interval = gc_interval
+        self.last_gc_time = 0.0
 
-    def simplify(self,ancestry):
+    def simplify(self,generation,ancestry):
         # update node times:
         if self.__nodes.num_rows > 0:
             tc = self.__nodes.time
-            dt = ancestry.offspring_generation + 1
-            tc += self.gc_interval
+            dt = float(generation) - self.last_gc_time 
+            tc += dt 
+            self.last_gc_time = generation
             # print("current node time adjustment: ")
             # print(self.__nodes.time)
             # print(tc)
@@ -27,6 +30,7 @@ class ArgSimplifier(object):
             # print(self.__edges.children)
             # print(self.__nodes)
 
+        # print("here", len(ancestry.nodes),generation,self.last_gc_time)
         ancestry.prep_for_gc()
         na = np.array(ancestry.nodes, copy=False)
         ea = np.array(ancestry.edges, copy=False)
@@ -86,7 +90,8 @@ class ArgSimplifier(object):
 
     def __call__(self, generation, ancestry):
         if generation > 0 and generation % self.gc_interval == 0.0:
-            return self.simplify(ancestry)
+            # print("GC in generation",generation)
+            return self.simplify(generation,ancestry)
         # Keep tuple size constant,
         # for sake of sanity.
         return (False,None,None)
@@ -112,3 +117,11 @@ class ArgSimplifier(object):
         if value <= 0:
             raise ValueError("GC interval must be and integer > 0")
         self.__gc_interval=int(value)
+
+    @property
+    def last_gc_time(self):
+        return self.__last_gc_time
+
+    @last_gc_time.setter
+    def last_gc_time(self, value):
+        self.__last_gc_time = float(value)
