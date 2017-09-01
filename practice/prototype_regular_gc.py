@@ -34,10 +34,12 @@ class MockAncestryTracker(object):
     """
     __nodes = None
     __edges = None
+    __samples = None
 
     def __init__(self):
         self.nodes = np.empty([0], dtype=node_dt)
         self.edges = np.empty([0], dtype=edge_dt)
+        self.samples = None
 
     @property
     def nodes(self):
@@ -55,10 +57,23 @@ class MockAncestryTracker(object):
     def edges(self, value):
         self.__edges = value
 
-    def update_data(self, new_nodes, new_edges):
+    @property
+    def samples(self):
+        return self.__samples
+
+    @samples.setter
+    def samples(self, value):
+        self.__samples = value
+
+    def update_data(self, new_nodes, new_edges, new_samples):
         self.nodes = np.insert(self.nodes, len(self.nodes), new_nodes)
         self.edges = np.insert(self.edges, len(self.edges), new_edges)
+        self.samples = new_samples
 
+    def convert_time(self):
+        self.nodes['generation'] -= self.nodes['generation'].max()
+        self.nodes['generation'] *= -1.0
+    
     def reset_data(self):
         """
         Call this after garbage collection.
@@ -66,6 +81,10 @@ class MockAncestryTracker(object):
         """
         self.nodes = np.empty([0], dtype=node_dt)
         self.edges = np.empty([0], dtype=edge_dt)
+
+    def post_gc_cleanup(self,gc_rv):
+        if gc_rv[0] is True:
+            self.reset_data()
 
 
 class ARGsimplifier(object):
@@ -76,10 +95,87 @@ class ARGsimplifier(object):
     """
     __nodes = None
     __edges = None
+    __gc_interval = None
 
-    def __init__():
+    def __init__(self,gc_interval=None):
         self.__nodes = msprime.NodeTable()
         self.__edges = msprime.EdgesetTable()
+        self.gc_interval = gc_interval
+
+    def simplify(self, tracker):
+        """
+        Details of taking new data, appending, and
+        simplifying.
+
+        :return: length of simplifed node table, which is next_id to use
+        """
+        # Update time in current nodes.
+        # Is this most effficient method?
+        self.nodes.set_columns(flags=self.nodes.flags,
+                               population=self.nodes.population,
+                               time=self.nodes.time + self.gc_interval)
+
+        # Create "flags" for new nodes.
+        # This is much faster than making a list
+        flags = np.empty([len(tracker.nodes)], dtype=np.uint32)
+        flags.fill(1)
+
+        tracker.convert_time()
+        tmin,tmax = None,None
+        if self.nodes.num_rows > 0:
+                tmin = self.nodes.time.min()
+                tmax = self.nodes.time.max()
+        # print(tmin,tmax,tracker.nodes['generation'].min(),tracker.nodes['generation'].max())
+        # print(self.nodes.num_rows,tracker.nodes['id'].min())
+
+        nl = self.nodes.num_rows
+        self.nodes.append_columns(flags=flags,
+                                  population=tracker.nodes['population'],
+                                  time=tracker.nodes['generation'])
+        # if nl > 0:
+        #     print(self.nodes)
+        nl2 = self.nodes.num_rows
+        self.edges.append_columns(left=tracker.edges['left'],
+                                  right=tracker.edges['right'],
+                                  parent=tracker.edges['parent'],
+                                  children=tracker.edges['child'],
+                                  children_length=[1] * len(tracker.edges))
+
+        msprime.sort_tables(nodes=self.nodes, edgesets = self.edges)
+        msprime.simplify_tables(samples=tracker.samples.tolist(),
+                                nodes=self.nodes, edgesets=self.edges)
+        # print(nl,nl2,self.nodes.num_rows)
+        return self.nodes.num_rows
+
+    def __call__(self, generation, tracker):
+        if generation > 0 and generation % self.gc_interval == 0:
+            return (True,self.simplify(tracker))
+
+        return (False,None)
+
+    @property
+    def gc_interval(self):
+        return self.__gc_interval
+
+    @gc_interval.setter
+    def gc_interval(self, value):
+        self.__gc_interval = int(value)
+
+    @property
+    def nodes(self):
+        return self.__nodes
+
+    @nodes.setter
+    def nodes(self, value):
+        self.__nodes = value
+
+    @property
+    def edges(self):
+        return self.__edges
+
+    @edges.setter
+    def edges(self, value):
+        self.__edges = value
 
 
 def xover(rate):
@@ -123,7 +219,7 @@ def handle_recombination_update(offspring_index, parental_id1,
                                 parental_id2, edges, breakpoints):
     if len(breakpoints) == 0:
         edges.append((0.0, 1.0, parental_id1, offspring_index))
-        #edges = np.insert(edges, len(edges),
+        # edges = np.insert(edges, len(edges),
         #                  (0.0, 1.0, parental_id1, offspring_index))
         return edges
 
@@ -139,7 +235,7 @@ def handle_recombination_update(offspring_index, parental_id1,
     return edges
 
 
-def wf(N, tracker, recrate, ngens):
+def wf(N, simplifier, tracker, recrate, ngens):
     """
     For N diploids, the diploids list contains 2N values.
     For the i-th diploids, diploids[2*i] and diploids[2*i+1]
@@ -168,6 +264,12 @@ def wf(N, tracker, recrate, ngens):
     next_id = len(diploids)  # This will be the next unique ID to use
     assert(max(diploids) < next_id)
     for gen in range(ngens):
+        gc_rv = simplifier(gen, tracker)
+        tracker.post_gc_cleanup(gc_rv)
+        if gc_rv[0] is True:
+            next_id = int(gc_rv[1])
+            diploids = np.arange(2*N, dtype = np.uint32)
+
         # Empty offspring list.
         # We also use this to mark the "samples" for simplify
         new_diploids = np.empty([len(diploids)], dtype=diploids.dtype)
@@ -182,7 +284,7 @@ def wf(N, tracker, recrate, ngens):
             start=next_id, stop=next_id + 2 * N, dtype=nodes['id'].dtype)
 
         # Store temp edges for this generation
-        edges = [] # np.empty([0], dtype=edge_dt)
+        edges = []  # np.empty([0], dtype=edge_dt)
         # Pick 2N parents:
         parents = np.random.randint(0, N, 2 * N)
         assert(parents.max() < N)
@@ -230,11 +332,11 @@ def wf(N, tracker, recrate, ngens):
             next_id += 2
             dip += 1
 
-        tracker.update_data(nodes, edges)
         # print(len(tracker.nodes),len(tracker.edges))
         assert(dip == N)
         assert(len(new_diploids) == 2 * N)
         diploids = new_diploids
+        tracker.update_data(nodes, edges, diploids)
         assert(max(diploids) < next_id)
 
     return (diploids)
@@ -295,9 +397,10 @@ if __name__ == "__main__":
 
     np.random.seed(seed)
 
+    simplifier = ARGsimplifier(100)
     tracker = MockAncestryTracker()
     recrate = rho / float(4 * popsize)
-    samples = wf(popsize, tracker, recrate, SIMLEN * popsize)
+    samples = wf(popsize, simplifier,tracker, recrate, SIMLEN * popsize)
 
     # Check that our sample IDs are as expected:
     # if __debug__:
