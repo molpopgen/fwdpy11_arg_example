@@ -56,7 +56,7 @@ evolve_singlepop_regions_track_ancestry(
     auto fitness_callback = fitness.callback();
     fitness.update(pop);
     auto wbar = rules.w(pop, fitness_callback);
-    //ancestry_tracker ancestry(pop.N);
+
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
@@ -104,8 +104,6 @@ evolve_singlepop_regions_track_ancestry(
             wbar = rules.w(pop, fitness_callback);
         }
     --pop.generation;
-    //py::print("Ending simulation with ", ancestry.nodes.size(), "nodes and ",
-    //          ancestry.edges.size(), " edges.");
 }
 
 //Register vectors of nodes and edges as "opaque"
@@ -122,10 +120,7 @@ PYBIND11_PLUGIN(wfarg)
     PYBIND11_NUMPY_DTYPE(node, id, population, generation);
     PYBIND11_NUMPY_DTYPE(edge, left, right, parent, child);
 
-    //py::class_<edge>(m,"Edge");
-    //py::class_<node>(m,"Node");
-
-    //Create Python classes of node/edgec containers.
+    //Create Python classes of node/edge containers.
     //These types support Python's buffer protocol, creating
     //Python classes that are castable to NumPy structured
     //arrays without a copy.
