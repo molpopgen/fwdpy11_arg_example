@@ -31,8 +31,11 @@ Install the following dependencies using conda:
 
     #hdf5 needed for msprime, which we 
     #are installing from github
-    conda install pybind11 gcc hdf5
+    conda install -c conda-forge pybind11==2.1.1 gcc hdf5
     conda install -c bioconda fwdpy11
+
+.. note::
+    This code was developed using pybind11 version 2.1.1.  Version 2.2.0 of that project changes how C++ containers are made "transparent" to Python.  Please make sure you are using 2.1.1!!!
 
 Install msprime_ from the current master branch on github. (Right now, you don't even need to do this in order to do a local build).
 
