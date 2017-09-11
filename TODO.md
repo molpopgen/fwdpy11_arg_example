@@ -1,6 +1,6 @@
 # To get msprime integration working:
 
-When I'm back from Tahoe, there is an issue resulting in left == right.  I think I know what is causing it: the rng is generating exactly 0 for the first breakpoint. 
+When I'm back from Tahoe, there is an issue resulting in left == right.  I think I know what is causing it: the rng is generating exactly 0 for the first breakpoint. FIXED, I think.
 
 The C++ side can/should do more to help
 

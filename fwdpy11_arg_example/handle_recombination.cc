@@ -9,9 +9,11 @@ std::pair<std::vector<std::pair<double, double>>,
 split_breakpoints(const std::vector<double>& breakpoints, const double start,
                   const double stop)
 {
-    std::vector<std::pair<double, double>> r1(
-        1, std::make_pair(start, breakpoints[0])),
-        r2;
+    std::vector<std::pair<double, double>> r1, r2;
+    if (breakpoints.front() != 0.0)
+        {
+            r1.emplace_back(std::make_pair(start, breakpoints.front()));
+        }
     for (unsigned j = 1; j < breakpoints.size(); ++j)
         {
             double a = breakpoints[j - 1];
