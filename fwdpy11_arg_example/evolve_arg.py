@@ -38,7 +38,7 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
                          gc_interval=10,
                          dfe=fwdpy11.ConstantS(0, 1, 1, -0.025, 1.0)):
     """
-    gc_interval does nothing :)
+
     """
     if isinstance(dfe, fwdpy11.Sregion) is False:
         raise TypeError("dfe must be a fwdpy11.Sregion")
