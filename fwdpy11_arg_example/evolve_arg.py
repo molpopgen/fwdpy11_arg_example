@@ -13,6 +13,17 @@ def evolve_track(rng, pop, params, gc_interval):
         # Will throw exception if anything is wrong:
         params.validate()
 
+    # Enforce min left end of 0.0, which is an msprime
+    # requirement:
+    if any(i.b < 0.0 for i in params.nregions) is True:
+        raise RuntimeError("Minimum possible position is 0.0")
+
+    if any(i.b < 0.0 for i in params.recregions) is True:
+        raise RuntimeError("Minimum possible position is 0.0")
+
+    if any(i.b < 0.0 for i in params.sregions) is True:
+        raise RuntimeError("Minimum possible position is 0.0")
+
     from fwdpy11.internal import makeMutationRegions, makeRecombinationRegions
     mm = makeMutationRegions(params.nregions, params.sregions)
     rm = makeRecombinationRegions(params.recregions)

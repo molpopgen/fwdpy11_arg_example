@@ -1,4 +1,4 @@
-import fwdpy11_arg_example.brute_force as bf
+import fwdpy11_arg_example.evolve_arg as ea
 import msprime
 import numpy as np
 import sys
@@ -8,7 +8,7 @@ rho = float(sys.argv[2])
 theta = float(sys.argv[3])
 gc_interval = int(sys.argv[4])
 seed = int(sys.argv[5])
-simplifier,atracker = bf.evolve_track_wrapper(popsize=N, rho=rho, seed = seed, gc_interval=100, mu = 0.0)
+simplifier,atracker = ea.evolve_track_wrapper(popsize=N, rho=rho, seed = seed, gc_interval=100, mu = 0.0)
 
 np.random.seed(seed)
 
