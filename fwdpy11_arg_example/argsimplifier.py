@@ -19,38 +19,16 @@ class ArgSimplifier(object):
             dt = float(generation) - self.last_gc_time 
             tc += dt 
             self.last_gc_time = generation
-            # print("current node time adjustment: ")
-            # print(self.__nodes.time)
-            # print(tc)
             flags = np.empty([self.__nodes.num_rows], dtype = np.uint32)
             flags.fill(1)
             self.__nodes.set_columns(flags=flags,population=self.__nodes.population,time=tc)
-            # print("current edge info:")
-            # print(self.__edges.parent)
-            # print(self.__edges.children)
-            # print(self.__nodes)
 
-        # print("here", len(ancestry.nodes),generation,self.last_gc_time)
         ancestry.prep_for_gc()
         na = np.array(ancestry.nodes, copy=False)
         ea = np.array(ancestry.edges, copy=False)
-        # print(na[:10])
-        # print(na[-10:])
-        # print(ea[:10])
-        # print(ea[-10:])
-        # print("min time: ",na['generation'].min(),na['generation'].max())
         samples = np.array(ancestry.samples, copy=False)
         flags=np.empty([len(na)], dtype=np.uint32)
         flags.fill(1)
-        # is_sample=np.empty([len(samples)], dtype = flags.dtype)
-        # is_sample.fill(1)
-        # flags[-len(samples):]=is_sample
-        # X=False
-        # if self.__nodes.num_rows>0:
-        #     X=True
-        #     print("before append:")
-        #     print(self.__nodes)
-        #     print(self.__edges)
         self.__nodes.append_columns(flags=flags,
                 population=na['population'],
                 time=na['generation'])
@@ -59,38 +37,12 @@ class ArgSimplifier(object):
                 parent=ea['parent'],
                 children=ea['child'],
                 children_length=[1]*len(ea))
-        # if X is True:
-        #     print(self.__nodes)
-        #     print(self.__edges)
-        #     print("done before append")
-        # print(ancestry.offspring_generation)
         msprime.sort_tables(nodes=self.__nodes, edgesets=self.__edges)
-        # print(len(self.__nodes.time))
-        # print("here")
-        # sample_map = {j:i for i,j in enumerate(samples)}
-        #print(sample_map)
-        # The rv tuple is : (we did GC, the next index to use for nodes,
-        # if self.__nodes.num_rows > 0:
-        #     print("what are we putting in:")
-        #     print(self.__nodes)
-        #     print(self.__edges)
-        #     print("input done")
         msprime.simplify_tables(samples=samples.tolist(), nodes = self.__nodes, edgesets = self.__edges)
-        # x=msprime.load_tables(nodes=self.__nodes, edgesets=self.__edges)
-        # x.dump_tables(nodes=self.__nodes, edgesets=self.__edges)
-        #print(self.__nodes)
-        #print("simplified edges:")
-        #print(self.__edges)
-        #print("simplified nodes:")
-        #print(self.__nodes)
-        #print(self.__nodes.num_rows)
-        #Do we really need this, or is min/max ok:
-        # a map of input to output nodes for the last generation
-        return (True,self.__nodes.num_rows)# ,sample_map)
+        return (True,self.__nodes.num_rows)
 
     def __call__(self, generation, ancestry):
         if generation > 0 and generation % self.gc_interval == 0.0:
-            # print("GC in generation",generation)
             return self.simplify(generation,ancestry)
         # Keep tuple size constant,
         # for sake of sanity.
