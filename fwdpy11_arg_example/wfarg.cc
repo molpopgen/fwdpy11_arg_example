@@ -1,3 +1,5 @@
+#include <chrono>
+#include <pybind11/chrono.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl_bind.h>
 #include <pybind11/numpy.h>
@@ -12,9 +14,10 @@
 #include <fwdpp/sugar/GSLrng_t.hpp>
 #include "ancestry_edge_sets.hpp"
 #include "evolve_generation.hpp"
+
 namespace py = pybind11;
 
-void
+double
 evolve_singlepop_regions_track_ancestry(
     const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,
     ancestry_tracker& ancestry, py::function ancestry_processor,
@@ -57,6 +60,7 @@ evolve_singlepop_regions_track_ancestry(
     fitness.update(pop);
     auto wbar = rules.w(pop, fitness_callback);
 
+	double time_simulating = 0.0;
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
@@ -67,23 +71,26 @@ evolve_singlepop_regions_track_ancestry(
             py::tuple processor_rv = ancestry_processor(
                 pop.generation, ancestry); //.nodes, ancestry.edges);
             ancestry.post_process_gc(processor_rv);
-			bool did_gc = processor_rv[0].cast<bool>();
-			// TODO: remove this next block.
-			// It is not necessary.
-			if(did_gc)
-			{
-				//py::print("did gc at generation, ",generation, pop.generation);
-				if (ancestry.nodes.size())
-				{
-					throw std::runtime_error("nodes not empty after GC");
-				}
-				if (ancestry.edges.size())
-				{
-					throw std::runtime_error("edges not empty after GC");
-				}
-			}
+            bool did_gc = processor_rv[0].cast<bool>();
+            // TODO: remove this next block.
+            // It is not necessary.
+            if (did_gc)
+                {
+                    //py::print("did gc at generation, ",generation, pop.generation);
+                    if (ancestry.nodes.size())
+                        {
+                            throw std::runtime_error(
+                                "nodes not empty after GC");
+                        }
+                    if (ancestry.edges.size())
+                        {
+                            throw std::runtime_error(
+                                "edges not empty after GC");
+                        }
+                }
             ancestry.offspring_indexes.clear();
             const auto N_next = popsizes.at(generation);
+			auto start = std::chrono::system_clock::now();
             evolve_generation(
                 rng, pop, N_next, mu_selected, mmodels, recmap,
                 std::bind(&fwdpy11::wf_rules::pick1, &rules,
@@ -102,8 +109,12 @@ evolve_singlepop_regions_track_ancestry(
                 pop.mut_lookup, pop.mcounts, pop.generation, 2 * pop.N);
             fitness.update(pop);
             wbar = rules.w(pop, fitness_callback);
+			auto stop = std::chrono::system_clock::now();
+			auto dur = stop - start;
+			time_simulating += std::chrono::duration<double>(dur).count();
         }
     --pop.generation;
+	return time_simulating;
 }
 
 //Register vectors of nodes and edges as "opaque"

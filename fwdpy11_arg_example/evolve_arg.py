@@ -32,17 +32,17 @@ def evolve_track(rng, pop, params, gc_interval):
     from .argsimplifier import ArgSimplifier
     simplifier = ArgSimplifier(gc_interval)
     atracker = AncestryTracker(pop.N)
-    evolve_singlepop_regions_track_ancestry(rng, pop, atracker, simplifier,
-                                            params.demography,
-                                            params.mutrate_s,
-                                            params.recrate, mm, rm,
-                                            params.gvalue, params.pself)
+    tsim = evolve_singlepop_regions_track_ancestry(rng, pop, atracker, simplifier,
+                                                   params.demography,
+                                                   params.mutrate_s,
+                                                   params.recrate, mm, rm,
+                                                   params.gvalue, params.pself)
     if len(atracker.nodes) > 0:
         # TODO
         # The + 1 is b/c we have a bit of a book-keeping
         # thing that we need to document...
-        simplifier.simplify(pop.generation+1,atracker)
-    return (simplifier,atracker)
+        simplifier.simplify(pop.generation + 1, atracker)
+    return (simplifier, atracker, tsim)
 
 
 def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
