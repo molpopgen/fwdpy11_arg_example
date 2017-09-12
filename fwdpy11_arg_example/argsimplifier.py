@@ -4,18 +4,12 @@ import time
 
 
 class ArgSimplifier(object):
-    __gc_interval = None
-    __last_gc_time = None
-    __nodes = msprime.NodeTable()
-    __edges = msprime.EdgesetTable()
-    __time_sorting = None
-    __time_appending = None
-    __time_simplifying = None
-    __time_prepping = None
 
     def __init__(self, gc_interval):
         self.gc_interval = gc_interval
         self.last_gc_time = 0.0
+        self.__nodes = msprime.NodeTable()
+        self.__edges = msprime.EdgesetTable()
         self.__time_sorting = 0.0
         self.__time_appending = 0.0
         self.__time_simplifying = 0.0
