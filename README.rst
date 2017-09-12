@@ -37,7 +37,7 @@ Install the following dependencies using conda:
 .. note::
     This code was developed using pybind11 version 2.1.1.  Version 2.2.0 of that project changes how C++ containers are made "transparent" to Python.  Please make sure you are using 2.1.1!!!
 
-Install msprime_ from the current master branch on github. (Right now, you don't even need to do this in order to do a local build).
+Install msprime_ from the current master branch on github. 
 
 Make a local build and run the unit tests:
 
