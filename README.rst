@@ -13,7 +13,7 @@ Overview
 
 We define a C++ class called "ancestry_tracker", which stores nodes and edges as they appear forwards in time.  These data structures, and their updating, are non-intrusive, meaning that they don't care about any of the fwdpp_ internals.  Rather, we simply have to define a new "iterate a generation" function that uses both fwdpp_ machinery and updates an ancestry_tracker as appropriate.
 
-Using pybid11_, we make anestry_trackers visible to Python as an AncestryTracker class.  The Python class has access to the nodes and edges as NumPy structured arrays, which can be viewed "for free", meaning that no copy from C++ to Python is required to look at them.
+Using pybind11_, we make anestry_trackers visible to Python as an AncestryTracker class.  The Python class has access to the nodes and edges as NumPy structured arrays, which can be viewed "for free", meaning that no copy from C++ to Python is required to look at them.
 
 We define an ArgSimplifier class to bridge the AncestryTracker and msprime.  The __call__ operator of ArgSimplifier will accept an AncestryTracker as an argument and use the msprime API to simplify the input data into a set of trees.
 
@@ -48,7 +48,6 @@ Make a local build and run the unit tests:
     python setup.py build_ext -i --gcc
     python -m unittest discover tests
 
-The unit test runs N = 1e3, 4Nr = 1e4, and some sites under selection, for 10N generations.  It takes about 20 seconds on my Linux box.  
 
 Test simulation
 +++++++++++++++++++++++++++++++++
