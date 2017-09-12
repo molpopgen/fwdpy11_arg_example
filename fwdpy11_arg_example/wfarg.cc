@@ -17,6 +17,19 @@
 
 namespace py = pybind11;
 
+// This function runs the simulation itself.
+// The details of a generation are in the file
+// evolve_generation.hpp. This function gets
+// exposed to Python, but it is not called
+// directly by a user. The function "evolve_track"
+// in evolve_arg.py takes the fwdpy11 objects and
+// passes them along to this function. The main purpose
+// of this function is to check parameters and send
+// data to msprime when needed.
+// The argument ancestry_processor is a Python callable.
+// It is to handle the GC/simplification step via msprime.
+// It should be an instance of ARGsimplifier.
+// The return value is the time spent simulating.
 double
 evolve_singlepop_regions_track_ancestry(
     const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,
@@ -60,37 +73,22 @@ evolve_singlepop_regions_track_ancestry(
     fitness.update(pop);
     auto wbar = rules.w(pop, fitness_callback);
 
-	double time_simulating = 0.0;
+    double time_simulating = 0.0;
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
-            //By hacking the API, we can show that it is
-            //passing nodes/edges into Python that is
-            //causin a slowdown.  But I *should* be able
-            //to do this w/o a copy.  Must investigate!
-            py::tuple processor_rv = ancestry_processor(
-                pop.generation, ancestry); //.nodes, ancestry.edges);
+			//Ask if we need to garbage collect:
+            py::tuple processor_rv
+                = ancestry_processor(pop.generation, ancestry);
+			//If we did GC, then the ancestry_tracker has
+			//some cleaning upto do:
             ancestry.post_process_gc(processor_rv);
-            bool did_gc = processor_rv[0].cast<bool>();
-            // TODO: remove this next block.
-            // It is not necessary.
-            if (did_gc)
-                {
-                    //py::print("did gc at generation, ",generation, pop.generation);
-                    if (ancestry.nodes.size())
-                        {
-                            throw std::runtime_error(
-                                "nodes not empty after GC");
-                        }
-                    if (ancestry.edges.size())
-                        {
-                            throw std::runtime_error(
-                                "edges not empty after GC");
-                        }
-                }
+
+			//This is not great API design, but 
+			//we need to clear the offspring indexes here:
             ancestry.offspring_indexes.clear();
             const auto N_next = popsizes.at(generation);
-			auto start = std::chrono::system_clock::now();
+            auto start = std::chrono::system_clock::now();
             evolve_generation(
                 rng, pop, N_next, mu_selected, mmodels, recmap,
                 std::bind(&fwdpy11::wf_rules::pick1, &rules,
@@ -109,12 +107,12 @@ evolve_singlepop_regions_track_ancestry(
                 pop.mut_lookup, pop.mcounts, pop.generation, 2 * pop.N);
             fitness.update(pop);
             wbar = rules.w(pop, fitness_callback);
-			auto stop = std::chrono::system_clock::now();
-			auto dur = stop - start;
-			time_simulating += std::chrono::duration<double>(dur).count();
+            auto stop = std::chrono::system_clock::now();
+            auto dur = stop - start;
+            time_simulating += std::chrono::duration<double>(dur).count();
         }
     --pop.generation;
-	return time_simulating;
+    return time_simulating;
 }
 
 //Register vectors of nodes and edges as "opaque"
@@ -150,6 +148,9 @@ PYBIND11_PLUGIN(wfarg)
                        "array without copy.",
         py::buffer_protocol());
 
+	//Expose the C++ ancestry_tracker to Python.
+	//We only expose the stuff that a user really needs
+	//to see.
     py::class_<ancestry_tracker>(m, "AncestryTracker")
         .def(py::init<KTfwd::uint_t>(), py::arg("N"))
         .def_readwrite("nodes", &ancestry_tracker::nodes,
@@ -165,6 +166,7 @@ PYBIND11_PLUGIN(wfarg)
                       "Last time point where garbage collection happened.")
         .def("prep_for_gc", &ancestry_tracker::prep_for_gc,
              "Call this immediately before you are going to simplify.");
+	
     //Make our C++ function callable from Python.
     //This is NOT part of a user-facing Python API.
     //Rather, we need a wrapper to integrate it with
