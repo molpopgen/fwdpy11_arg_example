@@ -9,6 +9,9 @@ import fwdpy11.wright_fisher as wf
 import fwdpy11.sampling
 import msprime
 
+if fwdpy11.__version__ < '0.1.3a2':
+    raise RuntimeError("fwdpy11 >= 0.1.3a2 required")
+
 
 def parse_args():
     dstring = "Prototype implementation of ARG tracking and regular garbage collection."
@@ -47,7 +50,9 @@ if __name__ == "__main__":
 
     pdict = {'rates': (mutrate_n, mutrate_s, recrate),
              'nregions': [fp11.Region(0, 1, 1)],
-             'sregions': [fp11.ExpS(0, 1, 1, -0.01, 1)],
+             # The below is equivelent to R's -1*rgamma(1,shape=1.0,scale=5.0)
+             # The scaling of 2N means that the DFE is with respect to 2Ns
+             'sregions': [fp11.GammaS(0, 1, 1, h=0.5, mean=-5.0, shape=1.0, scaling=2 * args.popsize)],
              'recregions': [fp11.Region(0, 1, 1)],
              'gvalue': fwdpy11.fitness.SlocusMult(1.0),
              'demography': np.array([args.popsize] * 20 * args.popsize, dtype=np.uint32)
@@ -82,14 +87,18 @@ if __name__ == "__main__":
         # Take times from simplifier before they change.
         times = simplifier.times
         print(times)
-        ttime = tsim + sum([value for key,value in times.items()])
+        ttime = tsim + sum([value for key, value in times.items()])
         print(ttime)
-        print ('Time spent in C++ simulation was {} seconds. ({}% of total)'.format(tsim,tsim/ttime))
-        print ('Time spent related to msprime functionality:')
-        print ('\tPrepping: {} seconds ({}%).'.format(times['prepping'],times['prepping']/ttime))
-        print ('\tAppending: {} seconds ({}%).'.format(times['appending'],times['appending']/ttime))
-        print ('\tSorting: {} seconds ({}%).'.format(times['sorting'],times['sorting']/ttime))
-        print ('\tSimplifying: {} seconds ({}%).'.format(times['simplifying'],times['simplifying']/ttime))
+        print('Time spent in C++ simulation was {} seconds. ({}% of total)'.format(tsim, tsim / ttime))
+        print('Time spent related to msprime functionality:')
+        print('\tPrepping: {} seconds ({}%).'.format(
+            times['prepping'], times['prepping'] / ttime))
+        print('\tAppending: {} seconds ({}%).'.format(
+            times['appending'], times['appending'] / ttime))
+        print('\tSorting: {} seconds ({}%).'.format(
+            times['sorting'], times['sorting'] / ttime))
+        print('\tSimplifying: {} seconds ({}%).'.format(
+            times['simplifying'], times['simplifying'] / ttime))
         # Simplify the genealogy down to a sample,
         # And throw mutations onto that sample
         msprime.simplify_tables(np.random.choice(2 * args.popsize, args.nsam,
