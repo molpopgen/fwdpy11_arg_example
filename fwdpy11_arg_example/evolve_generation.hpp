@@ -75,14 +75,14 @@ evolve_generation(const fwdpy11::GSLrng_t& rng, poptype& pop,
                                         pop.mutations);
             auto pid = ancestry.get_parent_ids(p1, swap1);
             auto offspring_indexes = ancestry.get_next_indexes();
-			//pybind11::print("next indexes are: ",std::get<0>(offspring_indexes),std::get<1>(offspring_indexes));
+
             dip.first = ancestry_recombination_details(
                 pop, ancestry, gamete_recycling_bin, p1g1, p1g2, breakpoints,
                 pid, std::get<0>(offspring_indexes));
             breakpoints = recmodel(pop.gametes[p2g1], pop.gametes[p2g2],
                                    pop.mutations);
             pid = ancestry.get_parent_ids(p2, swap2);
-            //offspring_indexes = ancestry.get_next_indexes();
+
             dip.second = ancestry_recombination_details(
                 pop, ancestry, gamete_recycling_bin, p2g1, p2g2, breakpoints,
                 pid, std::get<1>(offspring_indexes));
@@ -106,18 +106,6 @@ evolve_generation(const fwdpy11::GSLrng_t& rng, poptype& pop,
             update(rng, dip, pop, p1, p2);
         }
     ancestry.finish_generation();
-    //std::cout << "node ids: ( " << ancestry.generation << ") :";
-    //for (auto&& n : ancestry.nodes)
-    //    {
-    //        std::cout << n.id << ' ';
-    //    }
-    //std::cout << '\n';
-    //std::cout << "edge data: ";
-    //for (auto&& e : ancestry.edges)
-    //    {
-    //        std::cout << "(" << e.parent << ',' << e.child << ") ";
-    //    }
-    //std::cout << '\n';
     KTfwd::fwdpp_internal::process_gametes(pop.gametes, pop.mutations,
                                            pop.mcounts);
     KTfwd::fwdpp_internal::gamete_cleaner(pop.gametes, pop.mutations,
