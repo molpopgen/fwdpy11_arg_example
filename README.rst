@@ -61,6 +61,17 @@ To run a proof-of-principle example where we do an entire simulation and then ha
 
 The output will be the times spent in various steps.
 
+Source code overview
+-----------------------------------------
+
+The package consists of a mix of C++ and Python code.
+
+C++ code
++++++++++++++++++++++
+
+Python code
++++++++++++++++++++++
+
 .. _fwdpy11: http://molpopgen.github.io/fwdpy11
 .. _fwdpp: http://molpopgen.github.io/fwdpp
 .. _pybind11: http://github.com/pybind/pybind11
