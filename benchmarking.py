@@ -51,6 +51,7 @@ if __name__ == "__main__":
     pdict = {'rates': (mutrate_n, mutrate_s, recrate),
              'nregions': [fp11.Region(0, 1, 1)],
              # The below is equivelent to R's -1*rgamma(1,shape=1.0,scale=5.0)
+             # The scaling of 2N means that the DFE is with respect to 2Ns
              'sregions': [fp11.GammaS(0, 1, 1, h=0.5, mean=-5.0, shape=1.0, scaling=2 * args.popsize)],
              'recregions': [fp11.Region(0, 1, 1)],
              'gvalue': fwdpy11.fitness.SlocusMult(1.0),
