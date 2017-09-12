@@ -6,6 +6,18 @@ import msprime
 
 
 def evolve_track(rng, pop, params, gc_interval):
+    """
+    Evolve a population and track its ancestry using msprime.
+
+    :param rng: A fwdpy11.GSLrng
+    :param pop: A fwdpy11.SlocusPop
+    :param params: A fwdpy11.SlocusParams
+    :param gc_interval: An integer representing how often to simplify the ancestry.
+
+    :rtype: tuple
+
+    :return: An instance of ARGsimplifier, an instance of AncestryTracker, and the total time spent simulating.
+    """
     import warnings
     # Test parameters while suppressing warnings
     with warnings.catch_warnings():
@@ -49,7 +61,18 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
                          gc_interval=10,
                          dfe=fwdpy11.ConstantS(0, 1, 1, -0.025, 1.0)):
     """
+    Wrapper around evolve_track to facilitate testing.
 
+    :param popsize: Diploid population size.
+    :param rho: 4Nr
+    :param mu: Mutation rate to selected alleles
+    :param seed: RNG seed
+    :param gc_interval: Garbage collection interval.
+    :param dfe: An instance of a fwdpy11.Sregion
+
+    :rtype: tuple
+
+    :return: See evolve_track for details.
     """
     if isinstance(dfe, fwdpy11.Sregion) is False:
         raise TypeError("dfe must be a fwdpy11.Sregion")

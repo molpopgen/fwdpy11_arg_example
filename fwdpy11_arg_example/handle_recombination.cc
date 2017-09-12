@@ -40,6 +40,10 @@ ancestry_recombination_details(
                      ancestry_tracker::integer_type>& pid,
     const ancestry_tracker::integer_type offspring_index)
 {
+	// This has the effect of removing any double x-overs.
+	// Internally, fwdpp will do the right thing, but leaving
+	// them in causes msprime to throw an error.  We could filter them
+	// later, but doing it here is less code.
     breakpoints.erase(std::unique(breakpoints.begin(), breakpoints.end()),
                       breakpoints.end());
     if (breakpoints.empty())
