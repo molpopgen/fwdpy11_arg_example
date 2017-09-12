@@ -23,7 +23,7 @@ Crude usage instructions
 
 Currently, one can run simple simulations under very restrictive parameter combinations. There is currently **no** integration into msprime_ for generating the trees.  To be safe, I only recommend running the unit test for now.  While the underlying machinery is hooked up to fwdpy11_'s general scheme to model variation in mutation and recombination rates, the node/edge tracking currently assumes all positions are on the [0,1) interval.  
 
-This has been confirmed to work in a clean conda environment using Python3.
+This has been confirmed to work in a clean conda environment using Python3.  **We strongly recommend that this package is installed into a clean conda env.**
 
 Install the following dependencies using conda:
 
@@ -64,13 +64,25 @@ The output will be the times spent in various steps.
 Source code overview
 -----------------------------------------
 
-The package consists of a mix of C++ and Python code.
+The package consists of a mix of C++ and Python code. All source code is in the fwdpy11_arg_example subdirectory of thie main repository.
 
 C++ code
 +++++++++++++++++++++
 
+We define nodes and edges as simple structs, meaning that they are "C-like", consisting only of POD and no constructors or other C++ stuff.  This simple design allows C++ vectors of these structs to be treated as NumPy record arrays visible fom Python without needing to make a copy.
+
+* `node.hpp` defines a node as a simple C-like struct.
+* `edge.hpp` defines and edge as a simple C-like struct.
+* `ancestry_tracker.hpp` defines a C++ struct/class called ancestry_tracker to accumulate nodes and edges during a simulation.
+* `evolve_generation.hpp` handles the details of updating a Wright-Fisher population with an ancestry_tracker.
+* `handle_recombination.cc/.hpp` handles the conversion of fwdpp's recombination breakpoints into types use to make edges.
+* `wfarg.cc` defines a Python module (called `wfarg`) implemented in C++ via pybind11_.  It exposes our C++ back-end to Python.  The most important user-facing type defined is AncestryTracker, which wraps the C++ ancestry_tracker.
+
 Python code
 +++++++++++++++++++++
+
+* `argsimplifier.py` defines `ArgSimplifier`, which is the bridge between the C++ code to evolve a population and the msprime_ functionality to simplify the simulated nodes and edges.
+* `evolve_arg.py` defines a function that evolves a population while tracking its ancestry.  It integrates concepts from fwdpy11_ with the types defined in this package.
 
 .. _fwdpy11: http://molpopgen.github.io/fwdpy11
 .. _fwdpp: http://molpopgen.github.io/fwdpp
