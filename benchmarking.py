@@ -86,9 +86,7 @@ if __name__ == "__main__":
             rng, pop, params, args.gc)
         # Take times from simplifier before they change.
         times = simplifier.times
-        print(times)
         ttime = tsim + sum([value for key, value in times.items()])
-        print(ttime)
         print('Time spent in C++ simulation was {} seconds. ({}% of total)'.format(tsim, tsim / ttime))
         print('Time spent related to msprime functionality:')
         print('\tPrepping: {} seconds ({}%).'.format(
