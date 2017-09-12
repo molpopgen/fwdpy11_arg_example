@@ -12,7 +12,7 @@
 #include <fwdpp/sugar/popgenmut.hpp>
 #include <fwdpp/sugar/singlepop.hpp>
 #include <fwdpp/sugar/GSLrng_t.hpp>
-#include "ancestry_edge_sets.hpp"
+#include "ancestry_tracker.hpp"
 #include "evolve_generation.hpp"
 
 namespace py = pybind11;

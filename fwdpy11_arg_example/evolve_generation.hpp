@@ -14,7 +14,7 @@
 #include <fwdpy11/types.hpp>
 #include <fwdpy11/fitness/fitness.hpp>
 #include <fwdpy11/rng.hpp>
-#include "ancestry_edge_sets.hpp"
+#include "ancestry_tracker.hpp"
 #include "handle_recombination.hpp"
 
 // This is a copy/paste + modification of fwdpy11's
