@@ -42,6 +42,8 @@ class ArgSimplifier(object):
         flags = np.empty([len(na)], dtype=np.uint32)
         flags.fill(1)
         stop = time.time()
+        children_length = np.empty([len(ea)], dtype=np.uint32)
+        children_length.fill(1)
         self.__time_prepping += (stop - start)
 
         start = time.time()
@@ -52,7 +54,7 @@ class ArgSimplifier(object):
                                     right=ea['right'],
                                     parent=ea['parent'],
                                     children=ea['child'],
-                                    children_length=[1] * len(ea))
+                                    children_length=children_length)
         stop = time.time()
         self.__time_appending += (stop - start)
         start = time.time()
