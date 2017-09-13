@@ -87,16 +87,16 @@ if __name__ == "__main__":
         # Take times from simplifier before they change.
         times = simplifier.times
         ttime = tsim + sum([value for key, value in times.items()])
-        print('Time spent in C++ simulation was {} seconds. ({}% of total)'.format(tsim, tsim / ttime))
+        print('Time spent in C++ simulation was {} seconds. ({}% of total)'.format(tsim, 100.0 * tsim / ttime))
         print('Time spent related to msprime functionality:')
         print('\tPrepping: {} seconds ({}%).'.format(
-            times['prepping'], times['prepping'] / ttime))
+            times['prepping'], 100.0 * times['prepping'] / ttime))
         print('\tAppending: {} seconds ({}%).'.format(
-            times['appending'], times['appending'] / ttime))
+            times['appending'], 100.0 * times['appending'] / ttime))
         print('\tSorting: {} seconds ({}%).'.format(
-            times['sorting'], times['sorting'] / ttime))
+            times['sorting'], 100.0 * times['sorting'] / ttime))
         print('\tSimplifying: {} seconds ({}%).'.format(
-            times['simplifying'], times['simplifying'] / ttime))
+            times['simplifying'], 100.0 * times['simplifying'] / ttime))
         # Simplify the genealogy down to a sample,
         # And throw mutations onto that sample
         msprime.simplify_tables(np.random.choice(2 * args.popsize, args.nsam,
