@@ -77,15 +77,15 @@ evolve_singlepop_regions_track_ancestry(
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
-			//Ask if we need to garbage collect:
+            //Ask if we need to garbage collect:
             py::tuple processor_rv
                 = ancestry_processor(pop.generation, ancestry);
-			//If we did GC, then the ancestry_tracker has
-			//some cleaning upto do:
+            //If we did GC, then the ancestry_tracker has
+            //some cleaning upto do:
             ancestry.post_process_gc(processor_rv);
 
-			//This is not great API design, but 
-			//we need to clear the offspring indexes here:
+            //This is not great API design, but
+            //we need to clear the offspring indexes here:
             ancestry.offspring_indexes.clear();
             const auto N_next = popsizes.at(generation);
             auto start = std::chrono::system_clock::now();
@@ -102,9 +102,9 @@ evolve_singlepop_regions_track_ancestry(
                           std::placeholders::_5),
                 ancestry, std::true_type());
             pop.N = N_next;
-            fwdpy11::update_mutations_wrapper()(
+            fwdpy11::update_mutations(
                 pop.mutations, pop.fixations, pop.fixation_times,
-                pop.mut_lookup, pop.mcounts, pop.generation, 2 * pop.N);
+                pop.mut_lookup, pop.mcounts, pop.generation, 2 * pop.N, true);
             fitness.update(pop);
             wbar = rules.w(pop, fitness_callback);
             auto stop = std::chrono::system_clock::now();
@@ -148,9 +148,9 @@ PYBIND11_PLUGIN(wfarg)
                        "array without copy.",
         py::buffer_protocol());
 
-	//Expose the C++ ancestry_tracker to Python.
-	//We only expose the stuff that a user really needs
-	//to see.
+    //Expose the C++ ancestry_tracker to Python.
+    //We only expose the stuff that a user really needs
+    //to see.
     py::class_<ancestry_tracker>(m, "AncestryTracker")
         .def(py::init<KTfwd::uint_t>(), py::arg("N"))
         .def_readwrite("nodes", &ancestry_tracker::nodes,
@@ -166,7 +166,7 @@ PYBIND11_PLUGIN(wfarg)
                       "Last time point where garbage collection happened.")
         .def("prep_for_gc", &ancestry_tracker::prep_for_gc,
              "Call this immediately before you are going to simplify.");
-	
+
     //Make our C++ function callable from Python.
     //This is NOT part of a user-facing Python API.
     //Rather, we need a wrapper to integrate it with
