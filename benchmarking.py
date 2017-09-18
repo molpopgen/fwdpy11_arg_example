@@ -9,9 +9,6 @@ import fwdpy11.wright_fisher as wf
 import fwdpy11.sampling
 import msprime
 
-if fwdpy11.__version__ < '0.1.3a2':
-    raise RuntimeError("fwdpy11 >= 0.1.3a2 required")
-
 
 def parse_args():
     dstring = "Prototype implementation of ARG tracking and regular garbage collection."
@@ -97,6 +94,8 @@ if __name__ == "__main__":
             times['sorting'], 100.0 * times['sorting'] / ttime))
         print('\tSimplifying: {} seconds ({}%).'.format(
             times['simplifying'], 100.0 * times['simplifying'] / ttime))
+        print('There are {} segregating mutations.'.format(len([i for i in pop.mcounts if i >0])))
+        print('There are {} fixations.'.format(len(pop.fixations)))
         # Simplify the genealogy down to a sample,
         # And throw mutations onto that sample
         msprime.simplify_tables(np.random.choice(2 * args.popsize, args.nsam,
