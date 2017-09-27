@@ -8,7 +8,8 @@ import fwdpy11.model_params
 import fwdpy11.wright_fisher as wf
 import fwdpy11.sampling
 import msprime
-
+import gzip
+import pandas as pd
 
 def parse_args():
     dstring = "Prototype implementation of ARG tracking and regular garbage collection."
@@ -31,6 +32,8 @@ def parse_args():
     parser.add_argument('--neutral_mutations',
                         action='store_true',
                         help="Simulate neutral mutations.  If False, ARG is tracked instead and neutral mutations dropped down on the sample afterwards.")
+    parser.add_argument('--outfile1', type=str, help="Main output file")
+                        help="Output file for diagnostics.")
     return parser
 
 
@@ -83,19 +86,15 @@ if __name__ == "__main__":
             rng, pop, params, args.gc)
         # Take times from simplifier before they change.
         times = simplifier.times
-        ttime = tsim + sum([value for key, value in times.items()])
-        print('Time spent in C++ simulation was {} seconds. ({}% of total)'.format(tsim, 100.0 * tsim / ttime))
-        print('Time spent related to msprime functionality:')
-        print('\tPrepping: {} seconds ({}%).'.format(
-            times['prepping'], 100.0 * times['prepping'] / ttime))
-        print('\tAppending: {} seconds ({}%).'.format(
-            times['appending'], 100.0 * times['appending'] / ttime))
-        print('\tSorting: {} seconds ({}%).'.format(
-            times['sorting'], 100.0 * times['sorting'] / ttime))
-        print('\tSimplifying: {} seconds ({}%).'.format(
-            times['simplifying'], 100.0 * times['simplifying'] / ttime))
-        print('There are {} segregating mutations.'.format(len([i for i in pop.mcounts if i >0])))
-        print('There are {} fixations.'.format(len(pop.fixations)))
+        times['fwd_sim_runtime'] = tsim
+        times['N'] = args.popsize
+        times['theta'] = args.theta
+        times['rho'] = args.rho
+        times['simplify_interval'] = args.gc
+        d = pd.DataFrame.from_dict(times, orient = 'index')
+        d.reset_index(inplace=True)
+        d=d.rename(columns={'index':'variable',0:'value'})
+        d.to_csv(args.outfile1,sep='\t',index=False,compression='gzip')
         # Simplify the genealogy down to a sample,
         # And throw mutations onto that sample
         msprime.simplify_tables(np.random.choice(2 * args.popsize, args.nsam,
