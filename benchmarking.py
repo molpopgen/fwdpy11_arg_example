@@ -33,7 +33,6 @@ def parse_args():
                         action='store_true',
                         help="Simulate neutral mutations.  If False, ARG is tracked instead and neutral mutations dropped down on the sample afterwards.")
     parser.add_argument('--outfile1', type=str, help="Main output file")
-                        help="Output file for diagnostics.")
     return parser
 
 
