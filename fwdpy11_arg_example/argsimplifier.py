@@ -16,11 +16,12 @@ class ArgSimplifier(object):
         self.gc_interval = gc_interval
         self.last_gc_time = 0.0
         self.__nodes = msprime.NodeTable()
-        self.__edges = msprime.EdgesetTable()
+        self.__edges = msprime.EdgeTable()
         self.__time_sorting = 0.0
         self.__time_appending = 0.0
         self.__time_simplifying = 0.0
         self.__time_prepping = 0.0
+        self.__last_edge_start = 0
 
     def simplify(self, generation, ancestry):
         # update node times:
@@ -42,8 +43,8 @@ class ArgSimplifier(object):
         flags = np.empty([len(na)], dtype=np.uint32)
         flags.fill(1)
         stop = time.time()
-        children_length = np.empty([len(ea)], dtype=np.uint32)
-        children_length.fill(1)
+        # children_length = np.empty([len(ea)], dtype=np.uint32)
+        # children_length.fill(1)
         self.__time_prepping += (stop - start)
 
         start = time.time()
@@ -53,17 +54,23 @@ class ArgSimplifier(object):
         self.__edges.append_columns(left=ea['left'],
                                     right=ea['right'],
                                     parent=ea['parent'],
-                                    children=ea['child'],
-                                    children_length=children_length)
+                                    child=ea['child'])
+        # children_length=children_length)
         stop = time.time()
         self.__time_appending += (stop - start)
         start = time.time()
-        msprime.sort_tables(nodes=self.__nodes, edgesets=self.__edges)
+        print("EdgeTable length = ",len(self.__edges))
+        print("Sort start is ", self.__last_edge_start)
+        msprime.sort_tables(nodes=self.__nodes,
+                            edges=self.__edges,
+                            edge_start=self.__last_edge_start)
         stop = time.time()
         self.__time_sorting += (stop - start)
         start = time.time()
-        msprime.simplify_tables(samples=samples.tolist(
-        ), nodes=self.__nodes, edgesets=self.__edges)
+        msprime.simplify_tables(samples=samples.tolist(), 
+                nodes=self.__nodes, edges=self.__edges)
+        self.__last_edge_start = len(self.__edges)
+        print("EdgeTable length after simplify is ",self.__last_edge_start)
         stop = time.time()
         self.__time_simplifying += (stop - start)
         return (True, self.__nodes.num_rows)
