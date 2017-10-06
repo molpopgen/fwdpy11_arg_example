@@ -21,7 +21,6 @@ class ArgSimplifier(object):
         self.__time_appending = 0.0
         self.__time_simplifying = 0.0
         self.__time_prepping = 0.0
-        self.__last_edge_start = 0
 
     def simplify(self, generation, ancestry):
         # update node times:
@@ -51,26 +50,28 @@ class ArgSimplifier(object):
         self.__nodes.append_columns(flags=flags,
                                     population=na['population'],
                                     time=na['generation'])
-        self.__edges.append_columns(left=ea['left'],
-                                    right=ea['right'],
-                                    parent=ea['parent'],
-                                    child=ea['child'])
-        # children_length=children_length)
+        # Copy the already sorted edges to local arrays
+        left = self.__edges.left[:]
+        right = self.__edges.right[:]
+        parent = self.__edges.parent[:]
+        child = self.__edges.child[:]
+        # Insert the unsorted edges into the table so that we can sort them.
+        self.__edges.set_columns(left=ea['left'],
+                                 right=ea['right'],
+                                 parent=ea['parent'],
+                                 child=ea['child'])
         stop = time.time()
         self.__time_appending += (stop - start)
         start = time.time()
-        print("EdgeTable length = ",len(self.__edges))
-        print("Sort start is ", self.__last_edge_start)
-        msprime.sort_tables(nodes=self.__nodes,
-                            edges=self.__edges,
-                            edge_start=self.__last_edge_start)
+        msprime.sort_tables(nodes=self.__nodes, edges=self.__edges)
         stop = time.time()
         self.__time_sorting += (stop - start)
+        # Append the old sorted edges to the table.
+        self.__edges.append_columns(left=left, right=right, parent=parent, child=child)
         start = time.time()
-        msprime.simplify_tables(samples=samples.tolist(), 
+        msprime.simplify_tables(samples=samples.tolist(),
                 nodes=self.__nodes, edges=self.__edges)
         self.__last_edge_start = len(self.__edges)
-        print("EdgeTable length after simplify is ",self.__last_edge_start)
         stop = time.time()
         self.__time_simplifying += (stop - start)
         return (True, self.__nodes.num_rows)
@@ -100,7 +101,7 @@ class ArgSimplifier(object):
         return self.__nodes
 
     @property
-    def edgesets(self):
+    def edges(self):
         """
         A NumPy record array representing the edge sets.
         """
