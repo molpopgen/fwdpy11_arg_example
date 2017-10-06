@@ -99,11 +99,11 @@ if __name__ == "__main__":
         msprime.simplify_tables(np.random.choice(2 * args.popsize, args.nsam,
                                                  replace=False).tolist(),
                                 nodes=simplifier.nodes,
-                                edgesets=simplifier.edgesets)
+                                edges=simplifier.edges)
         msp_rng = msprime.RandomGenerator(args.seed)
         sites = msprime.SiteTable()
         mutations = msprime.MutationTable()
         mutgen = msprime.MutationGenerator(
             msp_rng, args.theta / float(4 * args.popsize))
         mutgen.generate(simplifier.nodes,
-                        simplifier.edgesets, sites, mutations)
+                        simplifier.edges, sites, mutations)
