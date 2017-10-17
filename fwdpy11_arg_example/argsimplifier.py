@@ -35,19 +35,16 @@ class ArgSimplifier(object):
             self.__nodes.set_columns(
                 flags=flags, population=self.__nodes.population, time=tc)
 
-        start = time.time()
+        before = time.process_time()
         ancestry.prep_for_gc()
         na = np.array(ancestry.nodes, copy=False)
         ea = np.array(ancestry.edges, copy=False)
         samples = np.array(ancestry.samples, copy=False)
         flags = np.empty([len(na)], dtype=np.uint32)
         flags.fill(1)
-        stop = time.time()
-        # children_length = np.empty([len(ea)], dtype=np.uint32)
-        # children_length.fill(1)
-        self.__time_prepping += (stop - start)
+        self.__time_prepping += time.process_time() - before
 
-        start = time.time()
+        before = time.process_time()
         self.__nodes.append_columns(flags=flags,
                                     population=na['population'],
                                     time=na['generation'])
@@ -66,10 +63,9 @@ class ArgSimplifier(object):
         parent_time = self.__nodes.time[new_parent]
         breakpoints = np.where(parent_time[1:] != parent_time[:-1])[0] + 1
         self.__edges.reset()
-        stop = time.time()
-        self.__time_appending += (stop - start)
+        self.__time_appending += time.process_time() - before
 
-        start = time.time()
+        before = time.process_time()
         start = 0
         for end in itertools.chain(breakpoints, [-1]):
             assert np.all(parent_time[start: end] == parent_time[start])
@@ -81,17 +77,15 @@ class ArgSimplifier(object):
                                 edges=self.__edges,
                                 edge_start=start)
             start = end
-        stop = time.time()
-        self.__time_sorting += (stop - start)
+        self.__time_sorting += time.process_time() - before
 
         # Append the old sorted edges to the table.
         self.__edges.append_columns(left=left, right=right, parent=parent, child=child)
-        start = time.time()
+        before = time.process_time()
         msprime.simplify_tables(samples=samples.tolist(),
                 nodes=self.__nodes, edges=self.__edges)
         self.__last_edge_start = len(self.__edges)
-        stop = time.time()
-        self.__time_simplifying += (stop - start)
+        self.__time_simplifying += time.process_time() - before
         return (True, self.__nodes.num_rows)
 
     def __call__(self, generation, ancestry):

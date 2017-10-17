@@ -88,7 +88,7 @@ evolve_singlepop_regions_track_ancestry(
             //we need to clear the offspring indexes here:
             ancestry.offspring_indexes.clear();
             const auto N_next = popsizes.at(generation);
-            auto start = std::chrono::system_clock::now();
+            auto start = std::clock();
             evolve_generation(
                 rng, pop, N_next, mu_selected, mmodels, recmap,
                 std::bind(&fwdpy11::wf_rules::pick1, &rules,
@@ -107,9 +107,9 @@ evolve_singlepop_regions_track_ancestry(
                 pop.mut_lookup, pop.mcounts, pop.generation, 2 * pop.N, true);
             fitness.update(pop);
             wbar = rules.w(pop, fitness_callback);
-            auto stop = std::chrono::system_clock::now();
-            auto dur = stop - start;
-            time_simulating += std::chrono::duration<double>(dur).count();
+            auto stop = std::clock();
+            auto dur = (stop - start) / (double) CLOCKS_PER_SEC;
+            time_simulating += dur;
         }
     --pop.generation;
     return time_simulating;
