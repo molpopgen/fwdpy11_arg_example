@@ -120,10 +120,9 @@ PYBIND11_MAKE_OPAQUE(std::vector<node>);
 PYBIND11_MAKE_OPAQUE(std::vector<edge>);
 PYBIND11_MAKE_OPAQUE(std::vector<ancestry_tracker::integer_type>);
 
-PYBIND11_PLUGIN(wfarg)
+PYBIND11_MODULE(wfarg, m)
 {
-    py::module m("wfarg", "Simple example of Wright-Fisher simulation with "
-                          "selection and ARG tracking");
+    m.doc() = "Simple example of Wright-Fisher simulation with selection and ARG tracking";
 
     //Register nodes and edges as NumPy dtypes:
     PYBIND11_NUMPY_DTYPE(node, id, population, generation);
@@ -152,7 +151,7 @@ PYBIND11_PLUGIN(wfarg)
     //We only expose the stuff that a user really needs
     //to see.
     py::class_<ancestry_tracker>(m, "AncestryTracker")
-        .def(py::init<KTfwd::uint_t>(), py::arg("N"))
+        .def(py::init<decltype(edge::parent)>(), py::arg("N"))
         .def_readwrite("nodes", &ancestry_tracker::nodes,
                        "Data for msprime.NodeTable.")
         .def_readwrite("edges", &ancestry_tracker::edges,
@@ -173,6 +172,4 @@ PYBIND11_PLUGIN(wfarg)
     //the rest of the fwdpy11 world.
     m.def("evolve_singlepop_regions_track_ancestry",
           &evolve_singlepop_regions_track_ancestry);
-
-    return m.ptr();
 }
