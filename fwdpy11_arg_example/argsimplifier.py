@@ -1,6 +1,7 @@
 import numpy as np
 import msprime
 import time
+import itertools
 
 
 class ArgSimplifier(object):
@@ -34,19 +35,16 @@ class ArgSimplifier(object):
             self.__nodes.set_columns(
                 flags=flags, population=self.__nodes.population, time=tc)
 
-        start = time.time()
+        before = time.process_time()
         ancestry.prep_for_gc()
         na = np.array(ancestry.nodes, copy=False)
         ea = np.array(ancestry.edges, copy=False)
         samples = np.array(ancestry.samples, copy=False)
         flags = np.empty([len(na)], dtype=np.uint32)
         flags.fill(1)
-        stop = time.time()
-        # children_length = np.empty([len(ea)], dtype=np.uint32)
-        # children_length.fill(1)
-        self.__time_prepping += (stop - start)
+        self.__time_prepping += time.process_time() - before
 
-        start = time.time()
+        before = time.process_time()
         self.__nodes.append_columns(flags=flags,
                                     population=na['population'],
                                     time=na['generation'])
@@ -55,25 +53,39 @@ class ArgSimplifier(object):
         right = self.__edges.right[:]
         parent = self.__edges.parent[:]
         child = self.__edges.child[:]
-        # Insert the unsorted edges into the table so that we can sort them.
-        self.__edges.set_columns(left=ea['left'],
-                                 right=ea['right'],
-                                 parent=ea['parent'],
-                                 child=ea['child'])
-        stop = time.time()
-        self.__time_appending += (stop - start)
-        start = time.time()
-        msprime.sort_tables(nodes=self.__nodes, edges=self.__edges)
-        stop = time.time()
-        self.__time_sorting += (stop - start)
+        # Get the new edges and reverse them. After this, we know that all edges
+        # are correctly sorted with respect to time. We then sort each time slice
+        # individually, reducing the overall cost of the sort.
+        new_left = ea['left'][::-1]
+        new_right = ea['right'][::-1]
+        new_parent = ea['parent'][::-1]
+        new_child = ea['child'][::-1]
+        parent_time = self.__nodes.time[new_parent]
+        breakpoints = np.where(parent_time[1:] != parent_time[:-1])[0] + 1
+        self.__edges.reset()
+        self.__time_appending += time.process_time() - before
+
+        before = time.process_time()
+        start = 0
+        for end in itertools.chain(breakpoints, [-1]):
+            assert np.all(parent_time[start: end] == parent_time[start])
+            self.__edges.append_columns(left=new_left[start: end],
+                                        right=new_right[start: end],
+                                        parent=new_parent[start: end],
+                                        child=new_child[start: end])
+            msprime.sort_tables(nodes=self.__nodes,
+                                edges=self.__edges,
+                                edge_start=start)
+            start = end
+        self.__time_sorting += time.process_time() - before
+
         # Append the old sorted edges to the table.
         self.__edges.append_columns(left=left, right=right, parent=parent, child=child)
-        start = time.time()
+        before = time.process_time()
         msprime.simplify_tables(samples=samples.tolist(),
                 nodes=self.__nodes, edges=self.__edges)
         self.__last_edge_start = len(self.__edges)
-        stop = time.time()
-        self.__time_simplifying += (stop - start)
+        self.__time_simplifying += time.process_time() - before
         return (True, self.__nodes.num_rows)
 
     def __call__(self, generation, ancestry):
