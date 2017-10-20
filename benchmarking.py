@@ -85,14 +85,12 @@ if __name__ == "__main__":
             rng, pop, params, args.gc)
         # Take times from simplifier before they change.
         times = simplifier.times
-        times['fwd_sim_runtime'] = tsim
-        times['N'] = args.popsize
-        times['theta'] = args.theta
-        times['rho'] = args.rho
-        times['simplify_interval'] = args.gc
-        d = pd.DataFrame.from_dict(times, orient = 'index')
-        d.reset_index(inplace=True)
-        d=d.rename(columns={'index':'variable',0:'value'})
+        times['fwd_sim_runtime'] = [tsim]
+        times['N'] = [args.popsize]
+        times['theta'] = [args.theta]
+        times['rho'] = [args.rho]
+        times['simplify_interval'] = [args.gc]
+        d = pd.DataFrame(times)
         d.to_csv(args.outfile1,sep='\t',index=False,compression='gzip')
         # Simplify the genealogy down to a sample,
         # And throw mutations onto that sample
