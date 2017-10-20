@@ -32,6 +32,7 @@ def parse_args():
     parser.add_argument('--neutral_mutations',
                         action='store_true',
                         help="Simulate neutral mutations.  If False, ARG is tracked instead and neutral mutations dropped down on the sample afterwards.")
+    parser.add_argument('--simlen',type=int,default=10,help="Simulation length, in multiples of N generations")
     parser.add_argument('--outfile1', type=str, help="Main output file")
     return parser
 
@@ -54,7 +55,7 @@ if __name__ == "__main__":
              'sregions': [fp11.GammaS(0, 1, 1, h=0.5, mean=-5.0, shape=1.0, scaling=2 * args.popsize)],
              'recregions': [fp11.Region(0, 1, 1)],
              'gvalue': fwdpy11.fitness.SlocusMult(1.0),
-             'demography': np.array([args.popsize] * 20 * args.popsize, dtype=np.uint32)
+             'demography': np.array([args.popsize] * args.simlen * args.popsize, dtype=np.uint32)
              }
 
     params = fwdpy11.model_params.SlocusParams(**pdict)
