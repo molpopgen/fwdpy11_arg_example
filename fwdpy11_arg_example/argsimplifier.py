@@ -10,14 +10,17 @@ class ArgSimplifier(object):
     AncestryTracker and msprime
     """
 
-    def __init__(self, gc_interval):
+    def __init__(self, gc_interval, trees = None):
         """
         :param gc_interval: Garbage collection interval
+        :param trees: An instance of :class:`msprime.TreeSequence`
         """
         self.gc_interval = gc_interval
         self.last_gc_time = 0.0
         self.__nodes = msprime.NodeTable()
         self.__edges = msprime.EdgeTable()
+        if trees is not None:
+            trees.dump_tables(nodes=self.__nodes, edges=self.__edges)
         self.__time_sorting = 0.0
         self.__time_appending = 0.0
         self.__time_simplifying = 0.0

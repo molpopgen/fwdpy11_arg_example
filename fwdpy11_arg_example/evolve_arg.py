@@ -5,7 +5,7 @@ import numpy as np
 import msprime
 
 
-def evolve_track(rng, pop, params, gc_interval):
+def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False):
     """
     Evolve a population and track its ancestry using msprime.
 
@@ -42,7 +42,11 @@ def evolve_track(rng, pop, params, gc_interval):
 
     from .wfarg import evolve_singlepop_regions_track_ancestry, AncestryTracker
     from .argsimplifier import ArgSimplifier
-    simplifier = ArgSimplifier(gc_interval)
+    initial_TreeSequence = None
+    if init_with_TreeSequence is True:
+        initial_TreeSequence = msprime.simulate(
+            2 * pop.N, recombination_rate=params.recrate / 2.0, Ne=pop.N)
+    simplifier = ArgSimplifier(gc_interval, initial_TreeSequence)
     atracker = AncestryTracker(pop.N)
     tsim = evolve_singlepop_regions_track_ancestry(rng, pop, atracker, simplifier,
                                                    params.demography,
