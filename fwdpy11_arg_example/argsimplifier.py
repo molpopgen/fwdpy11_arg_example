@@ -19,8 +19,11 @@ class ArgSimplifier(object):
         self.last_gc_time = 0.0
         self.__nodes = msprime.NodeTable()
         self.__edges = msprime.EdgeTable()
+        self.__process = True
         if trees is not None:
+            self.__process = False
             trees.dump_tables(nodes=self.__nodes, edges=self.__edges)
+            print("input data: ",len(self.__nodes),len(self.__edges))
         self.__time_sorting = 0.0
         self.__time_appending = 0.0
         self.__time_simplifying = 0.0
@@ -28,10 +31,13 @@ class ArgSimplifier(object):
 
     def simplify(self, generation, ancestry):
         # update node times:
-        if self.__nodes.num_rows > 0:
+        if self.__nodes.num_rows > 0: 
+            print("generation = ",generation)
             tc = self.__nodes.time
             dt = float(generation) - self.last_gc_time
+            print(tc)
             tc += dt
+            print("newtimes = ",tc)
             self.last_gc_time = generation
             flags = np.empty([self.__nodes.num_rows], dtype=np.uint32)
             flags.fill(1)
@@ -42,7 +48,12 @@ class ArgSimplifier(object):
         ancestry.prep_for_gc()
         na = np.array(ancestry.nodes, copy=False)
         ea = np.array(ancestry.edges, copy=False)
+        print(na.dtype)
+        print("generations = ",na['generation'])
+        print(na['id'])
+        print(ea)
         samples = np.array(ancestry.samples, copy=False)
+        print(samples)
         flags = np.empty([len(na)], dtype=np.uint32)
         flags.fill(1)
         self.__time_prepping += time.process_time() - before
@@ -89,6 +100,8 @@ class ArgSimplifier(object):
                 nodes=self.__nodes, edges=self.__edges)
         self.__last_edge_start = len(self.__edges)
         self.__time_simplifying += time.process_time() - before
+        self.__process = True
+        print("returning!")
         return (True, self.__nodes.num_rows)
 
     def __call__(self, generation, ancestry):

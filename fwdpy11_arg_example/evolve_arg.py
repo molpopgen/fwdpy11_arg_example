@@ -47,7 +47,7 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False):
         initial_TreeSequence = msprime.simulate(
             2 * pop.N, recombination_rate=params.recrate / 2.0, Ne=pop.N)
     simplifier = ArgSimplifier(gc_interval, initial_TreeSequence)
-    atracker = AncestryTracker(pop.N)
+    atracker = AncestryTracker(pop.N, init_with_TreeSequence)
     tsim = evolve_singlepop_regions_track_ancestry(rng, pop, atracker, simplifier,
                                                    params.demography,
                                                    params.mutrate_s,

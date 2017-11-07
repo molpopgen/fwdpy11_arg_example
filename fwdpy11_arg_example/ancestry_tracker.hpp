@@ -3,10 +3,10 @@
 // gets the data ready to send to msprime
 // and cleanup after msprime simplifies things.
 // The ancestry_tracer is mainly a book-keeper
-// and it is exposed to Python as 
+// and it is exposed to Python as
 // wfarg.AncestryTracker.
-// 
-// This implementation does not have to be 
+//
+// This implementation does not have to be
 // header-only.  However, it is easier (lazier)
 // to do that, and we'll fix that when moving things to
 // fwdpy11.
@@ -41,7 +41,7 @@ struct ancestry_tracker
     integer_type generation, next_index, first_parental_index;
     std::uint32_t lastN;
     decltype(node::generation) last_gc_time;
-    ancestry_tracker(const integer_type N)
+    ancestry_tracker(const integer_type N, const bool init_with_TreeSequence)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() },
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
@@ -53,11 +53,15 @@ struct ancestry_tracker
         temp.reserve(N);
 
         //Initialize 2N nodes for the generation 0
-        for (integer_type i = 0; i < 2 * N; ++i)
+        if (init_with_TreeSequence == false)
             {
-                //ID, time 0, population 0
-                nodes.emplace_back(make_node(i, 0.0, 0));
+                for (integer_type i = 0; i < 2 * N; ++i)
+                    {
+                        //ID, time 0, population 0
+                        nodes.emplace_back(make_node(i, 0.0, 0));
+                    }
             }
+        pybind11::print("Node size = ", nodes.size());
     }
 
     std::tuple<integer_type, integer_type>

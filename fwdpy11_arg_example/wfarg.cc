@@ -151,7 +151,7 @@ PYBIND11_MODULE(wfarg, m)
     //We only expose the stuff that a user really needs
     //to see.
     py::class_<ancestry_tracker>(m, "AncestryTracker")
-        .def(py::init<decltype(edge::parent)>(), py::arg("N"))
+        .def(py::init<decltype(edge::parent),bool>(), py::arg("N"),py::arg("init_with_TreeSequence"))
         .def_readwrite("nodes", &ancestry_tracker::nodes,
                        "Data for msprime.NodeTable.")
         .def_readwrite("edges", &ancestry_tracker::edges,
