@@ -108,7 +108,7 @@ evolve_singlepop_regions_track_ancestry(
             fitness.update(pop);
             wbar = rules.w(pop, fitness_callback);
             auto stop = std::clock();
-            auto dur = (stop - start) / (double) CLOCKS_PER_SEC;
+            auto dur = (stop - start) / (double)CLOCKS_PER_SEC;
             time_simulating += dur;
         }
     --pop.generation;
@@ -122,7 +122,8 @@ PYBIND11_MAKE_OPAQUE(std::vector<ancestry_tracker::integer_type>);
 
 PYBIND11_MODULE(wfarg, m)
 {
-    m.doc() = "Simple example of Wright-Fisher simulation with selection and ARG tracking";
+    m.doc() = "Simple example of Wright-Fisher simulation with selection and "
+              "ARG tracking";
 
     //Register nodes and edges as NumPy dtypes:
     PYBIND11_NUMPY_DTYPE(node, id, population, generation);
@@ -151,7 +152,9 @@ PYBIND11_MODULE(wfarg, m)
     //We only expose the stuff that a user really needs
     //to see.
     py::class_<ancestry_tracker>(m, "AncestryTracker")
-        .def(py::init<decltype(edge::parent),bool>(), py::arg("N"),py::arg("init_with_TreeSequence"))
+        .def(py::init<decltype(edge::parent), bool, decltype(edge::parent)>(),
+             py::arg("N"), py::arg("init_with_TreeSequence"),
+             py::arg("next_index"))
         .def_readwrite("nodes", &ancestry_tracker::nodes,
                        "Data for msprime.NodeTable.")
         .def_readwrite("edges", &ancestry_tracker::edges,

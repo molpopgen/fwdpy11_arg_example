@@ -43,11 +43,13 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False):
     from .wfarg import evolve_singlepop_regions_track_ancestry, AncestryTracker
     from .argsimplifier import ArgSimplifier
     initial_TreeSequence = None
+    next_index = 2*pop.N
     if init_with_TreeSequence is True:
         initial_TreeSequence = msprime.simulate(
             2 * pop.N, recombination_rate=params.recrate / 2.0, Ne=pop.N)
+        next_index = initial_TreeSequence.num_nodes
     simplifier = ArgSimplifier(gc_interval, initial_TreeSequence)
-    atracker = AncestryTracker(pop.N, init_with_TreeSequence)
+    atracker = AncestryTracker(pop.N, init_with_TreeSequence, next_index)
     tsim = evolve_singlepop_regions_track_ancestry(rng, pop, atracker, simplifier,
                                                    params.demography,
                                                    params.mutrate_s,

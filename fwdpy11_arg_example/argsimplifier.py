@@ -23,7 +23,7 @@ class ArgSimplifier(object):
         if trees is not None:
             self.__process = False
             trees.dump_tables(nodes=self.__nodes, edges=self.__edges)
-            print("input data: ",len(self.__nodes),len(self.__edges))
+            # print("input data: ",len(self.__nodes),len(self.__edges))
         self.__time_sorting = 0.0
         self.__time_appending = 0.0
         self.__time_simplifying = 0.0
@@ -32,12 +32,12 @@ class ArgSimplifier(object):
     def simplify(self, generation, ancestry):
         # update node times:
         if self.__nodes.num_rows > 0: 
-            print("generation = ",generation)
+            # print("generation = ",generation)
             tc = self.__nodes.time
             dt = float(generation) - self.last_gc_time
-            print(tc)
+            # print(tc)
             tc += dt
-            print("newtimes = ",tc)
+            # print("newtimes = ",tc)
             self.last_gc_time = generation
             flags = np.empty([self.__nodes.num_rows], dtype=np.uint32)
             flags.fill(1)
@@ -48,17 +48,17 @@ class ArgSimplifier(object):
         ancestry.prep_for_gc()
         na = np.array(ancestry.nodes, copy=False)
         ea = np.array(ancestry.edges, copy=False)
-        print(na.dtype)
-        print("generations = ",na['generation'])
-        print(na['id'])
-        print(ea)
+        # print(na.dtype)
+        # print("generations = ",na['generation'])
+        # print(na['id'])
         samples = np.array(ancestry.samples, copy=False)
-        print(samples)
+        # print(samples)
         flags = np.empty([len(na)], dtype=np.uint32)
         flags.fill(1)
         self.__time_prepping += time.process_time() - before
 
         before = time.process_time()
+        clen = len(self.__nodes)
         self.__nodes.append_columns(flags=flags,
                                     population=na['population'],
                                     time=na['generation'])
@@ -101,7 +101,7 @@ class ArgSimplifier(object):
         self.__last_edge_start = len(self.__edges)
         self.__time_simplifying += time.process_time() - before
         self.__process = True
-        print("returning!")
+        # print("returning!")
         return (True, self.__nodes.num_rows)
 
     def __call__(self, generation, ancestry):

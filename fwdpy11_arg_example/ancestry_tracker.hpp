@@ -41,11 +41,11 @@ struct ancestry_tracker
     integer_type generation, next_index, first_parental_index;
     std::uint32_t lastN;
     decltype(node::generation) last_gc_time;
-    ancestry_tracker(const integer_type N, const bool init_with_TreeSequence)
+    ancestry_tracker(const integer_type N, const bool init_with_TreeSequence, const integer_type next_index_)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() },
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
-          next_index{ 2 * N }, first_parental_index{ 0 },
+          next_index{ next_index_ }, first_parental_index{ 0 },
           lastN{ static_cast<std::uint32_t>(N) }, last_gc_time{ 0.0 }
     {
         nodes.reserve(2 * N);
@@ -61,7 +61,6 @@ struct ancestry_tracker
                         nodes.emplace_back(make_node(i, 0.0, 0));
                     }
             }
-        pybind11::print("Node size = ", nodes.size());
     }
 
     std::tuple<integer_type, integer_type>
@@ -117,6 +116,7 @@ struct ancestry_tracker
 
         //convert forward time to backwards time
         auto max_gen = nodes.back().generation;
+
         for (auto& n : nodes)
             {
                 n.generation -= max_gen;
