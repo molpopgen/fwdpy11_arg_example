@@ -83,7 +83,7 @@ if __name__ == "__main__":
     else:
         # Use this module
         simplifier, atracker, tsim = evolve_track(
-            rng, pop, params, args.gc)
+            rng, pop, params, args.gc, True)
         # Take times from simplifier before they change.
         times = simplifier.times
         times['fwd_sim_runtime'] = [tsim]

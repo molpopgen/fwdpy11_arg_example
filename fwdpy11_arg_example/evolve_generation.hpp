@@ -75,7 +75,6 @@ evolve_generation(const fwdpy11::GSLrng_t& rng, poptype& pop,
                                         pop.mutations);
             auto pid = ancestry.get_parent_ids(p1, swap1);
             auto offspring_indexes = ancestry.get_next_indexes();
-
             dip.first = ancestry_recombination_details(
                 pop, ancestry, gamete_recycling_bin, p1g1, p1g2, breakpoints,
                 pid, std::get<0>(offspring_indexes));
