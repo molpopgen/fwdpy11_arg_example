@@ -55,15 +55,19 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
     simplifier = ArgSimplifier(gc_interval, initial_TreeSequence)
     atracker = AncestryTracker(pop.N, init_with_TreeSequence, next_index)
     tsim = evolve_singlepop_regions_track_ancestry(rng, pop, atracker, simplifier,
+                                                   gc_interval,
                                                    params.demography,
                                                    params.mutrate_s,
                                                    params.recrate, mm, rm,
                                                    params.gvalue, params.pself)
-    if len(atracker.nodes) > 0:
+    if atracker.has_remaining_data():
         # TODO
         # The + 1 is b/c we have a bit of a book-keeping
         # thing that we need to document...
+        print("final GC needed")
+        atracker.swap_for_gc();
         simplifier.simplify(pop.generation + 1, atracker)
+    print("returning")
     return (simplifier, atracker, tsim)
 
 

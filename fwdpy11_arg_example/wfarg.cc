@@ -1,3 +1,4 @@
+#include <future>
 #include <chrono>
 #include <pybind11/chrono.h>
 #include <pybind11/pybind11.h>
@@ -34,8 +35,9 @@ double
 evolve_singlepop_regions_track_ancestry(
     const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,
     ancestry_tracker& ancestry, py::function ancestry_processor,
-    py::array_t<std::uint32_t> popsizes, const double mu_selected,
-    const double recrate, const KTfwd::extensions::discrete_mut_model& mmodel,
+    const KTfwd::uint_t gc_interval, py::array_t<std::uint32_t> popsizes,
+    const double mu_selected, const double recrate,
+    const KTfwd::extensions::discrete_mut_model& mmodel,
     const KTfwd::extensions::discrete_rec_model& rmodel,
     fwdpy11::single_locus_fitness& fitness, const double selfing_rate)
 {
@@ -78,12 +80,17 @@ evolve_singlepop_regions_track_ancestry(
          ++generation, ++pop.generation)
         {
             //Ask if we need to garbage collect:
-            py::tuple processor_rv
-                = ancestry_processor(pop.generation, ancestry);
-            //If we did GC, then the ancestry_tracker has
-            //some cleaning upto do:
-            ancestry.post_process_gc(processor_rv);
-
+            if (generation > 0 && generation % gc_interval == 0.)
+                {
+					ancestry.swap_for_gc();
+                    auto processor_rv_future
+                        = std::async(std::launch::async, ancestry_processor,
+                                     pop.generation, std::ref(ancestry));
+                    //If we did GC, then the ancestry_tracker has
+                    //some cleaning upto do:
+                    ancestry.post_process_gc(
+                        processor_rv_future.get().cast<py::tuple>());
+                }
             //This is not great API design, but
             //we need to clear the offspring indexes here:
             ancestry.offspring_indexes.clear();
@@ -166,6 +173,8 @@ PYBIND11_MODULE(wfarg, m)
             "Read-only access to current offspring/children generation.")
         .def_readonly("last_gc_time", &ancestry_tracker::last_gc_time,
                       "Last time point where garbage collection happened.")
+        .def("swap_for_gc", &ancestry_tracker::swap_for_gc)
+		.def("has_remaining_data",&ancestry_tracker::has_remaining_data)
         .def("prep_for_gc", &ancestry_tracker::prep_for_gc,
              "Call this immediately before you are going to simplify.");
 

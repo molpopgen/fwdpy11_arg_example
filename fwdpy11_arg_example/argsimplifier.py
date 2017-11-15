@@ -101,8 +101,11 @@ class ArgSimplifier(object):
         self.__last_edge_start = len(self.__edges)
         self.__time_simplifying += time.process_time() - before
         self.__process = True
-        # print("returning!")
+        print("returning from GC")
         return (True, self.__nodes.num_rows)
+
+    def is_gc_time(self, generation):
+        return generation > 0 and generation % self.gc_interval == 0.
 
     def __call__(self, generation, ancestry):
         """
@@ -115,11 +118,13 @@ class ArgSimplifier(object):
 
         :returns: A bool and an int
         """
-        if generation > 0 and generation % self.gc_interval == 0.0:
-            return self.simplify(generation, ancestry)
-        # Keep tuple size constant,
-        # for sake of sanity.
-        return (False, None)
+        return self.simplify(generation, ancestry)
+        # if generation > 0 and generation % self.gc_interval == 0.0:
+        #     print('gonna do it!')
+        #     return self.simplify(generation, ancestry)
+        # # Keep tuple size constant,
+        # # for sake of sanity.
+        # return (False, None)
 
     @property
     def nodes(self):

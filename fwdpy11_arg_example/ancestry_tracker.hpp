@@ -31,9 +31,9 @@ struct ancestry_tracker
 {
     using integer_type = decltype(edge::parent);
     /// Nodes:
-    std::vector<node> nodes;
+    std::vector<node> nodes, temp_nodes;
     /// The ARG:
-    std::vector<edge> edges;
+    std::vector<edge> edges, temp_edges;
     /// The edges generated for each generation:
     std::vector<edge> temp;
     /// This is used as the sample indexes for msprime:
@@ -41,15 +41,17 @@ struct ancestry_tracker
     integer_type generation, next_index, first_parental_index;
     std::uint32_t lastN;
     decltype(node::generation) last_gc_time;
-    ancestry_tracker(const integer_type N, const bool init_with_TreeSequence, const integer_type next_index_)
-        : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
+    ancestry_tracker(const integer_type N, const bool init_with_TreeSequence,
+                     const integer_type next_index_)
+        : nodes{ std::vector<node>() }, temp_nodes{ std::vector<node>() },
+          edges{ std::vector<edge>() }, temp_edges{ std::vector<edge>() },
           temp{ std::vector<edge>() },
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
           next_index{ next_index_ }, first_parental_index{ 0 },
           lastN{ static_cast<std::uint32_t>(N) }, last_gc_time{ 0.0 }
     {
-        nodes.reserve(2 * N);
-        edges.reserve(2 * N);
+        temp_nodes.reserve(2 * N);
+        temp_edges.reserve(2 * N);
         temp.reserve(N);
 
         //Initialize 2N nodes for the generation 0
@@ -58,9 +60,19 @@ struct ancestry_tracker
                 for (integer_type i = 0; i < 2 * N; ++i)
                     {
                         //ID, time 0, population 0
-                        nodes.emplace_back(make_node(i, 0.0, 0));
+                        temp_nodes.emplace_back(make_node(i, 0.0, 0));
                     }
             }
+    }
+
+    void
+    swap_for_gc()
+    {
+        edges.swap(temp_edges);
+        nodes.swap(temp_nodes);
+        temp_edges.clear();
+        temp_nodes.clear();
+		pybind11::print(edges.size(),nodes.size());
     }
 
     std::tuple<integer_type, integer_type>
@@ -98,9 +110,9 @@ struct ancestry_tracker
     {
         for (auto&& oi : offspring_indexes)
             {
-                nodes.emplace_back(make_node(oi, generation, 0));
+                temp_nodes.emplace_back(make_node(oi, generation, 0));
             }
-        edges.insert(edges.end(), temp.begin(), temp.end());
+        temp_edges.insert(temp_edges.end(), temp.begin(), temp.end());
         lastN = next_index - first_parental_index;
         first_parental_index = offspring_indexes.front();
 
@@ -131,6 +143,7 @@ struct ancestry_tracker
         if (!gc)
             return;
 
+		pybind11::print(nodes.size(),edges.size(),temp_nodes.size(),temp_edges.size());
         last_gc_time = generation;
         next_index = t[1].cast<integer_type>();
         // establish last parental index:
@@ -138,6 +151,11 @@ struct ancestry_tracker
         nodes.clear();
         edges.clear();
     }
+
+	bool has_remaining_data() const
+	{
+		return !temp_edges.empty()&&!temp_nodes.empty();
+	}
 };
 
 #endif
