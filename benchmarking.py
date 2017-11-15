@@ -11,6 +11,7 @@ import msprime
 import gzip
 import pandas as pd
 
+
 def parse_args():
     dstring = "Prototype implementation of ARG tracking and regular garbage collection."
     parser = argparse.ArgumentParser(description=dstring,
@@ -32,7 +33,8 @@ def parse_args():
     parser.add_argument('--neutral_mutations',
                         action='store_true',
                         help="Simulate neutral mutations.  If False, ARG is tracked instead and neutral mutations dropped down on the sample afterwards.")
-    parser.add_argument('--simlen',type=int,default=10,help="Simulation length, in multiples of N generations")
+    parser.add_argument('--simlen', type=int, default=10,
+                        help="Simulation length, in multiples of N generations")
     parser.add_argument('--outfile1', type=str, help="Main output file")
     return parser
 
@@ -83,7 +85,7 @@ if __name__ == "__main__":
     else:
         # Use this module
         simplifier, atracker, tsim = evolve_track(
-            rng, pop, params, args.gc, True)
+            rng, pop, params, args.gc, True, args.seed)
         # Take times from simplifier before they change.
         times = simplifier.times
         times['fwd_sim_runtime'] = [tsim]
@@ -92,7 +94,7 @@ if __name__ == "__main__":
         times['rho'] = [args.rho]
         times['simplify_interval'] = [args.gc]
         d = pd.DataFrame(times)
-        d.to_csv(args.outfile1,sep='\t',index=False,compression='gzip')
+        d.to_csv(args.outfile1, sep='\t', index=False, compression='gzip')
         # Simplify the genealogy down to a sample,
         # And throw mutations onto that sample
         msprime.simplify_tables(np.random.choice(2 * args.popsize, args.nsam,
