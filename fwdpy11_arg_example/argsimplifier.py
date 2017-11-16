@@ -39,8 +39,7 @@ class ArgSimplifier(object):
             tc += dt
             # print("newtimes = ",tc)
             self.last_gc_time = generation
-            flags = np.empty([self.__nodes.num_rows], dtype=np.uint32)
-            flags.fill(1)
+            flags = np.ones(self.__nodes.num_rows, dtype=np.uint32)
             self.__nodes.set_columns(
                 flags=flags, population=self.__nodes.population, time=tc)
 
@@ -69,12 +68,12 @@ class ArgSimplifier(object):
                 # for x in sd:
                 #     assert(x < len(self.__nodes)), "Value out of bounds {}".format(x)
             samples -= delta
+            print(samples)
             sdiff = np.setdiff1d(samples,na['id'])
             assert(len(sdiff) == 0)
             print("new edges 2",ea)
         # print(samples)
-        flags = np.empty([len(na)], dtype=np.uint32)
-        flags.fill(1)
+        flags = np.ones(len(na), dtype=np.uint32)
         self.__time_prepping += time.process_time() - before
 
         before = time.process_time()
