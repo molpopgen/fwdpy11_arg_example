@@ -69,6 +69,7 @@ struct ancestry_tracker
     void
     swap_for_gc()
     {
+		pybind11::print("in swap ",temp.size());
         edges.swap(temp_edges);
         nodes.swap(temp_nodes);
         temp_edges.clear();
@@ -131,6 +132,7 @@ struct ancestry_tracker
     {
         if (nodes.empty())
             return;
+		first_parental_index = 0;
 
         //convert forward time to backwards time
         auto max_gen = nodes.back().generation;
