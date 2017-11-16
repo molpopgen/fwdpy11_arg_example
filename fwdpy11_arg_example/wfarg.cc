@@ -76,20 +76,29 @@ evolve_singlepop_regions_track_ancestry(
     auto wbar = rules.w(pop, fitness_callback);
 
     double time_simulating = 0.0;
+	std::vector<std::future<py::object>> futures;
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
             //Ask if we need to garbage collect:
             if (generation > 0 && generation % gc_interval == 0.)
                 {
+					if(!futures.empty())
+					{
+						auto result = futures[0].get();
+						auto result_tuple = result.cast<py::tuple>();
+						py::print(result_tuple[1].cast<int>(),ancestry.temp_nodes.front().id);
+						ancestry.post_process_gc(result_tuple);
+						futures.clear();
+					}
 					ancestry.swap_for_gc();
-                    auto processor_rv_future
-                        = std::async(std::launch::async, ancestry_processor,
-                                     pop.generation, std::ref(ancestry));
+					futures.emplace_back(
+                        std::async(std::launch::async, ancestry_processor,
+                                     pop.generation, std::ref(ancestry)));
                     //If we did GC, then the ancestry_tracker has
                     //some cleaning upto do:
-                    ancestry.post_process_gc(
-                        processor_rv_future.get().cast<py::tuple>());
+                    //ancestry.post_process_gc(
+                    //    processor_rv_future.get().cast<py::tuple>());
                 }
             //This is not great API design, but
             //we need to clear the offspring indexes here:

@@ -39,7 +39,7 @@ struct ancestry_tracker
     std::vector<integer_type> offspring_indexes;
     /// This is used as the sample indexes for msprime:
     std::vector<integer_type> offspring_indexes_simplify;
-    integer_type generation, next_index, first_parental_index;
+    integer_type generation, next_index, first_parental_index,last_gc_index;
     std::uint32_t lastN;
     decltype(node::generation) last_gc_time;
     ancestry_tracker(const integer_type N, const bool init_with_TreeSequence,
@@ -48,7 +48,7 @@ struct ancestry_tracker
           edges{ std::vector<edge>() }, temp_edges{ std::vector<edge>() },
           temp{ std::vector<edge>() },
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
-          next_index{ next_index_ }, first_parental_index{ 0 },
+          next_index{ next_index_ }, first_parental_index{ 0 },last_gc_index{0},
           lastN{ static_cast<std::uint32_t>(N) }, last_gc_time{ 0.0 }
     {
         temp_nodes.reserve(2 * N);
@@ -73,6 +73,7 @@ struct ancestry_tracker
         nodes.swap(temp_nodes);
         temp_edges.clear();
         temp_nodes.clear();
+		last_gc_index = nodes.back().id;
         offspring_indexes_simplify.clear();
         offspring_indexes_simplify.insert(offspring_indexes_simplify.end(),
                                           offspring_indexes.begin(),
