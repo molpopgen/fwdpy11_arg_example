@@ -85,6 +85,7 @@ evolve_singlepop_regions_track_ancestry(
                 {
                     if (msprime_future.valid())
                         {
+							msprime_future.wait();
                             auto result = msprime_future.get();
                             auto result_tuple = result.cast<py::tuple>();
                             py::print(result_tuple[1].cast<int>(),
@@ -95,6 +96,11 @@ evolve_singlepop_regions_track_ancestry(
                     msprime_future
                         = std::async(std::launch::async, ancestry_processor,
                                      pop.generation, std::ref(ancestry));
+					//msprime_future.wait();
+					//auto result = msprime_future.get();
+					//auto result_tuple = result.cast<py::tuple>();
+					//ancestry.post_process_gc(result_tuple);
+
                     //If we did GC, then the ancestry_tracker has
                     //some cleaning upto do:
                     //ancestry.post_process_gc(
