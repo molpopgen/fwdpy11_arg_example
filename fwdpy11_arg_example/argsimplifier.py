@@ -53,6 +53,9 @@ class ArgSimplifier(object):
         delta = new_min_id - len(self.__nodes)
         samples = np.array(ancestry.samples, copy=False)
         if delta > 0:
+            # This next step does not have to be done.
+            # It is here for checking now.  Can delete
+            # later.
             na['id'] -= delta
             print("updating IDs:",new_min_id,na['id'][0],delta)
             print("max IDs are: ",na['id'].min(),na['id'].max())
