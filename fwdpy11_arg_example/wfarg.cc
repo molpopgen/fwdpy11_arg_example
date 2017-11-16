@@ -76,25 +76,25 @@ evolve_singlepop_regions_track_ancestry(
     auto wbar = rules.w(pop, fitness_callback);
 
     double time_simulating = 0.0;
-	std::vector<std::future<py::object>> futures;
+    std::future<py::object> msprime_future;
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
             //Ask if we need to garbage collect:
             if (pop.generation > 0 && pop.generation % gc_interval == 0.)
                 {
-					if(!futures.empty())
-					{
-						auto result = futures[0].get();
-						auto result_tuple = result.cast<py::tuple>();
-						py::print(result_tuple[1].cast<int>(),ancestry.temp_nodes.front().id);
-						ancestry.post_process_gc(result_tuple);
-						futures.clear();
-					}
-					ancestry.swap_for_gc();
-					futures.emplace_back(
-                        std::async(std::launch::async, ancestry_processor,
-                                     pop.generation, std::ref(ancestry)));
+                    if (msprime_future.valid())
+                        {
+                            auto result = msprime_future.get();
+                            auto result_tuple = result.cast<py::tuple>();
+                            py::print(result_tuple[1].cast<int>(),
+                                      ancestry.temp_nodes.front().id);
+                            ancestry.post_process_gc(result_tuple);
+                        }
+                    ancestry.swap_for_gc();
+                    msprime_future
+                        = std::async(std::launch::async, ancestry_processor,
+                                     pop.generation, std::ref(ancestry));
                     //If we did GC, then the ancestry_tracker has
                     //some cleaning upto do:
                     //ancestry.post_process_gc(
@@ -128,7 +128,7 @@ evolve_singlepop_regions_track_ancestry(
             time_simulating += dur;
         }
     --pop.generation;
-	py::print("returning from simulation");
+    py::print("returning from simulation");
     return time_simulating;
 }
 
@@ -176,7 +176,8 @@ PYBIND11_MODULE(wfarg, m)
                        "Data for msprime.NodeTable.")
         .def_readwrite("edges", &ancestry_tracker::edges,
                        "Data for msprime.EdgesetTable.")
-        .def_readwrite("samples", &ancestry_tracker::offspring_indexes_simplify,
+        .def_readwrite("samples",
+                       &ancestry_tracker::offspring_indexes_simplify,
                        "Sample indexes.")
         .def_readonly(
             "offspring_generation", &ancestry_tracker::generation,
@@ -184,7 +185,7 @@ PYBIND11_MODULE(wfarg, m)
         .def_readonly("last_gc_time", &ancestry_tracker::last_gc_time,
                       "Last time point where garbage collection happened.")
         .def("swap_for_gc", &ancestry_tracker::swap_for_gc)
-		.def("has_remaining_data",&ancestry_tracker::has_remaining_data)
+        .def("has_remaining_data", &ancestry_tracker::has_remaining_data)
         .def("prep_for_gc", &ancestry_tracker::prep_for_gc,
              "Call this immediately before you are going to simplify.");
 
