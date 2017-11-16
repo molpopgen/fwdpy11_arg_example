@@ -27,6 +27,45 @@
 #include "node.hpp"
 #include "edge.hpp"
 
+inline void
+prep_for_gc_details(std::vector<node>& nodes)
+{
+    if (nodes.empty())
+        return;
+
+    //convert forward time to backwards time
+    auto max_gen = nodes.back().generation;
+
+    for (auto& n : nodes)
+        {
+            n.generation -= max_gen;
+            n.generation *= -1.0;
+        }
+}
+struct ancestry_data_async
+{
+    using integer_type = decltype(edge::parent);
+    /// Nodes:
+    std::vector<node> nodes;
+    /// The ARG:
+    std::vector<edge> edges;
+    std::vector<integer_type> offspring_indexes;
+
+    explicit ancestry_data_async(std::vector<node>&& nodes_,
+                                 std::vector<edge>&& edges_,
+                                 std::vector<integer_type> offspring_indexes_)
+        : nodes(std::move(nodes_)), edges(std::move(edges_)),
+          offspring_indexes(std::move(offspring_indexes_))
+    {
+    }
+
+    void
+    prep_for_gc()
+    {
+        prep_for_gc_details(nodes);
+    }
+};
+
 struct ancestry_tracker
 {
     using integer_type = decltype(edge::parent);
@@ -41,7 +80,8 @@ struct ancestry_tracker
     integer_type generation, next_index, first_parental_index;
     std::uint32_t lastN;
     decltype(node::generation) last_gc_time;
-    ancestry_tracker(const integer_type N, const bool init_with_TreeSequence, const integer_type next_index_)
+    ancestry_tracker(const integer_type N, const bool init_with_TreeSequence,
+                     const integer_type next_index_)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() },
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
@@ -111,21 +151,11 @@ struct ancestry_tracker
     void
     prep_for_gc()
     {
-        if (nodes.empty())
-            return;
-
-        //convert forward time to backwards time
-        auto max_gen = nodes.back().generation;
-
-        for (auto& n : nodes)
-            {
-                n.generation -= max_gen;
-                n.generation *= -1.0;
-            }
+        prep_for_gc_details(nodes);
     }
 
     void
-    post_process_gc(pybind11::tuple t)
+    post_process_gc(pybind11::tuple t, const bool clear = true)
     {
         pybind11::bool_ gc = t[0].cast<bool>();
         if (!gc)
@@ -135,8 +165,19 @@ struct ancestry_tracker
         next_index = t[1].cast<integer_type>();
         // establish last parental index:
         first_parental_index = 0;
-        nodes.clear();
-        edges.clear();
+        if (clear)
+            {
+                nodes.clear();
+                edges.clear();
+            }
+    }
+
+    ancestry_data_async
+    prep_for_async()
+    {
+		first_parental_index = 0;
+        return ancestry_data_async(std::move(nodes), std::move(edges),
+                                   offspring_indexes);
     }
 };
 

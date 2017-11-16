@@ -5,7 +5,7 @@ import numpy as np
 import msprime
 
 
-def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, msprime_seed=None):
+def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, msprime_seed=None, async=False):
     """
     Evolve a population and track its ancestry using msprime.
 
@@ -41,6 +41,7 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
     rm = makeRecombinationRegions(params.recregions)
 
     from .wfarg import evolve_singlepop_regions_track_ancestry, AncestryTracker
+    from .wfarg import evolve_singlepop_regions_track_ancestry_async
     from .argsimplifier import ArgSimplifier
     initial_TreeSequence = None
     next_index = 2 * pop.N
@@ -54,11 +55,19 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
         next_index = initial_TreeSequence.num_nodes
     simplifier = ArgSimplifier(gc_interval, initial_TreeSequence)
     atracker = AncestryTracker(pop.N, init_with_TreeSequence, next_index)
-    tsim = evolve_singlepop_regions_track_ancestry(rng, pop, atracker, simplifier,
-                                                   params.demography,
-                                                   params.mutrate_s,
-                                                   params.recrate, mm, rm,
-                                                   params.gvalue, params.pself)
+    if async is False:
+        tsim = evolve_singlepop_regions_track_ancestry(rng, pop, atracker, simplifier,
+                                                       params.demography,
+                                                       params.mutrate_s,
+                                                       params.recrate, mm, rm,
+                                                       params.gvalue, params.pself)
+    else:
+        tsim = evolve_singlepop_regions_track_ancestry_async(rng, pop, atracker, simplifier,
+                                                             gc_interval,
+                                                             params.demography,
+                                                             params.mutrate_s,
+                                                             params.recrate, mm, rm,
+                                                             params.gvalue, params.pself)
     if len(atracker.nodes) > 0:
         # TODO
         # The + 1 is b/c we have a bit of a book-keeping
