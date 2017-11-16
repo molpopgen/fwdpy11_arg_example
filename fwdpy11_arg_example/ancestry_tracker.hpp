@@ -36,8 +36,9 @@ struct ancestry_tracker
     std::vector<edge> edges, temp_edges;
     /// The edges generated for each generation:
     std::vector<edge> temp;
-    /// This is used as the sample indexes for msprime:
     std::vector<integer_type> offspring_indexes;
+    /// This is used as the sample indexes for msprime:
+    std::vector<integer_type> offspring_indexes_simplify;
     integer_type generation, next_index, first_parental_index;
     std::uint32_t lastN;
     decltype(node::generation) last_gc_time;
@@ -72,7 +73,11 @@ struct ancestry_tracker
         nodes.swap(temp_nodes);
         temp_edges.clear();
         temp_nodes.clear();
-		pybind11::print(edges.size(),nodes.size());
+        offspring_indexes_simplify.clear();
+        offspring_indexes_simplify.insert(offspring_indexes_simplify.end(),
+                                          offspring_indexes.begin(),
+                                          offspring_indexes.end());
+        pybind11::print(edges.size(), nodes.size());
     }
 
     std::tuple<integer_type, integer_type>
@@ -143,7 +148,8 @@ struct ancestry_tracker
         if (!gc)
             return;
 
-		pybind11::print(nodes.size(),edges.size(),temp_nodes.size(),temp_edges.size());
+        pybind11::print(nodes.size(), edges.size(), temp_nodes.size(),
+                        temp_edges.size());
         last_gc_time = generation;
         next_index = t[1].cast<integer_type>();
         // establish last parental index:
@@ -152,10 +158,11 @@ struct ancestry_tracker
         edges.clear();
     }
 
-	bool has_remaining_data() const
-	{
-		return !temp_edges.empty()&&!temp_nodes.empty();
-	}
+    bool
+    has_remaining_data() const
+    {
+        return !temp_edges.empty() && !temp_nodes.empty();
+    }
 };
 
 #endif

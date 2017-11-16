@@ -166,7 +166,7 @@ PYBIND11_MODULE(wfarg, m)
                        "Data for msprime.NodeTable.")
         .def_readwrite("edges", &ancestry_tracker::edges,
                        "Data for msprime.EdgesetTable.")
-        .def_readwrite("samples", &ancestry_tracker::offspring_indexes,
+        .def_readwrite("samples", &ancestry_tracker::offspring_indexes_simplify,
                        "Sample indexes.")
         .def_readonly(
             "offspring_generation", &ancestry_tracker::generation,
