@@ -46,7 +46,6 @@ class ArgSimplifier(object):
 
         before = time.process_time()
         ancestry.prep_for_gc()
-        print("here")
         na = np.array(ancestry.nodes, copy=False)
         ea = np.array(ancestry.edges, copy=False)
         new_min_id = na['id'][0]
