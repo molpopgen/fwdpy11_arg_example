@@ -177,10 +177,11 @@ evolve_singlepop_regions_track_ancestry_async(
                             ancestry.post_process_gc(result_tuple,false);
                         }
 					auto async_data = ancestry.prep_for_async();
-					py::print(async_data.nodes.size(),async_data.edges.size(),async_data.offspring_indexes.size());
+					py::print(async_data.nodes.size(),async_data.edges.size(),async_data.offspring_indexes.size(),
+							ancestry.nodes.size(),ancestry.edges.size(),ancestry.nodes.capacity());
                     msprime_future
                         = std::async(std::launch::async, ancestry_processor,
-                                     pop.generation, std::ref(async_data));
+                                     pop.generation, std::move(async_data));
                     //msprime_future.wait();
                     //auto result = msprime_future.get();
                     //auto result_tuple = result.cast<py::tuple>();

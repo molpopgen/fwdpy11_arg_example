@@ -62,7 +62,7 @@ struct ancestry_data_async
     void
     prep_for_gc()
     {
-        prep_for_gc_details(nodes);
+        prep_for_gc_details(this->nodes);
     }
 };
 
