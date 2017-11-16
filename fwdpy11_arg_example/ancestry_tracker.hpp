@@ -80,7 +80,7 @@ struct ancestry_tracker
         offspring_indexes_simplify.insert(offspring_indexes_simplify.end(),
                                           offspring_indexes.begin(),
                                           offspring_indexes.end());
-        pybind11::print(edges.size(), nodes.size());
+		pybind11::print("After swapping for GC: ",first_parental_index,next_index);
     }
 
     std::tuple<integer_type, integer_type>
@@ -133,7 +133,6 @@ struct ancestry_tracker
     {
         if (nodes.empty())
             return;
-		first_parental_index = 0;
 
         //convert forward time to backwards time
         auto max_gen = nodes.back().generation;
