@@ -30,6 +30,7 @@ class ArgSimplifier(object):
         self.__time_prepping = 0.0
 
     def simplify(self, generation, ancestry):
+        print("simplify at generation",generation)
         # update node times:
         if self.__nodes.num_rows > 0: 
             # print("generation = ",generation)
@@ -50,17 +51,21 @@ class ArgSimplifier(object):
         ea = np.array(ancestry.edges, copy=False)
         input_diff = np.setdiff1d(ea['parent'],na['id'])
         print("set diff = ",input_diff,len(input_diff))
+        input_diff = np.setdiff1d(ea['child'],na['id'])
+        print("set diff = ",input_diff,len(input_diff))
         new_min_id = na['id'][0]
         new_max_id = na['id'][-1]
         delta = new_min_id - len(self.__nodes)
         samples = np.array(ancestry.samples, copy=False)
+        print("samples are ",samples)
         if delta > 0:
             na['id'] -= delta
             print("updating IDs:",new_min_id,na['id'][0],delta)
             print("max IDs are: ",na['id'].min(),na['id'].max())
-            print(ea)
+            print("new edges",ea)
             for field in ['parent','child']:
                 eids = np.where((ea[field]>=new_min_id)&(ea[field]<=new_max_id))[0]
+                print("processing ",field,len(eids),len(self.__nodes),len(na),new_min_id,new_max_id)
                 ea[field][eids] -= delta
                 sd = np.setdiff1d(ea[field],na['id'])
                 # print("checking",field)
@@ -69,7 +74,8 @@ class ArgSimplifier(object):
             samples -= delta
             sdiff = np.setdiff1d(samples,na['id'])
             assert(len(sdiff) == 0)
-            print(ea)
+            print("new edges 2",ea)
+            
         # print(na.dtype)
         # print("generations = ",na['generation'])
         # print(na['id'])

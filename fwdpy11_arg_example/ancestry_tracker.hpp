@@ -74,6 +74,7 @@ struct ancestry_tracker
         nodes.swap(temp_nodes);
         temp_edges.clear();
         temp_nodes.clear();
+		first_parental_index = 0;
 		last_gc_index = nodes.back().id;
         offspring_indexes_simplify.clear();
         offspring_indexes_simplify.insert(offspring_indexes_simplify.end(),

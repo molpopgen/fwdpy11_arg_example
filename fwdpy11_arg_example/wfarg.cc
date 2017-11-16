@@ -81,7 +81,7 @@ evolve_singlepop_regions_track_ancestry(
          ++generation, ++pop.generation)
         {
             //Ask if we need to garbage collect:
-            if (generation > 0 && generation % gc_interval == 0.)
+            if (pop.generation > 0 && pop.generation % gc_interval == 0.)
                 {
 					if(!futures.empty())
 					{
@@ -128,6 +128,7 @@ evolve_singlepop_regions_track_ancestry(
             time_simulating += dur;
         }
     --pop.generation;
+	py::print("returning from simulation");
     return time_simulating;
 }
 
