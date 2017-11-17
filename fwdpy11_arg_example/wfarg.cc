@@ -161,6 +161,7 @@ evolve_singlepop_regions_track_ancestry_async(
     auto wbar = rules.w(pop, fitness_callback);
 
     std::future<py::object> msprime_future;
+    ancestry_tracker local_ancestry_tracker(ancestry);
     double time_simulating = 0.0;
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
@@ -176,15 +177,22 @@ evolve_singlepop_regions_track_ancestry_async(
                         }
                     {
                         py::gil_scoped_acquire acquire;
-                        py::print("We got our future:", ancestry.nodes[0].id,
-                                  ancestry.nodes.back().id,ancestry.first_parental_index,ancestry.next_index);
+                        py::print("We got our future:", pop.generation,
+                                  ancestry.nodes[0].id,
+                                  ancestry.nodes.back().id,
+                                  ancestry.first_parental_index,
+                                  ancestry.next_index);
                     }
-                    auto async_data = ancestry.prep_for_async();
-                    //	py::print(async_data.nodes.size(),async_data.edges.size(),async_data.offspring_indexes.size(),
-                    //			ancestry.nodes.size(),ancestry.edges.size(),ancestry.nodes.capacity());
-                    msprime_future
-                        = std::async(std::launch::async, ancestry_processor,
-                                     pop.generation, std::move(async_data));
+                    ancestry.exchange_for_async(local_ancestry_tracker);
+                    //auto async_data = ancestry.prep_for_async();
+                    py::print(local_ancestry_tracker.nodes.size(),
+                              local_ancestry_tracker.edges.size(),
+                              local_ancestry_tracker.offspring_indexes.size(),
+                              ancestry.nodes.size(), ancestry.edges.size(),
+                              ancestry.nodes.capacity());
+                    msprime_future = std::async(
+                        std::launch::async, ancestry_processor, pop.generation,
+                        std::ref(local_ancestry_tracker));
                     //msprime_future.wait();
                     //auto result = msprime_future.get();
                     //auto result_tuple = result.cast<py::tuple>();
@@ -222,7 +230,16 @@ evolve_singlepop_regions_track_ancestry_async(
             auto dur = (stop - start) / (double)CLOCKS_PER_SEC;
             time_simulating += dur;
         }
+    py::print("leaving sim. future state: ", msprime_future.valid());
     --pop.generation;
+    if (msprime_future.valid())
+        {
+            msprime_future.wait();
+            auto result = msprime_future.get();
+            auto result_tuple = result.cast<py::tuple>();
+            ancestry.post_process_gc(result_tuple, false);
+        }
+
     return time_simulating;
 }
 //Register vectors of nodes and edges as "opaque"
@@ -276,18 +293,10 @@ PYBIND11_MODULE(wfarg, m)
             "Read-only access to current offspring/children generation.")
         .def_readonly("last_gc_time", &ancestry_tracker::last_gc_time,
                       "Last time point where garbage collection happened.")
+        .def("update_indexes", &ancestry_tracker::update_indexes)
         .def("prep_for_gc", &ancestry_tracker::prep_for_gc,
              "Call this immediately before you are going to simplify.");
 
-    py::class_<ancestry_data_async>(m, "AsyncAncestry")
-        .def_readwrite("nodes", &ancestry_data_async::nodes,
-                       "Data for msprime.NodeTable.")
-        .def_readwrite("edges", &ancestry_data_async::edges,
-                       "Data for msprime.EdgesetTable.")
-        .def_readwrite("samples", &ancestry_data_async::offspring_indexes,
-                       "Sample indexes.")
-        .def("prep_for_gc", &ancestry_data_async::prep_for_gc,
-             "Call this immediately before you are going to simplify.");
     //Make our C++ function callable from Python.
     //This is NOT part of a user-facing Python API.
     //Rather, we need a wrapper to integrate it with

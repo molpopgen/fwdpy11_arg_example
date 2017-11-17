@@ -61,15 +61,16 @@ class ArgSimplifier(object):
             # print("max IDs are: ",na['id'].min(),na['id'].max())
             # print("new edges",ea)
             # for field in ['parent','child']:
-            eids = np.where((ea['parent']>=new_min_id)&(ea['parent']<=new_max_id))[0]
-                # print("processing ",field,len(eids),len(self.__nodes),len(na),new_min_id,new_max_id)
-            ea['parent'][eids] -= delta
-            ea['child'] -= delta
+            ancestry.update_indexes(delta,new_min_id,new_max_id);
+            # eids = np.where((ea['parent']>=new_min_id)&(ea['parent']<=new_max_id))[0]
+            #     # print("processing ",field,len(eids),len(self.__nodes),len(na),new_min_id,new_max_id)
+            # ea['parent'][eids] -= delta
+            # ea['child'] -= delta
                 # sd = np.setdiff1d(ea[field],na['id'])
                 # print("checking",field)
                 # for x in sd:
                 #     assert(x < len(self.__nodes)), "Value out of bounds {}".format(x)
-            samples -= delta
+            # samples -= delta
             # print(samples)
             # sdiff = np.setdiff1d(samples,na['id'])
             # assert(len(sdiff) == 0)

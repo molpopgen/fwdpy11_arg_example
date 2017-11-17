@@ -27,45 +27,6 @@
 #include "node.hpp"
 #include "edge.hpp"
 
-inline void
-prep_for_gc_details(std::vector<node>& nodes)
-{
-    if (nodes.empty())
-        return;
-
-    //convert forward time to backwards time
-    auto max_gen = nodes.back().generation;
-
-    for (auto& n : nodes)
-        {
-            n.generation -= max_gen;
-            n.generation *= -1.0;
-        }
-}
-struct ancestry_data_async
-{
-    using integer_type = decltype(edge::parent);
-    /// Nodes:
-    std::vector<node> nodes;
-    /// The ARG:
-    std::vector<edge> edges;
-    std::vector<integer_type> offspring_indexes;
-
-    explicit ancestry_data_async(std::vector<node>&& nodes_,
-                                 std::vector<edge>&& edges_,
-                                 std::vector<integer_type> offspring_indexes_)
-        : nodes(std::move(nodes_)), edges(std::move(edges_)),
-          offspring_indexes(std::move(offspring_indexes_))
-    {
-    }
-
-    void
-    prep_for_gc()
-    {
-        prep_for_gc_details(this->nodes);
-    }
-};
-
 struct ancestry_tracker
 {
     using integer_type = decltype(edge::parent);
@@ -151,7 +112,17 @@ struct ancestry_tracker
     void
     prep_for_gc()
     {
-        prep_for_gc_details(nodes);
+        if (nodes.empty())
+            return;
+
+        //convert forward time to backwards time
+        auto max_gen = nodes.back().generation;
+
+        for (auto& n : nodes)
+            {
+                n.generation -= max_gen;
+                n.generation *= -1.0;
+            }
     }
 
     void
@@ -172,12 +143,31 @@ struct ancestry_tracker
             }
     }
 
-    ancestry_data_async
-    prep_for_async()
+    void
+    exchange_for_async(ancestry_tracker& a)
     {
-		first_parental_index = 0;
-        return ancestry_data_async(std::move(nodes), std::move(edges),
-                                   offspring_indexes);
+        nodes.swap(a.nodes);
+        edges.swap(a.edges);
+        a.offspring_indexes.assign(offspring_indexes.begin(),
+                                   offspring_indexes.end());
+        nodes.clear();
+        edges.clear();
+        first_parental_index = 0;
+    }
+    void
+    update_indexes(const integer_type delta, const integer_type mindex,
+                   const integer_type maxdex)
+    {
+        for (auto& e : edges)
+            {
+                e.child -= delta;
+                if (!(e.parent < mindex) && !(e.parent > maxdex))
+                    {
+                        e.parent -= delta;
+                    }
+            }
+        for (auto& i : offspring_indexes)
+            i -= delta;
     }
 };
 
