@@ -161,6 +161,7 @@ struct wf_rules_async_fitness : public fwdpy11::wf_rules
         if (nthreads > 1)
             {
                 auto N_curr = pop.diploids.size();
+				fitnesses.resize(N_curr);
                 std::size_t increment = N_curr / nthreads + 1;
                 std::size_t offset = increment;
                 auto first_diploid = pop.diploids.begin() + offset;
@@ -180,6 +181,7 @@ struct wf_rules_async_fitness : public fwdpy11::wf_rules
                                 static_cast<std::size_t>(std::distance(
                                     pop.diploids.begin(), first_diploid)),
                                 first_diploid, last_diploid_in_range, ff));
+						first_diploid=last_diploid_in_range;
                     }
                 wbar = accumulate_fitnesses()(
                     pop.gametes, pop.mutations, fitnesses, 0,
@@ -238,7 +240,7 @@ evolve_singlepop_regions_track_ancestry_async(
         mmodel, pop.mutations, pop.mut_lookup, rng.get(), 0.0, mu_selected,
         &pop.generation);
     ++pop.generation;
-    auto rules = wf_rules_async_fitness();
+    auto rules = wf_rules_async_fitness(2);
 
     auto fitness_callback = fitness.callback();
     fitness.update(pop);
