@@ -50,28 +50,29 @@ class ArgSimplifier(object):
         new_min_id = na['id'][0]
         new_max_id = na['id'][-1]
         delta = new_min_id - len(self.__nodes)
+        print("delta = ",delta)
         samples = np.array(ancestry.samples, copy=False)
-        if delta > 0:
+        if delta != 0:
             # This next step does not have to be done.
             # It is here for checking now.  Can delete
             # later.
             na['id'] -= delta
-            print("updating IDs:",new_min_id,na['id'][0],delta)
-            print("max IDs are: ",na['id'].min(),na['id'].max())
-            print("new edges",ea)
+            # print("updating IDs:",new_min_id,na['id'][0],delta)
+            # print("max IDs are: ",na['id'].min(),na['id'].max())
+            # print("new edges",ea)
             for field in ['parent','child']:
                 eids = np.where((ea[field]>=new_min_id)&(ea[field]<=new_max_id))[0]
-                print("processing ",field,len(eids),len(self.__nodes),len(na),new_min_id,new_max_id)
+                # print("processing ",field,len(eids),len(self.__nodes),len(na),new_min_id,new_max_id)
                 ea[field][eids] -= delta
                 sd = np.setdiff1d(ea[field],na['id'])
                 # print("checking",field)
                 # for x in sd:
                 #     assert(x < len(self.__nodes)), "Value out of bounds {}".format(x)
             samples -= delta
-            print(samples)
+            # print(samples)
             sdiff = np.setdiff1d(samples,na['id'])
             assert(len(sdiff) == 0)
-            print("new edges 2",ea)
+            # print("new edges 2",ea)
         # print(samples)
         flags = np.ones(len(na), dtype=np.uint32)
         self.__time_prepping += time.process_time() - before
