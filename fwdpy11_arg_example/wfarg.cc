@@ -161,7 +161,7 @@ struct wf_rules_async_fitness : public fwdpy11::wf_rules
         if (nthreads > 1)
             {
                 auto N_curr = pop.diploids.size();
-				fitnesses.resize(N_curr);
+                fitnesses.resize(N_curr);
                 std::size_t increment = N_curr / nthreads + 1;
                 std::size_t offset = increment;
                 auto first_diploid = pop.diploids.begin() + offset;
@@ -181,7 +181,7 @@ struct wf_rules_async_fitness : public fwdpy11::wf_rules
                                 static_cast<std::size_t>(std::distance(
                                     pop.diploids.begin(), first_diploid)),
                                 first_diploid, last_diploid_in_range, ff));
-						first_diploid=last_diploid_in_range;
+                        first_diploid = last_diploid_in_range;
                     }
                 wbar = accumulate_fitnesses()(
                     pop.gametes, pop.mutations, fitnesses, 0,
@@ -206,7 +206,7 @@ double
 evolve_singlepop_regions_track_ancestry_async(
     const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,
     ancestry_tracker& ancestry, py::object python_queue,
-	//py::function ancestry_processor,
+    //py::function ancestry_processor,
     const KTfwd::uint_t gc_interval, py::array_t<std::uint32_t> popsizes,
     const double mu_selected, const double recrate,
     const KTfwd::extensions::discrete_mut_model& mmodel,
@@ -231,7 +231,7 @@ evolve_singlepop_regions_track_ancestry_async(
             throw std::runtime_error("negative recombination rate: "
                                      + std::to_string(recrate));
         }
-	//py::gil_scoped_release released_GIL_during_simulation;
+    //py::gil_scoped_release released_GIL_during_simulation;
 
     pop.mutations.reserve(
         std::ceil(std::log(2 * pop.N)
@@ -250,23 +250,27 @@ evolve_singlepop_regions_track_ancestry_async(
     auto wbar = rules.w(pop, fitness_callback);
 
     //std::future<py::object> msprime_future;
-	ancestry_tracker local_ancestry_tracker(ancestry);
+    //ancestry_tracker local_ancestry_tracker(ancestry);
     double time_simulating = 0.0;
-	py::gil_scoped_release GIL_release;
+    py::gil_scoped_release GIL_release;
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
             if (pop.generation > 0 && pop.generation % gc_interval == 0.)
                 {
-					{
-						py::gil_scoped_acquire acquire;
-						py::object new_data = py::cast(ancestry_tracker(ancestry));
-						python_queue.attr("put")(py::make_tuple(pop.generation,new_data));
-						ancestry.first_parental_index = 0;
-						ancestry.next_index = 2*pop.diploids.size();
-						ancestry.nodes.clear();
-						ancestry.edges.clear();
-					}
+                    ancestry_tracker local_ancestry_tracker(ancestry);
+
+                    {
+                        py::gil_scoped_acquire acquire;
+                        py::object new_data = py::cast(ancestry_tracker(
+                            std::move(local_ancestry_tracker)));
+                        python_queue.attr("put")(
+                            py::make_tuple(pop.generation, new_data));
+                    }
+                    ancestry.first_parental_index = 0;
+                    ancestry.next_index = 2 * pop.diploids.size();
+                    ancestry.nodes.clear();
+                    ancestry.edges.clear();
                     //if (msprime_future.valid())
                     //    {
                     //        msprime_future.wait();
