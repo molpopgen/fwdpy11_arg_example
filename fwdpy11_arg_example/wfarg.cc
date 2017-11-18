@@ -252,6 +252,7 @@ evolve_singlepop_regions_track_ancestry_async(
     //std::future<py::object> msprime_future;
 	ancestry_tracker local_ancestry_tracker(ancestry);
     double time_simulating = 0.0;
+	py::gil_scoped_release GIL_release;
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {

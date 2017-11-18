@@ -67,9 +67,9 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
         def worker():
             while True:
                 data = q.get()
-                print(type(data),data[0])
                 if data is None:
                     break;
+                print(type(data),data[0])
                 simplifier(data[0],data[1])
                 q.task_done()
         t = threading.Thread(target=worker)
