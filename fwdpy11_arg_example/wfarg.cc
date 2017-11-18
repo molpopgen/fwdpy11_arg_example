@@ -205,7 +205,8 @@ struct wf_rules_async_fitness : public fwdpy11::wf_rules
 double
 evolve_singlepop_regions_track_ancestry_async(
     const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,
-    ancestry_tracker& ancestry, py::function ancestry_processor,
+    ancestry_tracker& ancestry, py::object python_queue,
+	//py::function ancestry_processor,
     const KTfwd::uint_t gc_interval, py::array_t<std::uint32_t> popsizes,
     const double mu_selected, const double recrate,
     const KTfwd::extensions::discrete_mut_model& mmodel,
@@ -230,6 +231,8 @@ evolve_singlepop_regions_track_ancestry_async(
             throw std::runtime_error("negative recombination rate: "
                                      + std::to_string(recrate));
         }
+	//py::gil_scoped_release released_GIL_during_simulation;
+
     pop.mutations.reserve(
         std::ceil(std::log(2 * pop.N)
                   * (4. * double(pop.N) * (mu_selected)
@@ -247,38 +250,47 @@ evolve_singlepop_regions_track_ancestry_async(
     auto wbar = rules.w(pop, fitness_callback);
 
     std::future<py::object> msprime_future;
-    ancestry_tracker local_ancestry_tracker(ancestry);
+	ancestry_tracker local_ancestry_tracker(ancestry);
     double time_simulating = 0.0;
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
             if (pop.generation > 0 && pop.generation % gc_interval == 0.)
                 {
-                    if (msprime_future.valid())
-                        {
-                            msprime_future.wait();
-                            auto result = msprime_future.get();
-                            auto result_tuple = result.cast<py::tuple>();
-                            ancestry.post_process_gc(result_tuple, false);
-                        }
-                    {
-                        py::gil_scoped_acquire acquire;
-                        py::print("We got our future:", pop.generation,
-                                  ancestry.nodes[0].id,
-                                  ancestry.nodes.back().id,
-                                  ancestry.first_parental_index,
-                                  ancestry.next_index);
-                    }
-                    ancestry.exchange_for_async(local_ancestry_tracker);
+					{
+						py::gil_scoped_acquire acquire;
+						py::object new_data = py::cast(ancestry_tracker(ancestry));
+						python_queue.attr("put")(py::make_tuple(pop.generation,new_data));
+						ancestry.first_parental_index = 0;
+						ancestry.next_index = 2*pop.diploids.size();
+						ancestry.nodes.clear();
+						ancestry.edges.clear();
+					}
+                    //if (msprime_future.valid())
+                    //    {
+                    //        msprime_future.wait();
+                    //        auto result = msprime_future.get();
+                    //        auto result_tuple = result.cast<py::tuple>();
+                    //        ancestry.post_process_gc(result_tuple, false);
+                    //    }
+                    //{
+                    //    py::gil_scoped_acquire acquire;
+                    //    py::print("We got our future:", pop.generation,
+                    //              ancestry.nodes[0].id,
+                    //              ancestry.nodes.back().id,
+                    //              ancestry.first_parental_index,
+                    //              ancestry.next_index);
+                    //}
+                    //ancestry.exchange_for_async(local_ancestry_tracker);
                     //auto async_data = ancestry.prep_for_async();
-                    py::print(local_ancestry_tracker.nodes.size(),
-                              local_ancestry_tracker.edges.size(),
-                              local_ancestry_tracker.offspring_indexes.size(),
-                              ancestry.nodes.size(), ancestry.edges.size(),
-                              ancestry.nodes.capacity());
-                    msprime_future = std::async(
-                        std::launch::async, ancestry_processor, pop.generation,
-                        std::ref(local_ancestry_tracker));
+                    //py::print(local_ancestry_tracker.nodes.size(),
+                    //          local_ancestry_tracker.edges.size(),
+                    //          local_ancestry_tracker.offspring_indexes.size(),
+                    //          ancestry.nodes.size(), ancestry.edges.size(),
+                    //          ancestry.nodes.capacity());
+                    //msprime_future = std::async(
+                    //    std::launch::async, ancestry_processor, pop.generation,
+                    //    local_ancestry_tracker);
                     //msprime_future.wait();
                     //auto result = msprime_future.get();
                     //auto result_tuple = result.cast<py::tuple>();

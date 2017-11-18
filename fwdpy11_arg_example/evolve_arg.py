@@ -4,7 +4,6 @@ import fwdpy11.model_params
 import numpy as np
 import msprime
 
-
 def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, msprime_seed=None, async=False):
     """
     Evolve a population and track its ancestry using msprime.
@@ -62,12 +61,27 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
                                                        params.recrate, mm, rm,
                                                        params.gvalue, params.pself)
     else:
-        tsim = evolve_singlepop_regions_track_ancestry_async(rng, pop, atracker, simplifier,
+        import threading
+        import queue
+        q = queue.Queue(2)
+        def worker():
+            while True:
+                data = q.get()
+                print(type(data))
+                if data is None:
+                    break;
+                simplifier(data[0],data[1])
+                q.task_done()
+        t = threading.Thread(target=worker)
+        t.start()
+        tsim = evolve_singlepop_regions_track_ancestry_async(rng, pop, atracker, q,
                                                              gc_interval,
                                                              params.demography,
                                                              params.mutrate_s,
                                                              params.recrate, mm, rm,
                                                              params.gvalue, params.pself)
+        q.put(None)
+        t.join()
     print("we have returned from the C++ side of the sim")
     if len(atracker.nodes) > 0:
         print("final simplify")
