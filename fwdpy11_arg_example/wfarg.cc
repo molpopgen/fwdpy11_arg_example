@@ -4,19 +4,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl_bind.h>
 #include <pybind11/numpy.h>
-#include <fwdpy11/rules/wf_rules.hpp>
-#include <fwdpy11/sim_functions.hpp>
-#include <fwdpy11/types.hpp>
-#include <fwdpy11/rng.hpp>
-#include <fwdpp/diploid.hh>
-#include <fwdpp/sugar/infsites.hpp>
-#include <fwdpp/sugar/popgenmut.hpp>
-#include <fwdpp/sugar/singlepop.hpp>
-#include <fwdpp/sugar/GSLrng_t.hpp>
 #include "ancestry_tracker.hpp"
 #include "evolve_generation.hpp"
 #include "evolve_functions.hpp"
-#include "wf_rules_async.hpp"
 
 namespace py = pybind11;
 
