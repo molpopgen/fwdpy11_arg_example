@@ -249,7 +249,7 @@ evolve_singlepop_regions_track_ancestry_async(
     fitness.update(pop);
     auto wbar = rules.w(pop, fitness_callback);
 
-    std::future<py::object> msprime_future;
+    //std::future<py::object> msprime_future;
 	ancestry_tracker local_ancestry_tracker(ancestry);
     double time_simulating = 0.0;
     for (unsigned generation = 0; generation < generations;
@@ -328,15 +328,15 @@ evolve_singlepop_regions_track_ancestry_async(
             auto dur = (stop - start) / (double)CLOCKS_PER_SEC;
             time_simulating += dur;
         }
-    py::print("leaving sim. future state: ", msprime_future.valid());
+    //py::print("leaving sim. future state: ", msprime_future.valid());
     --pop.generation;
-    if (msprime_future.valid())
-        {
-            msprime_future.wait();
-            auto result = msprime_future.get();
-            auto result_tuple = result.cast<py::tuple>();
-            ancestry.post_process_gc(result_tuple, false);
-        }
+    //if (msprime_future.valid())
+    //    {
+    //        msprime_future.wait();
+    //        auto result = msprime_future.get();
+    //        auto result_tuple = result.cast<py::tuple>();
+    //        ancestry.post_process_gc(result_tuple, false);
+    //    }
 
     return time_simulating;
 }
