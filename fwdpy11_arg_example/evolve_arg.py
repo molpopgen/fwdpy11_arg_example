@@ -82,7 +82,6 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
                 data = q.get()
                 if data is None:
                     break;
-                print(type(data), data[0])
                 simplifier(data[0], data[1])
                 q.task_done()
         t = threading.Thread(target=worker)
@@ -94,9 +93,7 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
         q.put(None)
         t.join()
 
-    print("we have returned from the C++ side of the sim")
     if len(atracker.nodes) > 0:
-        print("final simplify")
         # TODO
         # The + 1 is b/c we have a bit of a book-keeping
         # thing that we need to document...

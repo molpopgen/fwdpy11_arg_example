@@ -23,7 +23,6 @@ class ArgSimplifier(object):
         if trees is not None:
             self.__process = False
             trees.dump_tables(nodes=self.__nodes, edges=self.__edges)
-            # print("input data: ",len(self.__nodes),len(self.__edges))
         self.__time_sorting = 0.0
         self.__time_appending = 0.0
         self.__time_simplifying = 0.0
@@ -32,12 +31,9 @@ class ArgSimplifier(object):
     def simplify(self, generation, ancestry):
         # update node times:
         if self.__nodes.num_rows > 0: 
-            # print("generation = ",generation)
             tc = self.__nodes.time
             dt = float(generation) - self.last_gc_time
-            # print(tc)
             tc += dt
-            # print("newtimes = ",tc)
             self.last_gc_time = generation
             flags = np.ones(self.__nodes.num_rows, dtype=np.uint32)
             self.__nodes.set_columns(
@@ -50,32 +46,9 @@ class ArgSimplifier(object):
         new_min_id = na['id'][0]
         new_max_id = na['id'][-1]
         delta = new_min_id - len(self.__nodes)
-        print("delta = ",delta)
         samples = np.array(ancestry.samples, copy=False)
         if delta != 0:
-            # This next step does not have to be done.
-            # It is here for checking now.  Can delete
-            # later.
-            # na['id'] -= delta
-            # print("updating IDs:",new_min_id,na['id'][0],delta)
-            # print("max IDs are: ",na['id'].min(),na['id'].max())
-            # print("new edges",ea)
-            # for field in ['parent','child']:
             ancestry.update_indexes(delta,new_min_id,new_max_id);
-            # eids = np.where((ea['parent']>=new_min_id)&(ea['parent']<=new_max_id))[0]
-            #     # print("processing ",field,len(eids),len(self.__nodes),len(na),new_min_id,new_max_id)
-            # ea['parent'][eids] -= delta
-            # ea['child'] -= delta
-                # sd = np.setdiff1d(ea[field],na['id'])
-                # print("checking",field)
-                # for x in sd:
-                #     assert(x < len(self.__nodes)), "Value out of bounds {}".format(x)
-            # samples -= delta
-            # print(samples)
-            # sdiff = np.setdiff1d(samples,na['id'])
-            # assert(len(sdiff) == 0)
-            # print("new edges 2",ea)
-        # print(samples)
         flags = np.ones(len(na), dtype=np.uint32)
         self.__time_prepping += time.process_time() - before
 
@@ -123,7 +96,6 @@ class ArgSimplifier(object):
         self.__last_edge_start = len(self.__edges)
         self.__time_simplifying += time.process_time() - before
         self.__process = True
-        # print("returning!")
         return (True, self.__nodes.num_rows)
 
     def __call__(self, generation, ancestry):
