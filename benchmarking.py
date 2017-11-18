@@ -37,6 +37,8 @@ def parse_args():
                         help="Simulation length, in multiples of N generations")
     parser.add_argument('--outfile1', type=str, help="Main output file")
     parser.add_argument('--async',action='store_true',help="Execute msprime step in separate process during simulation.")
+    parser.add_argument('--queue',action='store_true',help="Use queue.Queue to handle msprime steps")
+    parser.add_argument('--qsize',type=int,default=2,help="Size of queue.Queue.")
     return parser
 
 
@@ -86,7 +88,7 @@ if __name__ == "__main__":
     else:
         # Use this module
         simplifier, atracker, tsim = evolve_track(
-            rng, pop, params, args.gc, True, args.seed, args.async)
+            rng, pop, params, args.gc, True, args.seed, args.async, args.queue, args.qsize)
         # Take times from simplifier before they change.
         times = simplifier.times
         times['fwd_sim_runtime'] = [tsim]
