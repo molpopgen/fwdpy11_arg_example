@@ -111,7 +111,7 @@ evolve_singlepop_regions_track_ancestry_python_queue(
             fitness.update(pop);
             wbar = rules.w(pop, fitness_callback);
             auto stop = std::clock();
-            auto dur = (stop - start) / (double)CLOCKS_PER_SEC;
+            auto dur = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
             time_simulating += dur;
         }
     --pop.generation;
