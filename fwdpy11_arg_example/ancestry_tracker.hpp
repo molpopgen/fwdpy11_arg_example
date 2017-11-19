@@ -41,7 +41,8 @@ struct ancestry_tracker
     integer_type generation, next_index, first_parental_index;
     std::uint32_t lastN;
     decltype(node::generation) last_gc_time;
-    ancestry_tracker(const integer_type N, const bool init_with_TreeSequence, const integer_type next_index_)
+    ancestry_tracker(const integer_type N, const bool init_with_TreeSequence,
+                     const integer_type next_index_)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() },
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
@@ -125,7 +126,7 @@ struct ancestry_tracker
     }
 
     void
-    post_process_gc(pybind11::tuple t)
+    post_process_gc(pybind11::tuple t, const bool clear = true)
     {
         pybind11::bool_ gc = t[0].cast<bool>();
         if (!gc)
@@ -135,8 +136,38 @@ struct ancestry_tracker
         next_index = t[1].cast<integer_type>();
         // establish last parental index:
         first_parental_index = 0;
+        if (clear)
+            {
+                nodes.clear();
+                edges.clear();
+            }
+    }
+
+    void
+    exchange_for_async(ancestry_tracker& a)
+    {
+        nodes.swap(a.nodes);
+        edges.swap(a.edges);
+        a.offspring_indexes.assign(offspring_indexes.begin(),
+                                   offspring_indexes.end());
         nodes.clear();
         edges.clear();
+        first_parental_index = 0;
+    }
+    void
+    update_indexes(const integer_type delta, const integer_type mindex,
+                   const integer_type maxdex)
+    {
+        for (auto& e : edges)
+            {
+                e.child -= delta;
+                if (!(e.parent < mindex) && !(e.parent > maxdex))
+                    {
+                        e.parent -= delta;
+                    }
+            }
+        for (auto& i : offspring_indexes)
+            i -= delta;
     }
 };
 

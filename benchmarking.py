@@ -11,6 +11,7 @@ import msprime
 import gzip
 import pandas as pd
 
+
 def parse_args():
     dstring = "Prototype implementation of ARG tracking and regular garbage collection."
     parser = argparse.ArgumentParser(description=dstring,
@@ -32,8 +33,12 @@ def parse_args():
     parser.add_argument('--neutral_mutations',
                         action='store_true',
                         help="Simulate neutral mutations.  If False, ARG is tracked instead and neutral mutations dropped down on the sample afterwards.")
-    parser.add_argument('--simlen',type=int,default=10,help="Simulation length, in multiples of N generations")
+    parser.add_argument('--simlen', type=int, default=10,
+                        help="Simulation length, in multiples of N generations")
     parser.add_argument('--outfile1', type=str, help="Main output file")
+    parser.add_argument('--async',action='store_true',help="Execute msprime step in separate process during simulation.")
+    parser.add_argument('--queue',action='store_true',help="Use queue.Queue to handle msprime steps")
+    parser.add_argument('--qsize',type=int,default=2,help="Size of queue.Queue.")
     return parser
 
 
@@ -83,7 +88,7 @@ if __name__ == "__main__":
     else:
         # Use this module
         simplifier, atracker, tsim = evolve_track(
-            rng, pop, params, args.gc, True)
+            rng, pop, params, args.gc, True, args.seed, args.async, args.queue, args.qsize)
         # Take times from simplifier before they change.
         times = simplifier.times
         times['fwd_sim_runtime'] = [tsim]
@@ -92,7 +97,7 @@ if __name__ == "__main__":
         times['rho'] = [args.rho]
         times['simplify_interval'] = [args.gc]
         d = pd.DataFrame(times)
-        d.to_csv(args.outfile1,sep='\t',index=False,compression='gzip')
+        d.to_csv(args.outfile1, sep='\t', index=False, compression='gzip')
         # Simplify the genealogy down to a sample,
         # And throw mutations onto that sample
         msprime.simplify_tables(np.random.choice(2 * args.popsize, args.nsam,
