@@ -21,11 +21,11 @@
 // existing function to evolve a single-deme, single-region
 // population object for one generation.  The modification is to include updating
 // an ancestry_tracker object
-template <typename poptype, typename pick1_function, typename pick2_function,
+template <typename pick1_function, typename pick2_function,
           typename update_function, typename mutation_model,
           typename recombination_model, typename mutation_removal_policy>
 void
-evolve_generation(const fwdpy11::GSLrng_t& rng, poptype& pop,
+evolve_generation(const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,
                   const KTfwd::uint_t N_next, const double mu,
                   const mutation_model& mmodel,
                   const recombination_model& recmodel,
@@ -33,9 +33,6 @@ evolve_generation(const fwdpy11::GSLrng_t& rng, poptype& pop,
                   const update_function& update, ancestry_tracker& ancestry,
                   const mutation_removal_policy& mrp)
 {
-    static_assert(std::is_same<typename poptype::popmodel_t,
-                               KTfwd::sugar::SINGLEPOP_TAG>::value,
-                  "Population type must be a single-locus, single-deme type.");
 
     auto gamete_recycling_bin
         = KTfwd::fwdpp_internal::make_gamete_queue(pop.gametes);
