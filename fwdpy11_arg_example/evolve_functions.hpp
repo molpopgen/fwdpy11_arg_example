@@ -2,6 +2,7 @@
 #define EVOLVE_FUNCTIONS_HPP__
 
 #include <fwdpy11/types.hpp>
+#include <fwdpy11/fitness/fitness.hpp>
 #include <fwdpp/extensions/regions.hpp>
 #include <pybind11/numpy.h>
 

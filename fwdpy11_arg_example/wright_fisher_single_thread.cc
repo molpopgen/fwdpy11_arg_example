@@ -1,7 +1,10 @@
+#include <chrono>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
+#include <pybind11/chrono.h>
 #include <fwdpy11/rules/wf_rules.hpp>
 #include <fwdpy11/sim_functions.hpp>
+#include <fwdpp/extensions/regions.hpp>
 #include "evolve_generation.hpp"
 
 namespace py = pybind11;
@@ -89,7 +92,7 @@ evolve_singlepop_regions_track_ancestry(
                           std::placeholders::_1, std::placeholders::_2,
                           std::placeholders::_3, std::placeholders::_4,
                           std::placeholders::_5),
-                ancestry, std::true_type());
+                ancestry);
             pop.N = N_next;
             fwdpy11::update_mutations(
                 pop.mutations, pop.fixations, pop.fixation_times,
