@@ -56,7 +56,7 @@ evolve_singlepop_regions_track_ancestry_async(
     auto wbar = rules.w(pop, fitness_callback);
 
     std::future<py::object> msprime_future;
-    ancestry_tracker local_ancestry_tracker(ancestry);
+    ancestry_tracker local_ancestry_tracker;
     double time_simulating = 0.0;
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)

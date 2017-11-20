@@ -20,12 +20,32 @@
 #include <map>
 #include <limits>
 #include <cstdint>
+#include <atomic>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
 #include "node.hpp"
 #include "edge.hpp"
+
+class spinlock
+{
+    std::atomic_flag f;
+
+  public:
+    spinlock() : f(ATOMIC_FLAG_INIT) {}
+    void
+    lock()
+    {
+        while (f.test_and_set(std::memory_order_acquire))
+            ;
+    }
+    void
+    unlock()
+    {
+        f.clear(std::memory_order_release);
+    }
+};
 
 struct ancestry_tracker
 {
@@ -41,13 +61,14 @@ struct ancestry_tracker
     integer_type generation, next_index, first_parental_index;
     std::uint32_t lastN;
     decltype(node::generation) last_gc_time;
+    spinlock ready;
     ancestry_tracker(const integer_type N, const bool init_with_TreeSequence,
                      const integer_type next_index_)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() },
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
           next_index{ next_index_ }, first_parental_index{ 0 },
-          lastN{ static_cast<std::uint32_t>(N) }, last_gc_time{ 0.0 }
+          lastN{ static_cast<std::uint32_t>(N) }, last_gc_time{ 0.0 }, ready{}
     {
         nodes.reserve(2 * N);
         edges.reserve(2 * N);
@@ -62,6 +83,28 @@ struct ancestry_tracker
                         nodes.emplace_back(make_node(i, 0.0, 0));
                     }
             }
+    }
+
+    ancestry_tracker()
+        : nodes{}, edges{}, temp{}, offspring_indexes{}, generation{},
+          next_index{}, first_parental_index{}, lastN{}, last_gc_time{},
+          ready{}
+    {
+    }
+
+    ancestry_tracker(const ancestry_tracker& a)
+        : nodes{ a.nodes }, edges{ a.edges }, temp{ a.temp },
+          offspring_indexes{ a.offspring_indexes }, generation{ a.generation },
+          next_index{ a.next_index },
+          first_parental_index{ a.first_parental_index }, lastN{ a.lastN },
+          last_gc_time{ a.last_gc_time }, ready{}
+	// Copy construtor.
+	// This only exists so that we can wrap this object
+	// in a shared_ptr in a pybind11::class_.  This
+	// constructor must NOT be exposed to Python via 
+	// pybind11::init<>.  Any use other than initialization
+	// into a shared_ptr is considered undefined behavior.
+    {
     }
 
     std::tuple<integer_type, integer_type>
@@ -146,6 +189,7 @@ struct ancestry_tracker
     void
     exchange_for_async(ancestry_tracker& a)
     {
+        a.ready.lock();
         nodes.swap(a.nodes);
         edges.swap(a.edges);
         a.offspring_indexes.assign(offspring_indexes.begin(),
@@ -168,6 +212,12 @@ struct ancestry_tracker
             }
         for (auto& i : offspring_indexes)
             i -= delta;
+    }
+
+    void
+    release_spinlock()
+    {
+        ready.unlock();
     }
 };
 

@@ -64,7 +64,7 @@ evolve_singlepop_regions_track_ancestry_python_queue(
     std::vector<py::object> faux_memory_pool(python_qsize);
     for (auto& i : faux_memory_pool)
         {
-            i = py::cast(ancestry_tracker(ancestry));
+            i = py::cast(ancestry_tracker());
         }
     std::size_t items_submitted = 0;
     for (unsigned generation = 0; generation < generations;

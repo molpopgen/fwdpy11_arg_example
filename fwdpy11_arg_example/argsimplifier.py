@@ -69,6 +69,7 @@ class ArgSimplifier(object):
         new_right = ea['right'][::-1]
         new_parent = ea['parent'][::-1]
         new_child = ea['child'][::-1]
+
         parent_time = self.__nodes.time[new_parent]
         breakpoints = np.where(parent_time[1:] != parent_time[:-1])[0] + 1
         self.__edges.reset()
@@ -90,6 +91,8 @@ class ArgSimplifier(object):
 
         # Append the old sorted edges to the table.
         self.__edges.append_columns(left=left, right=right, parent=parent, child=child)
+        # We can now release the mutex
+        ancestry.release_spinlock()
         before = time.process_time()
         msprime.simplify_tables(samples=samples.tolist(),
                 nodes=self.__nodes, edges=self.__edges)

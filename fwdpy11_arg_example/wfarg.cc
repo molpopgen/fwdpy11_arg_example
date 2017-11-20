@@ -8,7 +8,6 @@
 
 namespace py = pybind11;
 
-
 //Register vectors of nodes and edges as "opaque"
 PYBIND11_MAKE_OPAQUE(std::vector<node>);
 PYBIND11_MAKE_OPAQUE(std::vector<edge>);
@@ -45,10 +44,11 @@ PYBIND11_MODULE(wfarg, m)
     //Expose the C++ ancestry_tracker to Python.
     //We only expose the stuff that a user really needs
     //to see.
-    py::class_<ancestry_tracker>(m, "AncestryTracker")
+    py::class_<ancestry_tracker,std::shared_ptr<ancestry_tracker>>(m, "AncestryTracker")
         .def(py::init<decltype(edge::parent), bool, decltype(edge::parent)>(),
              py::arg("N"), py::arg("init_with_TreeSequence"),
              py::arg("next_index"))
+		.def(py::init<ancestry_tracker&>())
         .def_readwrite("nodes", &ancestry_tracker::nodes,
                        "Data for msprime.NodeTable.")
         .def_readwrite("edges", &ancestry_tracker::edges,
@@ -62,7 +62,10 @@ PYBIND11_MODULE(wfarg, m)
                       "Last time point where garbage collection happened.")
         .def("update_indexes", &ancestry_tracker::update_indexes)
         .def("prep_for_gc", &ancestry_tracker::prep_for_gc,
-             "Call this immediately before you are going to simplify.");
+             "Call this immediately before you are going to simplify.")
+        .def("release_spinlock", &ancestry_tracker::release_spinlock,
+             "Releases the spin lock.  Used in multi-threaded applications of "
+             "the msprime machinery.");
 
     //Make our C++ function callable from Python.
     //This is NOT part of a user-facing Python API.
