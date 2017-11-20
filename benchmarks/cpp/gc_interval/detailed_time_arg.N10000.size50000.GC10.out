@@ -1,0 +1,8 @@
+Time spent in C++ simulation was 10122.833204437131 seconds. (32.19409332204865% of total)
+Time spent related to msprime functionality:
+	Prepping: 14.849722146987915 seconds (0.04722722689899387%).
+	Appending: 133.98714685440063 seconds (0.42612523812946335%).
+	Sorting: 7014.2240788936615 seconds (22.307646487613894%).
+	Simplifying: 14157.243889093399 seconds (45.024907725309%).
+There are 4447 segregating mutations.
+There are 510 fixations.
