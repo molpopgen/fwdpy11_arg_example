@@ -75,7 +75,7 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
     else:
         import threading
         import queue
-        q = queue.Queue(4)
+        q = queue.Queue(qsize)
 
         def worker():
             while True:

@@ -10,7 +10,10 @@ class ArgSimplifier(object):
     AncestryTracker and msprime
     """
 
-    def __init__(self, gc_interval, trees = None):
+    from .wfarg import reverse_time
+    from .wfarg import update_indexes
+
+    def __init__(self, gc_interval, trees=None):
         """
         :param gc_interval: Garbage collection interval
         :param trees: An instance of :class:`msprime.TreeSequence`
@@ -29,8 +32,9 @@ class ArgSimplifier(object):
         self.__time_prepping = 0.0
 
     def simplify(self, generation, ancestry):
+        # print(type(ancestry))
         # update node times:
-        if self.__nodes.num_rows > 0: 
+        if self.__nodes.num_rows > 0:
             tc = self.__nodes.time
             dt = float(generation) - self.last_gc_time
             tc += dt
@@ -40,15 +44,17 @@ class ArgSimplifier(object):
                 flags=flags, population=self.__nodes.population, time=tc)
 
         before = time.process_time()
-        ancestry.prep_for_gc()
+        # Acquire mutex 
+        ancestry.acquire()
+        self.reverse_time(ancestry.nodes)
         na = np.array(ancestry.nodes, copy=False)
         ea = np.array(ancestry.edges, copy=False)
         new_min_id = na['id'][0]
         new_max_id = na['id'][-1]
         delta = new_min_id - len(self.__nodes)
-        samples = np.array(ancestry.samples, copy=False)
         if delta != 0:
-            ancestry.update_indexes(delta,new_min_id,new_max_id);
+            self.update_indexes(ancestry.edges,ancestry.samples,delta, new_min_id, new_max_id)
+        samples = np.array(ancestry.samples, copy=False)
         flags = np.ones(len(na), dtype=np.uint32)
         self.__time_prepping += time.process_time() - before
 
@@ -90,12 +96,14 @@ class ArgSimplifier(object):
         self.__time_sorting += time.process_time() - before
 
         # Append the old sorted edges to the table.
-        self.__edges.append_columns(left=left, right=right, parent=parent, child=child)
-        # We can now release the mutex
-        ancestry.release_spinlock()
+        self.__edges.append_columns(
+            left=left, right=right, parent=parent, child=child)
         before = time.process_time()
         msprime.simplify_tables(samples=samples.tolist(),
-                nodes=self.__nodes, edges=self.__edges)
+                                nodes=self.__nodes, edges=self.__edges)
+
+        # Release any locks on the ancestry object
+        ancestry.release()
         self.__last_edge_start = len(self.__edges)
         self.__time_simplifying += time.process_time() - before
         self.__process = True
