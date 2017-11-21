@@ -64,7 +64,7 @@ evolve_singlepop_regions_track_ancestry_python_queue(
     std::vector<py::object> faux_memory_pool(python_qsize);
     for (auto& i : faux_memory_pool)
         {
-            i = py::cast(ancestry_tracker());
+            i = py::cast(ancestry_data());
         }
     std::size_t items_submitted = 0;
     for (unsigned generation = 0; generation < generations;
@@ -77,7 +77,7 @@ evolve_singlepop_regions_track_ancestry_python_queue(
 						py::print("exchanging at gen",pop.generation);
                         ancestry.exchange_for_async(
                             faux_memory_pool[items_submitted]
-                                .cast<ancestry_tracker&>());
+                                .cast<ancestry_data&>());
 						py::print("putting...");
                         python_queue.attr("put")(py::make_tuple(
                             pop.generation,

@@ -56,7 +56,7 @@ evolve_singlepop_regions_track_ancestry_async(
     auto wbar = rules.w(pop, fitness_callback);
 
     std::future<py::object> msprime_future;
-    ancestry_tracker local_ancestry_tracker;
+    ancestry_data local_ancestry_data;
     double time_simulating = 0.0;
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
@@ -71,10 +71,10 @@ evolve_singlepop_regions_track_ancestry_async(
                             ancestry.post_process_gc(result_tuple, false);
                         }
 
-                    ancestry.exchange_for_async(local_ancestry_tracker);
+                    ancestry.exchange_for_async(local_ancestry_data);
                     msprime_future = std::async(
                         std::launch::async, ancestry_processor, pop.generation,
-                        std::ref(local_ancestry_tracker));
+                        std::ref(local_ancestry_data));
                 }
             //This is not great API design, but
             //we need to clear the offspring indexes here:

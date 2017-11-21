@@ -47,6 +47,53 @@ class spinlock
     }
 };
 
+inline void
+reverse_time(std::vector<node>& nodes)
+{
+    if (nodes.empty())
+        return;
+
+    //convert forward time to backwards time
+    auto max_gen = nodes.back().generation;
+
+    for (auto& n : nodes)
+        {
+            n.generation -= max_gen;
+            n.generation *= -1.0;
+        }
+}
+
+inline void
+update_indexes(std::vector<edge>& edges,
+               std::vector<decltype(edge::parent)>& offspring_indexes,
+               const decltype(edge::parent) delta,
+               const decltype(edge::parent) mindex,
+               const decltype(edge::parent) maxdex)
+{
+    for (auto& e : edges)
+        {
+            e.child -= delta;
+            if (!(e.parent < mindex) && !(e.parent > maxdex))
+                {
+                    e.parent -= delta;
+                }
+        }
+    for (auto& i : offspring_indexes)
+        i -= delta;
+}
+
+struct ancestry_data
+{
+    using integer_type = decltype(edge::parent);
+    /// Nodes:
+    std::vector<node> nodes;
+    /// The ARG:
+    std::vector<edge> edges;
+    std::vector<integer_type> samples;
+
+    ancestry_data() : nodes{}, edges{}, samples{} {}
+};
+
 struct ancestry_tracker
 {
     using integer_type = decltype(edge::parent);
@@ -61,14 +108,13 @@ struct ancestry_tracker
     integer_type generation, next_index, first_parental_index;
     std::uint32_t lastN;
     decltype(node::generation) last_gc_time;
-    spinlock ready;
     ancestry_tracker(const integer_type N, const bool init_with_TreeSequence,
                      const integer_type next_index_)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() },
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
           next_index{ next_index_ }, first_parental_index{ 0 },
-          lastN{ static_cast<std::uint32_t>(N) }, last_gc_time{ 0.0 }, ready{}
+          lastN{ static_cast<std::uint32_t>(N) }, last_gc_time{ 0.0 }
     {
         nodes.reserve(2 * N);
         edges.reserve(2 * N);
@@ -83,28 +129,6 @@ struct ancestry_tracker
                         nodes.emplace_back(make_node(i, 0.0, 0));
                     }
             }
-    }
-
-    ancestry_tracker()
-        : nodes{}, edges{}, temp{}, offspring_indexes{}, generation{},
-          next_index{}, first_parental_index{}, lastN{}, last_gc_time{},
-          ready{}
-    {
-    }
-
-    ancestry_tracker(const ancestry_tracker& a)
-        : nodes{ a.nodes }, edges{ a.edges }, temp{ a.temp },
-          offspring_indexes{ a.offspring_indexes }, generation{ a.generation },
-          next_index{ a.next_index },
-          first_parental_index{ a.first_parental_index }, lastN{ a.lastN },
-          last_gc_time{ a.last_gc_time }, ready{}
-    // Copy construtor.
-    // This only exists so that we can wrap this object
-    // in a shared_ptr in a pybind11::class_.  This
-    // constructor must NOT be exposed to Python via
-    // pybind11::init<>.  Any use other than initialization
-    // into a shared_ptr is considered undefined behavior.
-    {
     }
 
     std::tuple<integer_type, integer_type>
@@ -153,22 +177,6 @@ struct ancestry_tracker
     }
 
     void
-    prep_for_gc()
-    {
-        if (nodes.empty())
-            return;
-
-        //convert forward time to backwards time
-        auto max_gen = nodes.back().generation;
-
-        for (auto& n : nodes)
-            {
-                n.generation -= max_gen;
-                n.generation *= -1.0;
-            }
-    }
-
-    void
     post_process_gc(pybind11::tuple t, const bool clear = true)
     {
         pybind11::bool_ gc = t[0].cast<bool>();
@@ -187,41 +195,21 @@ struct ancestry_tracker
     }
 
     void
-    exchange_for_async(ancestry_tracker& a)
+    exchange_for_async(ancestry_data& a)
     {
-        pybind11::print("getting lock...");
-        a.ready.lock();
-        pybind11::print("got lock...");
         nodes.swap(a.nodes);
         edges.swap(a.edges);
-        a.offspring_indexes.assign(offspring_indexes.begin(),
-                                   offspring_indexes.end());
+        a.samples.assign(offspring_indexes.begin(), offspring_indexes.end());
         nodes.clear();
         edges.clear();
         first_parental_index = 0;
         pybind11::print("returning from exchange_for_async");
-    }
-    void
-    update_indexes(const integer_type delta, const integer_type mindex,
-                   const integer_type maxdex)
-    {
-        for (auto& e : edges)
-            {
-                e.child -= delta;
-                if (!(e.parent < mindex) && !(e.parent > maxdex))
-                    {
-                        e.parent -= delta;
-                    }
-            }
-        for (auto& i : offspring_indexes)
-            i -= delta;
     }
 
     void
     release_spinlock()
     {
         pybind11::print("releasing...");
-        ready.unlock();
         pybind11::print("returning from release...");
     }
 };
