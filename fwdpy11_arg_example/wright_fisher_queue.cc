@@ -74,12 +74,15 @@ evolve_singlepop_regions_track_ancestry_python_queue(
                 {
                     {
                         py::gil_scoped_acquire acquire;
+						py::print("exchanging at gen",pop.generation);
                         ancestry.exchange_for_async(
                             faux_memory_pool[items_submitted]
                                 .cast<ancestry_tracker&>());
+						py::print("putting...");
                         python_queue.attr("put")(py::make_tuple(
                             pop.generation,
                             faux_memory_pool[items_submitted++]));
+						py::print("done putting");
                     }
                     if (items_submitted >= python_qsize)
                         {

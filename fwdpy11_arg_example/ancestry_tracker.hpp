@@ -33,7 +33,7 @@ class spinlock
     std::atomic_flag f;
 
   public:
-    spinlock() : f(ATOMIC_FLAG_INIT) {}
+    spinlock() : f{ ATOMIC_FLAG_INIT } {}
     void
     lock()
     {
@@ -98,12 +98,12 @@ struct ancestry_tracker
           next_index{ a.next_index },
           first_parental_index{ a.first_parental_index }, lastN{ a.lastN },
           last_gc_time{ a.last_gc_time }, ready{}
-	// Copy construtor.
-	// This only exists so that we can wrap this object
-	// in a shared_ptr in a pybind11::class_.  This
-	// constructor must NOT be exposed to Python via 
-	// pybind11::init<>.  Any use other than initialization
-	// into a shared_ptr is considered undefined behavior.
+    // Copy construtor.
+    // This only exists so that we can wrap this object
+    // in a shared_ptr in a pybind11::class_.  This
+    // constructor must NOT be exposed to Python via
+    // pybind11::init<>.  Any use other than initialization
+    // into a shared_ptr is considered undefined behavior.
     {
     }
 
@@ -189,7 +189,9 @@ struct ancestry_tracker
     void
     exchange_for_async(ancestry_tracker& a)
     {
+        pybind11::print("getting lock...");
         a.ready.lock();
+        pybind11::print("got lock...");
         nodes.swap(a.nodes);
         edges.swap(a.edges);
         a.offspring_indexes.assign(offspring_indexes.begin(),
@@ -197,6 +199,7 @@ struct ancestry_tracker
         nodes.clear();
         edges.clear();
         first_parental_index = 0;
+        pybind11::print("returning from exchange_for_async");
     }
     void
     update_indexes(const integer_type delta, const integer_type mindex,
@@ -217,7 +220,9 @@ struct ancestry_tracker
     void
     release_spinlock()
     {
+        pybind11::print("releasing...");
         ready.unlock();
+        pybind11::print("returning from release...");
     }
 };
 
