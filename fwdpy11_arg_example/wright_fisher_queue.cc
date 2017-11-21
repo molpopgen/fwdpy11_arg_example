@@ -60,12 +60,12 @@ evolve_singlepop_regions_track_ancestry_python_queue(
 
     std::size_t python_qsize
         = python_queue.attr("maxsize").cast<std::size_t>();
-    py::gil_scoped_release GIL_release;
     std::vector<py::object> faux_memory_pool(python_qsize);
     for (auto& i : faux_memory_pool)
         {
             i = py::cast(ancestry_data());
         }
+    py::gil_scoped_release GIL_release;
     std::size_t items_submitted = 0;
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
@@ -74,15 +74,18 @@ evolve_singlepop_regions_track_ancestry_python_queue(
                 {
                     {
                         py::gil_scoped_acquire acquire;
-						py::print("exchanging at gen",pop.generation);
+						// py::print("exchanging at gen",pop.generation);
+						faux_memory_pool[items_submitted].attr("acquire")();
                         ancestry.exchange_for_async(
                             faux_memory_pool[items_submitted]
                                 .cast<ancestry_data&>());
-						py::print("putting...");
+						// py::print("putting...");
                         python_queue.attr("put")(py::make_tuple(
                             pop.generation,
-                            faux_memory_pool[items_submitted++]));
-						py::print("done putting");
+                            faux_memory_pool[items_submitted]));
+						faux_memory_pool[items_submitted].attr("release")();
+						items_submitted++;
+						// py::print("done putting");
                     }
                     if (items_submitted >= python_qsize)
                         {

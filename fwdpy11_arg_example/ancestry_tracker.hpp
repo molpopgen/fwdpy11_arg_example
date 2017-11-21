@@ -28,24 +28,6 @@
 #include "node.hpp"
 #include "edge.hpp"
 
-class spinlock
-{
-    std::atomic_flag f;
-
-  public:
-    spinlock() : f{ ATOMIC_FLAG_INIT } {}
-    void
-    lock()
-    {
-        while (f.test_and_set(std::memory_order_acquire))
-            ;
-    }
-    void
-    unlock()
-    {
-        f.clear(std::memory_order_release);
-    }
-};
 
 inline void
 reverse_time(std::vector<node>& nodes)
@@ -90,8 +72,12 @@ struct ancestry_data
     /// The ARG:
     std::vector<edge> edges;
     std::vector<integer_type> samples;
-
-    ancestry_data() : nodes{}, edges{}, samples{} {}
+    pybind11::object lock_;
+    ancestry_data() : nodes{}, edges{}, samples{}, lock_{}
+    {
+        pybind11::module threading = pybind11::module::import("threading");
+        lock_ = threading.attr("Lock")();
+    }
 };
 
 struct ancestry_tracker
@@ -203,14 +189,6 @@ struct ancestry_tracker
         nodes.clear();
         edges.clear();
         first_parental_index = 0;
-        pybind11::print("returning from exchange_for_async");
-    }
-
-    void
-    release_spinlock()
-    {
-        pybind11::print("releasing...");
-        pybind11::print("returning from release...");
     }
 };
 

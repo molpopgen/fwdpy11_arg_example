@@ -32,7 +32,7 @@ class ArgSimplifier(object):
         self.__time_prepping = 0.0
 
     def simplify(self, generation, ancestry):
-        print(type(ancestry))
+        # print(type(ancestry))
         # update node times:
         if self.__nodes.num_rows > 0:
             tc = self.__nodes.time
@@ -44,8 +44,9 @@ class ArgSimplifier(object):
                 flags=flags, population=self.__nodes.population, time=tc)
 
         before = time.process_time()
+        # Acquire mutex 
+        ancestry.acquire()
         self.reverse_time(ancestry.nodes)
-        # ancestry.prep_for_gc()
         na = np.array(ancestry.nodes, copy=False)
         ea = np.array(ancestry.edges, copy=False)
         new_min_id = na['id'][0]
@@ -97,13 +98,12 @@ class ArgSimplifier(object):
         # Append the old sorted edges to the table.
         self.__edges.append_columns(
             left=left, right=right, parent=parent, child=child)
-        # We can now release the mutex
-        print("release lock...")
-        # ancestry.release_spinlock()
-        print("done releasing lock in Py side")
         before = time.process_time()
         msprime.simplify_tables(samples=samples.tolist(),
                                 nodes=self.__nodes, edges=self.__edges)
+
+        # Release any locks on the ancestry object
+        ancestry.release()
         self.__last_edge_start = len(self.__edges)
         self.__time_simplifying += time.process_time() - before
         self.__process = True

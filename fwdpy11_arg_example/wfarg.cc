@@ -60,22 +60,26 @@ PYBIND11_MODULE(wfarg, m)
             "Read-only access to current offspring/children generation.")
         .def_readonly("last_gc_time", &ancestry_tracker::last_gc_time,
                       "Last time point where garbage collection happened.")
-        //.def("update_indexes", &ancestry_tracker::update_indexes)
-        //.def("prep_for_gc", &ancestry_tracker::prep_for_gc,
-        //     "Call this immediately before you are going to simplify.")
-        .def("release_spinlock", &ancestry_tracker::release_spinlock,
-             "Releases the spin lock.  Used in multi-threaded applications of "
-             "the msprime machinery.");
+        .def("release", [](ancestry_tracker& a) {})
+        .def("acquire", [](ancestry_tracker& a) {});
+    //.def("update_indexes", &ancestry_tracker::update_indexes)
+    //.def("prep_for_gc", &ancestry_tracker::prep_for_gc,
+    //     "Call this immediately before you are going to simplify.")
+    //.def("release_spinlock", &ancestry_tracker::release_spinlock,
+    //     "Releases the spin lock.  Used in multi-threaded applications of "
+    //     "the msprime machinery.");
 
-    py::class_<ancestry_data>(m, "_AncestryData",
-			"Used internally for data-swapping in multi-threaded scenarios")
+    py::class_<ancestry_data>(
+        m, "_AncestryData",
+        "Used internally for data-swapping in multi-threaded scenarios")
         .def(py::init<>())
         .def_readwrite("nodes", &ancestry_data::nodes,
                        "Data for msprime.NodeTable.")
         .def_readwrite("edges", &ancestry_data::edges,
                        "Data for msprime.EdgesetTable.")
-        .def_readwrite("samples", &ancestry_data::samples,
-                       "Sample indexes.");
+        .def_readwrite("samples", &ancestry_data::samples, "Sample indexes.")
+        .def("release", [](ancestry_data& a) { a.lock_.attr("release")(); })
+        .def("acquire", [](ancestry_data& a) { a.lock_.attr("acquire")(); });
 
     //Make our C++ functions callable from Python.
     //This is NOT part of a user-facing Python API.
@@ -87,6 +91,6 @@ PYBIND11_MODULE(wfarg, m)
           &evolve_singlepop_regions_track_ancestry_async);
     m.def("evolve_singlepop_regions_track_ancestry_python_queue",
           &evolve_singlepop_regions_track_ancestry_python_queue);
-	m.def("reverse_time",&reverse_time);
-	m.def("update_indexes",&update_indexes);
+    m.def("reverse_time", &reverse_time);
+    m.def("update_indexes", &update_indexes);
 }
