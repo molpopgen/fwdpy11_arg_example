@@ -39,6 +39,7 @@ def parse_args():
     parser.add_argument('--async',action='store_true',help="Execute msprime step in separate process during simulation.")
     parser.add_argument('--queue',action='store_true',help="Use queue.Queue to handle msprime steps")
     parser.add_argument('--qsize',type=int,default=2,help="Size of queue.Queue.")
+    parser.add_argument('--wthreads',type=int,default=2,help="Number of threads to use for fitness calculations.  Only works with --queue.")
     return parser
 
 
@@ -88,7 +89,7 @@ if __name__ == "__main__":
     else:
         # Use this module
         simplifier, atracker, tsim = evolve_track(
-            rng, pop, params, args.gc, True, args.seed, args.async, args.queue, args.qsize)
+            rng, pop, params, args.gc, True, args.seed, args.async, args.queue, args.qsize, args.wthreads)
         # Take times from simplifier before they change.
         times = simplifier.times
         times['fwd_sim_runtime'] = [tsim]

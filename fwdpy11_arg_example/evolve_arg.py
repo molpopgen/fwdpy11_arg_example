@@ -5,7 +5,7 @@ import numpy as np
 import msprime
 
 
-def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, msprime_seed=None, async=False, use_queue=False, qsize=2):
+def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, msprime_seed=None, async=False, use_queue=False, qsize=2, wthreads=2):
     """
     Evolve a population and track its ancestry using msprime.
 
@@ -81,15 +81,16 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
             while True:
                 data = q.get()
                 if data is None:
-                    break;
+                    break
                 simplifier(data[0], data[1])
                 q.task_done()
         t = threading.Thread(target=worker)
         t.start()
         tsim = evolve_singlepop_regions_track_ancestry_python_queue(rng, pop, atracker, q,
-                                                             gc_interval,
-                                                             params.demography, params.mutrate_s,
-                                                             params.recrate, mm, rm, params.gvalue, params.pself)
+                                                                    gc_interval,
+                                                                    params.demography, params.mutrate_s,
+                                                                    params.recrate, mm, rm,
+                                                                    params.gvalue, params.pself, wthreads)
         q.put(None)
         t.join()
 
@@ -124,10 +125,10 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
     if dfe.b != 0.0 or dfe.e != 1.0:
         raise ValueError("DFE beg/end must be 0.0/1.0, repsectively")
 
-    pop=fwdpy11.SlocusPop(popsize)
-    recrate=float(rho) / (4.0 * float(popsize))
+    pop = fwdpy11.SlocusPop(popsize)
+    recrate = float(rho) / (4.0 * float(popsize))
 
-    pdict={'rates': (0.0, mu, recrate),
+    pdict = {'rates': (0.0, mu, recrate),
              'nregions': [],
              'sregions': [dfe],
              'recregions': [fwdpy11.Region(0, 1, 1)],
@@ -135,6 +136,6 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
              'demography': np.array([popsize] * 20 * popsize, dtype=np.uint32)
              }
 
-    params=fwdpy11.model_params.SlocusParams(**pdict)
-    rng=fwdpy11.GSLrng(seed)
+    params = fwdpy11.model_params.SlocusParams(**pdict)
+    rng = fwdpy11.GSLrng(seed)
     return evolve_track(rng, pop, params, gc_interval)
