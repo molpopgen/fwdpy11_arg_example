@@ -1,4 +1,3 @@
-
 # Prototype of our C++ implementation
 # in Python using NumPy arrays and
 # a VERY simple W-F simulations.
@@ -180,11 +179,11 @@ def expensive_check(popsize, edges, nodes):
     nodes and edges that we generated
     in the simulation
     """
-    assert(len(edges) == 10 * popsize * 4 * popsize)
+    assert(len(edges) == 20 * popsize * 4 * popsize)
 
     # Check that all parent/child IDs are
     # in expected range.
-    for gen in range(1, 10 * popsize + 1):
+    for gen in range(1, 20 * popsize + 1):
         min_parental_id = 2 * popsize * (gen - 1)
         max_parental_id = 2 * popsize * (gen - 1) + 2 * popsize
         min_child_id = max_parental_id
@@ -230,14 +229,14 @@ if __name__ == "__main__":
     np.random.seed(seed)
 
     tracker = MockAncestryTracker()
-    ngens = 10 * popsize
+    ngens = 20 * popsize
 
     samples = wf(popsize, tracker, ngens)
 
     # Check that our sample IDs are as expected:
     if __debug__:
-        min_sample = 10 * popsize * 2 * popsize
-        max_sample = 10 * popsize * 2 * popsize + 2 * popsize
+        min_sample = 20 * popsize * 2 * popsize
+        max_sample = 20 * popsize * 2 * popsize + 2 * popsize
         if any(i < min_sample or i >= max_sample for i in samples) is True:
             raise RuntimeError("Houston, we have a problem.")
 
@@ -249,7 +248,7 @@ if __name__ == "__main__":
         expensive_check(popsize, edges, nodes)
 
     max_gen = nodes['generation'].max()
-    assert(int(max_gen) == 10 * popsize)
+    assert(int(max_gen) == 20 * popsize)
 
     # Convert node times from forwards to backwards
     nodes['generation'] = nodes['generation'] - max_gen
@@ -261,57 +260,55 @@ if __name__ == "__main__":
 
     prior_ts = msprime.simulate(2 * popsize)
     nt = msprime.NodeTable()
-    es = msprime.EdgesetTable()
-    prior_ts.dump_tables(nodes=nt, edgesets=es)
-    nt.set_columns(flags=nt.flags[2 * popsize:],
-            population=nt.population[2 * popsize:],
-            time=nt.time[2 * popsize:] + ngens + 1)
+    es = msprime.EdgeTable()
+    prior_ts.dump_tables(nodes=nt, edges=es)
+    nt.set_columns(flags=nt.flags, #[2 * popsize:],
+                   population=nt.population,#[2 * popsize:],
+                   time=nt.time + ngens + 1)
     node_offset = nt.num_rows
 
     nt.append_columns(flags=flags,
-                   population=nodes['population'] + node_offset,
-                   time=nodes['generation'])
+                      population=nodes['population'] + node_offset,
+                      time=nodes['generation'])
 
     es.append_columns(left=edges['left'],
-                   right=edges['right'],
-                   parent=edges['parent'] + node_offset,
-                   children=edges['child'] + node_offset,
-                   children_length=[1] * len(edges))
+                      right=edges['right'],
+                      parent=edges['parent'] + node_offset,
+                      child=edges['child'] + node_offset)
 
     # Sort
-    msprime.sort_tables(nodes=nt, edgesets=es)
+    msprime.sort_tables(nodes=nt, edges=es)
 
     # Simplify: this is where the magic happens
-    ## PLR: since these tables aren't valid, you gotta use simplify_tables, not load them into a tree sequence
-    msprime.simplify_tables(samples=samples.tolist(), nodes=nt, edgesets=es)
+    # PLR: since these tables aren't valid, you gotta use simplify_tables, not load them into a tree sequence
+    msprime.simplify_tables(samples=samples.tolist(), nodes=nt, edges=es)
 
     # Create a tree sequence
-    x = msprime.load_tables(nodes=nt, edgesets=es)
+    x = msprime.load_tables(nodes=nt, edges=es)
 
     # Lets look at the MRCAS.
     # This is where things go badly:
-    MRCAS=[t.get_time(t.get_root()) for t in x.trees()]
+    MRCAS = [t.get_time(t.get_root()) for t in x.trees()]
     print(MRCAS)
-
 
     # Throw down some mutations
     # onto a sample of size nsam
     # We'll copy tables here,
     # just to see what happens.
-    ## PLR: these .copy()s aren't doing anything: just overwritten before
+    # PLR: these .copy()s aren't doing anything: just overwritten before
     nt_s = nt.copy()
     es_s = es.copy()
 
     nsam_samples = np.random.choice(2 * popsize, nsam, replace=False)
-    ## PLR: TreeSequence.simplify() *returns* the modified tree sequence, leaving x unmodified
-    ## you could alternatively do everything here with tables
+    # PLR: TreeSequence.simplify() *returns* the modified tree sequence, leaving x unmodified
+    # you could alternatively do everything here with tables
     xs = x.simplify(nsam_samples.tolist())
-    xs.dump_tables(nodes=nt_s, edgesets=es_s)
+    xs.dump_tables(nodes=nt_s, edges=es_s)
     msp_rng = msprime.RandomGenerator(seed)
     mutations = msprime.MutationTable()
     sites = msprime.SiteTable()
     mutgen = msprime.MutationGenerator(msp_rng, theta / float(4 * popsize))
     mutgen.generate(nt_s, es_s, sites, mutations)
-    x = msprime.load_tables(nodes=nt_s, edgesets=es_s,
+    x = msprime.load_tables(nodes=nt_s, edges=es_s,
                             sites=sites, mutations=mutations)
     print(sites.num_rows)

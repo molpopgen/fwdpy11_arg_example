@@ -110,7 +110,7 @@ class ARGsimplifier(object):
 
     def __init__(self, gc_interval=None):
         self.__nodes = msprime.NodeTable()
-        self.__edges = msprime.EdgesetTable()
+        self.__edges = msprime.EdgeTable()
         self.gc_interval = gc_interval
         self.last_gc_time = 0
 
@@ -143,13 +143,12 @@ class ARGsimplifier(object):
         self.edges.append_columns(left=tracker.edges['left'],
                                   right=tracker.edges['right'],
                                   parent=tracker.edges['parent'],
-                                  children=tracker.edges['child'],
-                                  children_length=[1] * len(tracker.edges))
+                                  child=tracker.edges['child'])
 
         # Sort and simplify
-        msprime.sort_tables(nodes=self.nodes, edgesets=self.edges)
+        msprime.sort_tables(nodes=self.nodes, edges=self.edges)
         msprime.simplify_tables(samples=tracker.samples.tolist(),
-                                nodes=self.nodes, edgesets=self.edges)
+                                nodes=self.nodes, edges=self.edges)
         # Return length of NodeTable,
         # which can be used as next offspring ID
         return self.nodes.num_rows
@@ -423,7 +422,7 @@ if __name__ == "__main__":
 
     nsam_samples = np.random.choice(2 * args.popsize, args.nsam, replace=False)
     msprime.simplify_tables(samples=nsam_samples.tolist(),
-                            nodes=nodes, edgesets=edges)
+                            nodes=nodes, edges=edges)
     msp_rng = msprime.RandomGenerator(args.seed)
     mutations = msprime.MutationTable()
     sites = msprime.SiteTable()
