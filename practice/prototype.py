@@ -24,6 +24,9 @@ edge_dt = np.dtype([('left', np.float),
                     ('parent', np.int32),
                     ('child', np.int32)])
 
+mutation_dt = np.dtype([('position',np.float64), 
+						('node_id',np.uint32)])
+
 # Simulation with be popsize*SIMLEN generations
 SIMLEN=20
 
@@ -33,11 +36,13 @@ class MockAncestryTracker(object):
     """
     __nodes = None
     __edges = None
-
+    __mutations = None
+    
     def __init__(self):
         self.nodes = np.empty([0], dtype=node_dt)
         self.edges = np.empty([0], dtype=edge_dt)
-
+        self.mutations = np.empty([0], dtype=mutation_dt)
+        
     @property
     def nodes(self):
         return self.__nodes
@@ -54,6 +59,13 @@ class MockAncestryTracker(object):
     def edges(self, value):
         self.__edges = value
 
+	@property
+    def mutations(self):
+        return self.__mutations
+
+    @mutations.setter
+    def mutations(self, value):
+        self.__mutations = value
 
 def xover():
     breakpoint = np.random.sample()
