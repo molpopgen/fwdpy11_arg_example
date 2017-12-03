@@ -15,10 +15,14 @@ for i in sys.argv[1:]:
 dflist = []
 for i in files:
     ARG = True
+    Q = False
     if re.search('with', i):
         ARG = False
+    if re.search('queue',i):
+        Q = True
     d = pd.read_csv(i, sep=" ", names=['time', 'mem'], index_col=False)
     d['arg'] = [ARG]
+    d['queue'] =  [Q]
     fields = i.split('.')
     fields[1] = re.sub('N', '', fields[1])
     fields[2] = re.sub('size', '', fields[2])

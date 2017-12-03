@@ -19,7 +19,7 @@ evolve_singlepop_regions_track_ancestry_python_queue(
     const double mu_selected, const double recrate,
     const KTfwd::extensions::discrete_mut_model& mmodel,
     const KTfwd::extensions::discrete_rec_model& rmodel,
-    fwdpy11::single_locus_fitness& fitness, const double selfing_rate)
+    fwdpy11::single_locus_fitness& fitness, const double selfing_rate, const int wthreads)
 {
     if (pop.generation > 0)
         {
@@ -50,7 +50,7 @@ evolve_singlepop_regions_track_ancestry_python_queue(
         mmodel, pop.mutations, pop.mut_lookup, rng.get(), 0.0, mu_selected,
         &pop.generation);
     ++pop.generation;
-    auto rules = wf_rules_async_fitness(2);
+    auto rules = wf_rules_async_fitness(wthreads);
 
     auto fitness_callback = fitness.callback();
     fitness.update(pop);
