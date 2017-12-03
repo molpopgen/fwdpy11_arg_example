@@ -309,13 +309,16 @@ if __name__ == "__main__":
 
     # Sort
     msprime.sort_tables(nodes=nt, edges=es, sites=st, mutations=mt)
-
+    print(st.num_rows)
     # Simplify: this is where the magic happens
     ## PLR: since these tables aren't valid, you gotta use simplify_tables, not load them into a tree sequence
     msprime.simplify_tables(samples=samples.tolist(), nodes=nt, edges=es, sites=st, mutations=mt)
-
+    print(st.num_rows)
     # Create a tree sequence
     x = msprime.load_tables(nodes=nt, edges=es, sites=st, mutations=mt)
+    
+    #for site in range(st.num_rows):
+        #print(st.position[site], mt.node[site])
 
     # Lets look at the MRCAS.
     # This is where things go badly:
