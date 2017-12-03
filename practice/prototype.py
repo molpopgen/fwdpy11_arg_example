@@ -25,7 +25,7 @@ edge_dt = np.dtype([('left', np.float),
                     ('child', np.int32)])
 
 mutation_dt = np.dtype([('position',np.float64), 
- 						('node_id',np.uint32)])
+ 						('node_id',np.int32)])
 
 # Simulation with be popsize*SIMLEN generations
 SIMLEN=20
@@ -67,7 +67,7 @@ class MockAncestryTracker(object):
     def mutations(self, value):
         self.__mutations = value
 
-def xover():
+def random_loc():
     breakpoint = np.random.sample()
     while breakpoint == 0.0 or breakpoint == 1.0:
         breakpoint = np.random.sample()
@@ -104,6 +104,12 @@ def wf(N, tracker, ngens):
     # two new edges, and 4N new edges are formed each generation.
     tracker.edges = np.empty([ngens * 4 * N], dtype=edge_dt)
     edge_index = int(0)
+    # Our simple WF sim makes 1 mutation per parent
+    # in each mating.  Thus, each offspring inherits
+    # two new mutations, and 4N new mutations are formed each generation.
+    tracker.mutations = np.empty([ngens * 2 * N], dtype=mutation_dt)
+    mutation_index = int(0)
+    
     node_id = int(len(diploids))
     next_id = len(diploids)  # This will be the next unique ID to use
     assert(max(diploids) < next_id)
@@ -137,8 +143,8 @@ def wf(N, tracker, ngens):
 
             # Crossing-over and edges due to
             # contribution from parent 1
-            breakpoint = xover()
-
+            breakpoint = random_loc()
+            mutation_pos = random_loc()
             # Add the edges. Parent 1 will contribute [0,breakpoint)
             # from p1g1 and [breakpoint,1.0) from p1g2. Note that
             # we've already done the Mendel thing above. Both of these
@@ -147,6 +153,8 @@ def wf(N, tracker, ngens):
             tracker.edges[edge_index] = (0.0, breakpoint, p1g1, next_id)
             tracker.edges[edge_index + 1] = (breakpoint, 1.0, p1g2, next_id)
 
+            # Add mutations. Parent 1 will contribute 1 mutation at mutation_pos
+            tracker.mutations[mutation_index] = (mutation_pos, next_id)
             # Update offspring container for
             # offspring dip, chrom 1:
             new_diploids[2 * dip] = next_id
@@ -156,11 +164,13 @@ def wf(N, tracker, ngens):
 
             # Repeat process for parent 2's contribution.
             # Stuff is now being inherited by node next_id + 1
-            breakpoint = xover()
-            tracker.edges[edge_index +
-                          2] = (0.0, breakpoint, p2g1, next_id + 1)
-            tracker.edges[edge_index +
-                          3] = (breakpoint, 1.0, p2g2, next_id + 1)
+            breakpoint = random_loc()
+            mutation_pos = random_loc()
+            
+            tracker.edges[edge_index + 2] = (0.0, breakpoint, p2g1, next_id + 1)
+            tracker.edges[edge_index + 3] = (breakpoint, 1.0, p2g2, next_id + 1)
+            
+            tracker.mutations[mutation_index+1] = (mutation_pos, next_id+1)
 
             new_diploids[2 * dip + 1] = next_id + 1
 
@@ -178,6 +188,7 @@ def wf(N, tracker, ngens):
             # and added 4 edges
             node_id += 2
             next_id += 2
+            mutation_index += 2
             dip += 1
             edge_index += 4
 
@@ -259,6 +270,7 @@ if __name__ == "__main__":
     # Make local names for convenience
     nodes = tracker.nodes
     edges = tracker.edges
+    mutas = tracker.mutations
 
     if __debug__:
         expensive_check(popsize, edges, nodes)
@@ -283,16 +295,27 @@ if __name__ == "__main__":
                    right=edges['right'],
                    parent=edges['parent'],
                    child=edges['child'])
+    
+    st = msprime.SiteTable()
+    st.set_columns(position=mutas['position'],
+                   ancestral_state=np.zeros(len(mutas['position']),np.int8),
+                   ancestral_state_length=np.ones(len(mutas['position']),np.uint32))
+    
+    mt = msprime.MutationTable()
+    mt.set_columns(site=np.arange(len(mutas['node_id']),dtype=np.int32),
+                   node=mutas['node_id'],
+                   derived_state=np.ones(len(mutas['node_id']),np.int8),
+                   derived_state_length=np.ones(len(mutas['node_id']),np.uint32))
 
     # Sort
-    msprime.sort_tables(nodes=nt, edges=es)
+    msprime.sort_tables(nodes=nt, edges=es, sites=st, mutations=mt)
 
     # Simplify: this is where the magic happens
     ## PLR: since these tables aren't valid, you gotta use simplify_tables, not load them into a tree sequence
-    msprime.simplify_tables(samples=samples.tolist(), nodes=nt, edges=es)
+    msprime.simplify_tables(samples=samples.tolist(), nodes=nt, edges=es, sites=st, mutations=mt)
 
     # Create a tree sequence
-    x = msprime.load_tables(nodes=nt, edges=es)
+    x = msprime.load_tables(nodes=nt, edges=es, sites=st, mutations=mt)
 
     # Lets look at the MRCAS.
     # This is where things go badly:
