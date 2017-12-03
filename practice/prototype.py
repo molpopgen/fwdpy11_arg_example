@@ -25,7 +25,7 @@ edge_dt = np.dtype([('left', np.float),
                     ('child', np.int32)])
 
 mutation_dt = np.dtype([('position',np.float64), 
-						('node_id',np.uint32)])
+ 						('node_id',np.uint32)])
 
 # Simulation with be popsize*SIMLEN generations
 SIMLEN=20
@@ -59,7 +59,7 @@ class MockAncestryTracker(object):
     def edges(self, value):
         self.__edges = value
 
-	@property
+    @property
     def mutations(self):
         return self.__mutations
 
@@ -90,6 +90,8 @@ def wf(N, tracker, ngens):
        Mendel, which means we swap parental chromosome ids 50% of the time.
     4. We do a single crossover for every mating, just so that there are
        a lot of breakpoints to handle
+       
+    For each mating, each child chromosome gets 1 mutation in a random position
     """
     diploids = np.arange(2 * N, dtype=np.uint32)
     # so we pre-allocate the space. We only need
@@ -243,6 +245,7 @@ if __name__ == "__main__":
     np.random.seed(seed)
 
     tracker = MockAncestryTracker()
+
     samples = wf(popsize, tracker, SIMLEN * popsize)
 
     # Check that our sample IDs are as expected:
@@ -275,26 +278,25 @@ if __name__ == "__main__":
                    population=nodes['population'],
                    time=nodes['generation'])
 
-    es = msprime.EdgesetTable()
+    es = msprime.EdgeTable()
     es.set_columns(left=edges['left'],
                    right=edges['right'],
                    parent=edges['parent'],
-                   children=edges['child'],
-                   children_length=[1] * len(edges))
+                   child=edges['child'])
 
     # Sort
-    msprime.sort_tables(nodes=nt, edgesets=es)
+    msprime.sort_tables(nodes=nt, edges=es)
 
     # Simplify: this is where the magic happens
     ## PLR: since these tables aren't valid, you gotta use simplify_tables, not load them into a tree sequence
-    msprime.simplify_tables(samples=samples.tolist(), nodes=nt, edgesets=es)
+    msprime.simplify_tables(samples=samples.tolist(), nodes=nt, edges=es)
 
     # Create a tree sequence
-    x = msprime.load_tables(nodes=nt, edgesets=es)
+    x = msprime.load_tables(nodes=nt, edges=es)
 
     # Lets look at the MRCAS.
     # This is where things go badly:
-    MRCAS=[t.get_time(t.get_root()) for t in x.trees()]
+    #MRCAS=[t.get_time(t.get_root()) for t in x.trees()]
 
     # Throw down some mutations
     # onto a sample of size nsam
@@ -308,12 +310,12 @@ if __name__ == "__main__":
     ## PLR: TreeSequence.simplify() *returns* the modified tree sequence, leaving x unmodified
     ## you could alternatively do everything here with tables
     xs = x.simplify(nsam_samples.tolist())
-    xs.dump_tables(nodes=nt_s, edgesets=es_s)
+    xs.dump_tables(nodes=nt_s, edges=es_s)
     msp_rng = msprime.RandomGenerator(seed)
     mutations = msprime.MutationTable()
     sites = msprime.SiteTable()
     mutgen = msprime.MutationGenerator(msp_rng, theta / float(4 * popsize))
     mutgen.generate(nt_s, es_s, sites, mutations)
-    x = msprime.load_tables(nodes=nt_s, edgesets=es_s,
+    x = msprime.load_tables(nodes=nt_s, edges=es_s,
                             sites=sites, mutations=mutations)
     print(sites.num_rows)
