@@ -319,29 +319,3 @@ if __name__ == "__main__":
     
     #for site in range(st.num_rows):
         #print(st.position[site], mt.node[site])
-
-    # Lets look at the MRCAS.
-    # This is where things go badly:
-    #MRCAS=[t.get_time(t.get_root()) for t in x.trees()]
-
-    # Throw down some mutations
-    # onto a sample of size nsam
-    # We'll copy tables here,
-    # just to see what happens.
-    ## PLR: these .copy()s aren't doing anything: just overwritten before
-    nt_s = nt.copy()
-    es_s = es.copy()
-
-    nsam_samples = np.random.choice(2 * popsize, nsam, replace=False)
-    ## PLR: TreeSequence.simplify() *returns* the modified tree sequence, leaving x unmodified
-    ## you could alternatively do everything here with tables
-    xs = x.simplify(nsam_samples.tolist())
-    xs.dump_tables(nodes=nt_s, edges=es_s)
-    msp_rng = msprime.RandomGenerator(seed)
-    mutations = msprime.MutationTable()
-    sites = msprime.SiteTable()
-    mutgen = msprime.MutationGenerator(msp_rng, theta / float(4 * popsize))
-    mutgen.generate(nt_s, es_s, sites, mutations)
-    x = msprime.load_tables(nodes=nt_s, edges=es_s,
-                            sites=sites, mutations=mutations)
-    print(sites.num_rows)
