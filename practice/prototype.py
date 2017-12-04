@@ -263,26 +263,25 @@ if __name__ == "__main__":
                    population=nodes['population'],
                    time=nodes['generation'])
 
-    es = msprime.EdgesetTable()
+    es = msprime.EdgeTable()
     es.set_columns(left=edges['left'],
                    right=edges['right'],
                    parent=edges['parent'],
-                   children=edges['child'],
-                   children_length=[1] * len(edges))
+                   child=edges['child'])
 
     # Sort
-    msprime.sort_tables(nodes=nt, edgesets=es)
+    msprime.sort_tables(nodes=nt, edges=es)
 
     # Simplify: this is where the magic happens
     ## PLR: since these tables aren't valid, you gotta use simplify_tables, not load them into a tree sequence
-    msprime.simplify_tables(samples=samples.tolist(), nodes=nt, edgesets=es)
+    msprime.simplify_tables(samples=samples.tolist(), nodes=nt, edges=es)
 
     # Create a tree sequence
-    x = msprime.load_tables(nodes=nt, edgesets=es)
+    x = msprime.load_tables(nodes=nt, edges=es)
 
     # Lets look at the MRCAS.
     # This is where things go badly:
-    MRCAS=[t.get_time(t.get_root()) for t in x.trees()]
+    #MRCAS=[t.get_time(t.get_root()) for t in x.trees()]
 
     # Throw down some mutations
     # onto a sample of size nsam
@@ -296,12 +295,12 @@ if __name__ == "__main__":
     ## PLR: TreeSequence.simplify() *returns* the modified tree sequence, leaving x unmodified
     ## you could alternatively do everything here with tables
     xs = x.simplify(nsam_samples.tolist())
-    xs.dump_tables(nodes=nt_s, edgesets=es_s)
+    xs.dump_tables(nodes=nt_s, edges=es_s)
     msp_rng = msprime.RandomGenerator(seed)
     mutations = msprime.MutationTable()
     sites = msprime.SiteTable()
     mutgen = msprime.MutationGenerator(msp_rng, theta / float(4 * popsize))
     mutgen.generate(nt_s, es_s, sites, mutations)
-    x = msprime.load_tables(nodes=nt_s, edgesets=es_s,
+    x = msprime.load_tables(nodes=nt_s, edges=es_s,
                             sites=sites, mutations=mutations)
     print(sites.num_rows)
