@@ -317,5 +317,8 @@ if __name__ == "__main__":
     # Create a tree sequence
     x = msprime.load_tables(nodes=nt, edges=es, sites=st, mutations=mt)
     
-    for site in range(st.num_rows):
-        print(st.position[site], mt.node[site])
+    #for site in range(st.num_rows):
+        #print(st.position[site], mt.node[site])
+    
+    print(max(mt.node))
+    print(nt.num_rows)
