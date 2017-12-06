@@ -310,15 +310,29 @@ if __name__ == "__main__":
     # Sort
     msprime.sort_tables(nodes=nt, edges=es, sites=st, mutations=mt)
     print("num total mutations: ", st.num_rows)
+     
     # Simplify: this is where the magic happens
     ## PLR: since these tables aren't valid, you gotta use simplify_tables, not load them into a tree sequence
-    msprime.simplify_tables(samples=samples.tolist(), nodes=nt, edges=es, sites=st, mutations=mt)
-    print("num simplified mutations: ", st.num_rows)
+    nt_c = nt.copy()
+    es_c = es.copy()
+    st_c = st.copy()
+    mt_c = mt.copy()
+    msprime.simplify_tables(samples=samples.tolist(), nodes=nt_c, edges=es_c, sites=st_c, mutations=mt_c)
+    print("num simplified mutations: ", st_c.num_rows)
     # Create a tree sequence
-    x = msprime.load_tables(nodes=nt, edges=es, sites=st, mutations=mt)
+    x = msprime.load_tables(nodes=nt_c, edges=es_c, sites=st_c, mutations=mt_c)   
     
-    #for site in range(st.num_rows):
-        #print(st.position[site], mt.node[site])
+    print(max(mt_c.node))
+    print(nt_c.num_rows)
     
-    print(max(mt.node))
-    print(nt.num_rows)
+    nt_s = nt_c.copy()
+    es_s = es_c.copy()
+    st_s = st_c.copy()
+    mt_s = mt_c.copy()
+       
+    nsam_samples = np.random.choice(2 * popsize, nsam, replace=False)
+    xs = x.simplify(nsam_samples.tolist())
+    xs.dump_tables(nodes=nt_s, edges=es_s, sites=st_s, mutations=mt_s)
+    
+    print(max(mt_s.node))
+    print(nt_s.num_rows)
