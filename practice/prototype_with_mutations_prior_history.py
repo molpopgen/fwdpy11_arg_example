@@ -336,19 +336,12 @@ if __name__ == "__main__":
     for index in range(st_c.num_rows):
          if(mt_c.node[index] < 2*popsize):
              for index2 in range(mt.num_rows):
-                 if(mt.node[index2] == map_nodes[mt_c.node[index]]):
-                    print(mt_c.node[index], st_c.position[index], mt.node[index2], st.position[index2], index, index2) 
-                    break
-    print("\n\n")
-    
-    for index in range(st_c.num_rows):
-         if(mt_c.node[index] < 2*popsize):
-             for index2 in range(mt.num_rows):
                  if(st.position[index2] == st_c.position[index]):
                     print(mt_c.node[index], st_c.position[index], mt.node[index2], st.position[index2], index, index2, node_map[mt.node[index2]]) 
                     break
     
     print("\n\n")
+    
     for index in range(st.num_rows):
          if(mt.node[index] >= 2*ngens*popsize):		
                  for index2 in range(mt_c.num_rows):		
