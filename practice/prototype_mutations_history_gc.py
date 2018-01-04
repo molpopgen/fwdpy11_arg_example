@@ -17,6 +17,9 @@ edge_dt = np.dtype([('left', np.float),
                     ('parent', np.int32),
                     ('child', np.int32)])
 
+mutation_dt = np.dtype([('position',np.float64), 
+ 						('node_id',np.int32)])
+ 						
 # Simulation with be popsize*SIMLEN generations
 SIMLEN = 20
 
@@ -27,11 +30,13 @@ class MockAncestryTracker(object):
     """
     __nodes = None
     __edges = None
+    __mutations = None
     __samples = None
 
     def __init__(self):
         self.nodes = np.empty([0], dtype=node_dt)
         self.edges = np.empty([0], dtype=edge_dt)
+        self.mutations = np.empty([0], dtype=mutation_dt)
         self.samples = None
 
     @property
@@ -49,6 +54,14 @@ class MockAncestryTracker(object):
     @edges.setter
     def edges(self, value):
         self.__edges = value
+        
+    @property
+    def mutations(self):
+        return self.__mutations
+
+    @mutations.setter
+    def mutations(self, value):
+        self.__mutations = value
 
     @property
     def samples(self):
@@ -58,7 +71,7 @@ class MockAncestryTracker(object):
     def samples(self, value):
         self.__samples = np.array(value, copy=True)
 
-    def update_data(self, new_nodes, new_edges, new_samples):
+    def update_data(self, new_nodes, new_edges, new_mutations, new_samples):
         """
         Takes the new nodes and edges simulated each generation
         and appends them to the class data.  new_samples is the list
@@ -66,6 +79,7 @@ class MockAncestryTracker(object):
         """
         self.nodes = np.insert(self.nodes, len(self.nodes), new_nodes)
         self.edges = np.insert(self.edges, len(self.edges), new_edges)
+        self.mutations = np.insert(self.mutations, len(self.mutations), new_mutations)
         self.samples = new_samples
 
     def convert_time(self):
@@ -86,6 +100,7 @@ class MockAncestryTracker(object):
         """
         self.nodes = np.empty([0], dtype=node_dt)
         self.edges = np.empty([0], dtype=edge_dt)
+        self.mutations = np.empty([0], dtype=mutation_dt)
 
     def post_gc_cleanup(self, gc_rv):
         """
@@ -105,12 +120,16 @@ class ARGsimplifier(object):
     """
     __nodes = None
     __edges = None
+    __mutations = None
+    __sites = None
     __gc_interval = None
     __last_gc_time = None
 
     def __init__(self, gc_interval=None):
         self.__nodes = msprime.NodeTable()
         self.__edges = msprime.EdgeTable()
+        self.__mutations = msprime.MutationTable()
+        self.__sites = msprime.SiteTable()
         self.gc_interval = gc_interval
         self.last_gc_time = 0
 
@@ -137,6 +156,7 @@ class ARGsimplifier(object):
         tracker.convert_time()
 
         # Update internal *Tables
+        node_offset = 0; # For use when adding prior tree
         self.nodes.append_columns(flags=flags,
                                   population=tracker.nodes['population'],
                                   time=tracker.nodes['generation'])
@@ -144,11 +164,19 @@ class ARGsimplifier(object):
                                   right=tracker.edges['right'],
                                   parent=tracker.edges['parent'],
                                   child=tracker.edges['child'])
-
+        self.sites.append_columns(position=tracker.mutations['position'],
+                   ancestral_state=np.zeros(len(tracker.mutations['position']),np.int8),
+                   ancestral_state_length=np.ones(len(tracker.mutations['position']),np.uint32))
+    
+        self.mutations.append_columns(site=np.arange(len(tracker.mutations['node_id']),dtype=np.int32),
+                   node=tracker.mutations['node_id'] + node_offset,
+                   derived_state=np.ones(len(tracker.mutations['node_id']),np.int8),
+                   derived_state_length=np.ones(len(tracker.mutations['node_id']),np.uint32))
+                   
         # Sort and simplify
-        msprime.sort_tables(nodes=self.nodes, edges=self.edges)
+        msprime.sort_tables(nodes=self.nodes, edges=self.edges, sites=self.sites, mutations=self.mutations)
         msprime.simplify_tables(samples=tracker.samples.tolist(),
-                                nodes=self.nodes, edges=self.edges)
+                                nodes=self.nodes, edges=self.edges, sites=self.sites, mutations=self.mutations)
         # Return length of NodeTable,
         # which can be used as next offspring ID
         return self.nodes.num_rows
@@ -193,6 +221,21 @@ class ARGsimplifier(object):
     def edges(self, value):
         self.__edges = value
 
+    @property
+    def sites(self):
+        return self.__sites
+
+    @sites.setter
+    def sites(self, value):
+        self.__sites = value
+
+    @property
+    def mutations(self):
+        return self.__mutations
+
+    @mutations.setter
+    def mutations(self, value):
+        self.__mutations = value
 
 def xover(rate):
     """ 
@@ -371,7 +414,7 @@ def wf(N, simplifier, tracker, recrate, ngens):
         assert(dip == N)
         assert(len(new_diploids) == 2 * N)
         diploids = new_diploids
-        tracker.update_data(nodes, edges, diploids)
+        tracker.update_data(nodes, edges, np.empty([0], dtype=mutation_dt), diploids)
         assert(max(diploids) < next_id)
 
     return (diploids)
