@@ -309,8 +309,22 @@ def handle_recombination_update(offspring_index, parental_id1,
         edges.append((i, j, parental_id2, offspring_index))
     return edges
 
+def mutation_loci(rate):
+    nmut = np.random.poisson(rate)
+    if nmut == 0:
+        return np.empty([0], dtype=np.float64)
+    pos = np.random.random_sample(nmut)
+    pos = np.unique(pos)
+    return pos
+    
+def handle_mutation_update(mutations_all, new_mutation_node_id, new_mutation_locs):
+	if(len(new_mutation_locs) > 0): 
+	    new_mutations = [(pos,new_mutation_node_id) for pos in new_mutation_locs]
+	    mutations_all.extend(new_mutations)
+	return mutations_all
+	
 
-def wf(N, simplifier, tracker, recrate, ngens):
+def wf(N, simplifier, tracker, recrate, murate, ngens):
     """
     For N diploids, the diploids list contains 2N values.
     For the i-th diploids, diploids[2*i] and diploids[2*i+1]
@@ -326,11 +340,14 @@ def wf(N, simplifier, tracker, recrate, ngens):
        Mendel, which means we swap parental chromosome ids 50% of the time.
     4. Crossing over is a Poisson process, and the code used here (above)
        is modeled after that in our C++ implementation.
+    5. Mutation is a Poisson process, mutations are added according to each
+       parental index. 
     """
     diploids = np.arange(2 * N, dtype=np.uint32)
     # so we pre-allocate the space. We only need
     # to do this once b/c N is constant.
     tracker.nodes = np.array([(i, 0, 0) for i in diploids], dtype=node_dt)
+    tracker.mutations = np.empty([0], dtype=mutation_dt)
 
     next_id = len(diploids)  # This will be the next unique ID to use
     assert(max(diploids) < next_id)
@@ -342,6 +359,7 @@ def wf(N, simplifier, tracker, recrate, ngens):
         if gc_rv[0] is True:
             assert(len(tracker.nodes) == 0)
             assert(len(tracker.edges) == 0)
+            assert(len(tracker.mutations) == 0)
             # If we did GC, we need to reset
             # some variables.  Internally,
             # when msprime simplifies tables,
@@ -370,8 +388,11 @@ def wf(N, simplifier, tracker, recrate, ngens):
 
         # Store temp edges for this generation
         edges = []  # np.empty([0], dtype=edge_dt)
+        
+        #Store temp mutations for this generation
+        mutations = []  #np.empty([0], dtype=mutation_dt)
         # Pick 2N parents:
-        parents = np.random.randint(0, N, 2 * N)
+        parents = np.random.randint(0, N, 2 * N) 
         assert(parents.max() < N)
         dip = int(0)  # dummy index for filling contents of new_diploids
 
@@ -391,10 +412,12 @@ def wf(N, simplifier, tracker, recrate, ngens):
                 p2g1, p2g2 = p2g2, p2g1
 
             breakpoints = xover(recrate)
-
+            mloci = mutation_loci(murate)
+			
             edges = handle_recombination_update(
                 next_id, p1g1, p1g2, edges, breakpoints)
-
+            mutations = handle_mutation_update(
+                 mutations, next_id, mloci)
             # Update offspring container for
             # offspring dip, chrom 1:
             new_diploids[2 * dip] = next_id
@@ -402,8 +425,12 @@ def wf(N, simplifier, tracker, recrate, ngens):
             # Repeat process for parent 2's contribution.
             # Stuff is now being inherited by node next_id + 1
             breakpoints = xover(recrate)
+            mloci = mutation_loci(murate)
+            
             edges = handle_recombination_update(
                 next_id + 1, p2g1, p2g2, edges, breakpoints)
+            mutations = handle_mutation_update(
+                 mutations, next_id+1, mloci)
 
             new_diploids[2 * dip + 1] = next_id + 1
 
@@ -414,7 +441,7 @@ def wf(N, simplifier, tracker, recrate, ngens):
         assert(dip == N)
         assert(len(new_diploids) == 2 * N)
         diploids = new_diploids
-        tracker.update_data(nodes, edges, np.empty([0], dtype=mutation_dt), diploids)
+        tracker.update_data(nodes, edges, mutations, diploids)
         assert(max(diploids) < next_id)
 
     return (diploids)
@@ -446,8 +473,9 @@ if __name__ == "__main__":
     simplifier = ARGsimplifier(args.gc)
     tracker = MockAncestryTracker()
     recrate = args.rho / float(4 * args.popsize)
+    murate = args.theta / float(4 * args.popsize)
     samples = wf(args.popsize, simplifier, tracker,
-                 recrate, SIMLEN * args.popsize)
+                 recrate, murate, SIMLEN * args.popsize)
 
     if len(tracker.nodes) > 0:  # Then there's stuff that didn't get GC'd
         simplifier.simplify(SIMLEN * args.popsize, tracker)
@@ -462,14 +490,17 @@ if __name__ == "__main__":
     # history of the pop'n.
     nodes = simplifier.nodes.copy()
     edges = simplifier.edges.copy()
-
+    sites = simplifier.sites.copy()
+    mutations = simplifier.mutations.copy()
     nsam_samples = np.random.choice(2 * args.popsize, args.nsam, replace=False)
     msprime.simplify_tables(samples=nsam_samples.tolist(),
-                            nodes=nodes, edges=edges)
+                            nodes=nodes, edges=edges, sites=sites, mutations=mutations)
+    print(sites.num_rows)
+    
     msp_rng = msprime.RandomGenerator(args.seed)
-    mutations = msprime.MutationTable()
-    sites = msprime.SiteTable()
+    mutations2 = msprime.MutationTable()
+    sites2 = msprime.SiteTable()
     mutgen = msprime.MutationGenerator(
         msp_rng, args.theta / float(4 * args.popsize))
-    mutgen.generate(nodes, edges, sites, mutations)
-    print(sites.num_rows)
+    mutgen.generate(nodes, edges, sites2, mutations2)
+    print(sites2.num_rows)    
