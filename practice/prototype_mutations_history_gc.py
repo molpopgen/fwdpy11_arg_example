@@ -156,7 +156,6 @@ class ARGsimplifier(object):
         tracker.convert_time()
 
         # Update internal *Tables
-        node_offset = 0; # For use when adding prior tree
         self.nodes.append_columns(flags=flags,
                                   population=tracker.nodes['population'],
                                   time=tracker.nodes['generation'])
@@ -169,7 +168,7 @@ class ARGsimplifier(object):
                    ancestral_state_length=np.ones(len(tracker.mutations['position']),np.uint32))
     
         self.mutations.append_columns(site=np.arange(len(tracker.mutations['node_id']),dtype=np.int32),
-                   node=tracker.mutations['node_id'] + node_offset,
+                   node=tracker.mutations['node_id'],
                    derived_state=np.ones(len(tracker.mutations['node_id']),np.int8),
                    derived_state_length=np.ones(len(tracker.mutations['node_id']),np.uint32))
                    
@@ -474,12 +473,22 @@ if __name__ == "__main__":
     tracker = MockAncestryTracker()
     recrate = args.rho / float(4 * args.popsize)
     murate = args.theta / float(4 * args.popsize)
+    ngens = SIMLEN * args.popsize
     samples = wf(args.popsize, simplifier, tracker,
-                 recrate, murate, SIMLEN * args.popsize)
+                 recrate, murate, ngens)
 
     if len(tracker.nodes) > 0:  # Then there's stuff that didn't get GC'd
-        simplifier.simplify(SIMLEN * args.popsize, tracker)
-
+        simplifier.simplify(ngens, tracker)
+            
+    prior_ts = msprime.simulate(2 * args.popsize)
+    nt = msprime.NodeTable()
+    es = msprime.EdgeTable()
+    prior_ts.dump_tables(nodes=nt, edges=es)
+    nt.set_columns(flags=nt.flags, #[2 * popsize:],
+                   population=nt.population,#[2 * popsize:],
+                   time=nt.time + ngens + 1)
+    node_offset = nt.num_rows
+    
     # Local names for convenience.
     # I copy the tables here, too,
     # because I think that will be
@@ -492,9 +501,31 @@ if __name__ == "__main__":
     edges = simplifier.edges.copy()
     sites = simplifier.sites.copy()
     mutations = simplifier.mutations.copy()
+
+    nt.append_columns(flags=nodes.flags,
+                      population=nodes.population,
+                      time=nodes.time)
+
+    es.append_columns(left=edges.left,
+                      right=edges.right,
+                      parent=edges.parent + node_offset,
+                      child=edges.child + node_offset)
+
+    st = msprime.SiteTable()
+    st.set_columns(position=sites.position,
+                   ancestral_state=sites.ancestral_state,
+                   ancestral_state_length=sites.ancestral_state_length)
+    
+    mt = msprime.MutationTable()
+    mt.set_columns(site=mutations.site,
+                   node=mutations.node + node_offset,
+                   derived_state=mutations.derived_state,
+                   derived_state_length=mutations.derived_state_length)
+
+    msprime.sort_tables(nodes=nt, edges=es, sites=st, mutations=mt)
     nsam_samples = np.random.choice(2 * args.popsize, args.nsam, replace=False)
     msprime.simplify_tables(samples=nsam_samples.tolist(),
-                            nodes=nodes, edges=edges, sites=sites, mutations=mutations)
+                            nodes=nt, edges=es, sites=st, mutations=mt)
     print(sites.num_rows)
     
     msp_rng = msprime.RandomGenerator(args.seed)
