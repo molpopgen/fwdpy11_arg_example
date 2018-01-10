@@ -167,7 +167,7 @@ class ARGsimplifier(object):
                    ancestral_state=np.zeros(len(tracker.mutations['position']),np.int8),
                    ancestral_state_length=np.ones(len(tracker.mutations['position']),np.uint32))
     
-        self.mutations.append_columns(site=np.arange(len(tracker.mutations['node_id']),dtype=np.int32),
+        self.mutations.append_columns(site=np.arange(len(tracker.mutations['node_id']),dtype=np.int32) + self.mutations.num_rows,
                    node=tracker.mutations['node_id'],
                    derived_state=np.ones(len(tracker.mutations['node_id']),np.int8),
                    derived_state_length=np.ones(len(tracker.mutations['node_id']),np.uint32))
