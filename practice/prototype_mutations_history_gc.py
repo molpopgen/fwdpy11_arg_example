@@ -165,12 +165,13 @@ class ARGsimplifier(object):
                                   child=tracker.edges['child'])
         self.sites.append_columns(position=tracker.mutations['position'],
                    ancestral_state=np.zeros(len(tracker.mutations['position']),np.int8),
-                   ancestral_state_length=np.ones(len(tracker.mutations['position']),np.uint32))
+                   ancestral_state_offset=np.arange(len(tracker.mutations['position'])+1,dtype=np.uint32))
     
         self.mutations.append_columns(site=np.arange(len(tracker.mutations['node_id']),dtype=np.int32) + self.mutations.num_rows,
                    node=tracker.mutations['node_id'],
                    derived_state=np.ones(len(tracker.mutations['node_id']),np.int8),
-                   derived_state_length=np.ones(len(tracker.mutations['node_id']),np.uint32))
+                   derived_state_offset=np.arange(len(tracker.mutations['position'])+1,dtype=np.uint32))
+                   #derived_state_length=np.ones(len(tracker.mutations['node_id']),np.uint32))
                    
         # Sort and simplify
         msprime.sort_tables(nodes=self.nodes, edges=self.edges, sites=self.sites, mutations=self.mutations)
@@ -514,13 +515,13 @@ if __name__ == "__main__":
     st = msprime.SiteTable()
     st.set_columns(position=sites.position,
                    ancestral_state=sites.ancestral_state,
-                   ancestral_state_length=sites.ancestral_state_length)
+                   ancestral_state_offset=sites.ancestral_state_offset)
     
     mt = msprime.MutationTable()
     mt.set_columns(site=mutations.site,
                    node=mutations.node + node_offset,
                    derived_state=mutations.derived_state,
-                   derived_state_length=mutations.derived_state_length)
+                   derived_state_offset=mutations.derived_state_offset)
 
     msprime.sort_tables(nodes=nt, edges=es, sites=st, mutations=mt)
     nsam_samples = np.random.choice(2 * args.popsize, args.nsam, replace=False)
