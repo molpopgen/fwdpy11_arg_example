@@ -309,13 +309,23 @@ def handle_recombination_update(offspring_index, parental_id1,
         edges.append((i, j, parental_id2, offspring_index))
     return edges
 
-def mutation_loci(rate):
+def mutation_loci(rate, lookup):
+    """
+    Lookup is expected to be a dict
+    """
     nmut = np.random.poisson(rate)
     if nmut == 0:
         return np.empty([0], dtype=np.float64)
-    pos = np.random.random_sample(nmut)
-    pos = np.unique(pos)
-    return pos
+    i = 0
+    rv = np.zeros(nmut)
+    while i < nmut:
+        pos = np.random.random_sample(1)
+        while pos[0] in lookup:
+            pos = np.random.random_sample(1)
+        rv[i]=pos[0]
+        lookup[rv[i]] = True;
+        i+=1
+    return rv
     
 def handle_mutation_update(mutations_all, new_mutation_node_id, new_mutation_locs):
 	if(len(new_mutation_locs) > 0): 
@@ -349,6 +359,8 @@ def wf(N, simplifier, tracker, recrate, murate, ngens):
     tracker.nodes = np.array([(i, 0, 0) for i in diploids], dtype=node_dt)
     tracker.mutations = np.empty([0], dtype=mutation_dt)
 
+    mutation_lookup = dict()
+
     next_id = len(diploids)  # This will be the next unique ID to use
     assert(max(diploids) < next_id)
     for gen in range(ngens):
@@ -360,6 +372,10 @@ def wf(N, simplifier, tracker, recrate, murate, ngens):
             assert(len(tracker.nodes) == 0)
             assert(len(tracker.edges) == 0)
             assert(len(tracker.mutations) == 0)
+
+            # Reset our mutation lookup via a dictionary comprehension
+            mutation_lookup = {i:True for i in simplifier.sites.position}
+
             # If we did GC, we need to reset
             # some variables.  Internally,
             # when msprime simplifies tables,
@@ -412,8 +428,7 @@ def wf(N, simplifier, tracker, recrate, murate, ngens):
                 p2g1, p2g2 = p2g2, p2g1
 
             breakpoints = xover(recrate)
-            mloci = mutation_loci(murate)
-			
+            mloci = mutation_loci(murate, mutation_lookup)
             edges = handle_recombination_update(
                 next_id, p1g1, p1g2, edges, breakpoints)
             mutations = handle_mutation_update(
@@ -425,7 +440,7 @@ def wf(N, simplifier, tracker, recrate, murate, ngens):
             # Repeat process for parent 2's contribution.
             # Stuff is now being inherited by node next_id + 1
             breakpoints = xover(recrate)
-            mloci = mutation_loci(murate)
+            mloci = mutation_loci(murate, mutation_lookup)
             
             edges = handle_recombination_update(
                 next_id + 1, p2g1, p2g2, edges, breakpoints)
@@ -536,3 +551,4 @@ if __name__ == "__main__":
         msp_rng, args.theta / float(4 * args.popsize))
     mutgen.generate(nodes, edges, sites2, mutations2)
     print(sites2.num_rows)    
+    
