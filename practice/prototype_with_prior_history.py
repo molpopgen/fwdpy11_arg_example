@@ -268,7 +268,7 @@ if __name__ == "__main__":
     node_offset = nt.num_rows
 
     nt.append_columns(flags=flags,
-                      population=nodes['population'] + node_offset,
+                      population=nodes['population'],
                       time=nodes['generation'])
 
     es.append_columns(left=edges['left'],
