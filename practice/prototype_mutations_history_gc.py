@@ -551,5 +551,11 @@ if __name__ == "__main__":
         msp_rng, args.theta / float(4 * args.popsize))
     mutgen.generate(nodes, edges, sites2, mutations2)
     print(sites2.num_rows)    
+
+    print("Us:")
+    for i in range(10):
+       print(sites[i])
+    print("Jerome:")
+    for i in range(10):
+       print(sites2[i])
    
-    print(sites)
