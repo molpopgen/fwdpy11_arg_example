@@ -164,12 +164,12 @@ class ARGsimplifier(object):
                                   parent=tracker.edges['parent'],
                                   child=tracker.edges['child'])
         self.sites.append_columns(position=tracker.mutations['position'],
-                   ancestral_state=np.zeros(len(tracker.mutations['position']),np.int8),
+                   ancestral_state=np.zeros(len(tracker.mutations['position']) + ord('0'),np.int8),
                    ancestral_state_offset=np.arange(len(tracker.mutations['position'])+1,dtype=np.uint32))
     
         self.mutations.append_columns(site=np.arange(len(tracker.mutations['node_id']),dtype=np.int32) + self.mutations.num_rows,
                    node=tracker.mutations['node_id'],
-                   derived_state=np.ones(len(tracker.mutations['node_id']),np.int8),
+                   derived_state=np.ones(len(tracker.mutations['node_id']) + ord('0'),np.int8),
                    derived_state_offset=np.arange(len(tracker.mutations['position'])+1,dtype=np.uint32))
                    #derived_state_length=np.ones(len(tracker.mutations['node_id']),np.uint32))
                    
@@ -549,5 +549,7 @@ if __name__ == "__main__":
     mutgen = msprime.MutationGenerator(
         msp_rng, args.theta / float(4 * args.popsize))
     mutgen.generate(nodes, edges, sites2, mutations2)
+    for i in range(10):
+        print(sites[i])
     print(sites.num_rows,sites2.num_rows)    
 
