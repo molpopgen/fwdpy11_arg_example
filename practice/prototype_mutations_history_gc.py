@@ -542,7 +542,6 @@ if __name__ == "__main__":
     nsam_samples = np.random.choice(2 * args.popsize, args.nsam, replace=False)
     msprime.simplify_tables(samples=nsam_samples.tolist(),
                             nodes=nt, edges=es, sites=st, mutations=mt)
-    print(sites.num_rows)
     
     msp_rng = msprime.RandomGenerator(args.seed)
     mutations2 = msprime.MutationTable()
@@ -550,12 +549,5 @@ if __name__ == "__main__":
     mutgen = msprime.MutationGenerator(
         msp_rng, args.theta / float(4 * args.popsize))
     mutgen.generate(nodes, edges, sites2, mutations2)
-    print(sites2.num_rows)    
+    print(sites.num_rows,sites2.num_rows)    
 
-    print("Us:")
-    for i in range(10):
-       print(sites[i])
-    print("Jerome:")
-    for i in range(10):
-       print(sites2[i])
-   
