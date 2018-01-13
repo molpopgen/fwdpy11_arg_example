@@ -17,9 +17,9 @@ edge_dt = np.dtype([('left', np.float),
                     ('parent', np.int32),
                     ('child', np.int32)])
 
-mutation_dt = np.dtype([('position',np.float64), 
- 						('node_id',np.int32)])
- 						
+mutation_dt = np.dtype([('position', np.float64),
+                        ('node_id', np.int32)])
+
 # Simulation with be popsize*SIMLEN generations
 SIMLEN = 20
 
@@ -54,7 +54,7 @@ class MockAncestryTracker(object):
     @edges.setter
     def edges(self, value):
         self.__edges = value
-        
+
     @property
     def mutations(self):
         return self.__mutations
@@ -79,13 +79,14 @@ class MockAncestryTracker(object):
         """
         self.nodes = np.insert(self.nodes, len(self.nodes), new_nodes)
         self.edges = np.insert(self.edges, len(self.edges), new_edges)
-        self.mutations = np.insert(self.mutations, len(self.mutations), new_mutations)
+        self.mutations = np.insert(
+            self.mutations, len(self.mutations), new_mutations)
         self.samples = new_samples
 
     def convert_time(self):
         """
         Convert from forwards time to backwards time.
-        
+
         This results in self.nodes['generation'].min() 
         equal to -0.0 (e.g, 0.0 with the negative bit set),
         but msprime does not seem to mind.
@@ -164,17 +165,20 @@ class ARGsimplifier(object):
                                   parent=tracker.edges['parent'],
                                   child=tracker.edges['child'])
         self.sites.append_columns(position=tracker.mutations['position'],
-                   ancestral_state=np.zeros(len(tracker.mutations['position']) + ord('0'),np.int8),
-                   ancestral_state_offset=np.arange(len(tracker.mutations['position'])+1,dtype=np.uint32))
-    
-        self.mutations.append_columns(site=np.arange(len(tracker.mutations['node_id']),dtype=np.int32) + self.mutations.num_rows,
-                   node=tracker.mutations['node_id'],
-                   derived_state=np.ones(len(tracker.mutations['node_id']) + ord('0'),np.int8),
-                   derived_state_offset=np.arange(len(tracker.mutations['position'])+1,dtype=np.uint32))
-                   #derived_state_length=np.ones(len(tracker.mutations['node_id']),np.uint32))
-                   
+                                  ancestral_state=np.zeros(
+                                      len(tracker.mutations['position']) + ord('0'), np.int8),
+                                  ancestral_state_offset=np.arange(len(tracker.mutations['position']) + 1, dtype=np.uint32))
+
+        self.mutations.append_columns(site=np.arange(len(tracker.mutations['node_id']), dtype=np.int32) + self.mutations.num_rows,
+                                      node=tracker.mutations['node_id'],
+                                      derived_state=np.ones(
+                                          len(tracker.mutations['node_id']) + ord('0'), np.int8),
+                                      derived_state_offset=np.arange(len(tracker.mutations['position']) + 1, dtype=np.uint32))
+        # derived_state_length=np.ones(len(tracker.mutations['node_id']),np.uint32))
+
         # Sort and simplify
-        msprime.sort_tables(nodes=self.nodes, edges=self.edges, sites=self.sites, mutations=self.mutations)
+        msprime.sort_tables(nodes=self.nodes, edges=self.edges,
+                            sites=self.sites, mutations=self.mutations)
         msprime.simplify_tables(samples=tracker.samples.tolist(),
                                 nodes=self.nodes, edges=self.edges, sites=self.sites, mutations=self.mutations)
         # Return length of NodeTable,
@@ -236,6 +240,7 @@ class ARGsimplifier(object):
     @mutations.setter
     def mutations(self, value):
         self.__mutations = value
+
 
 def xover(rate):
     """ 
@@ -309,6 +314,7 @@ def handle_recombination_update(offspring_index, parental_id1,
         edges.append((i, j, parental_id2, offspring_index))
     return edges
 
+
 def mutation_loci(rate, lookup):
     """
     Lookup is expected to be a dict
@@ -322,17 +328,19 @@ def mutation_loci(rate, lookup):
         pos = np.random.random_sample(1)
         while pos[0] in lookup:
             pos = np.random.random_sample(1)
-        rv[i]=pos[0]
-        lookup[rv[i]] = True;
-        i+=1
+        rv[i] = pos[0]
+        lookup[rv[i]] = True
+        i += 1
     return rv
-    
+
+
 def handle_mutation_update(mutations_all, new_mutation_node_id, new_mutation_locs):
-	if(len(new_mutation_locs) > 0): 
-	    new_mutations = [(pos,new_mutation_node_id) for pos in new_mutation_locs]
-	    mutations_all.extend(new_mutations)
-	return mutations_all
-	
+    if(len(new_mutation_locs) > 0):
+        new_mutations = [(pos, new_mutation_node_id)
+                         for pos in new_mutation_locs]
+        mutations_all.extend(new_mutations)
+    return mutations_all
+
 
 def wf(N, simplifier, tracker, recrate, murate, ngens):
     """
@@ -374,7 +382,7 @@ def wf(N, simplifier, tracker, recrate, murate, ngens):
             assert(len(tracker.mutations) == 0)
 
             # Reset our mutation lookup via a dictionary comprehension
-            mutation_lookup = {i:True for i in simplifier.sites.position}
+            mutation_lookup = {i: True for i in simplifier.sites.position}
 
             # If we did GC, we need to reset
             # some variables.  Internally,
@@ -404,11 +412,11 @@ def wf(N, simplifier, tracker, recrate, murate, ngens):
 
         # Store temp edges for this generation
         edges = []  # np.empty([0], dtype=edge_dt)
-        
-        #Store temp mutations for this generation
-        mutations = []  #np.empty([0], dtype=mutation_dt)
+
+        # Store temp mutations for this generation
+        mutations = []  # np.empty([0], dtype=mutation_dt)
         # Pick 2N parents:
-        parents = np.random.randint(0, N, 2 * N) 
+        parents = np.random.randint(0, N, 2 * N)
         assert(parents.max() < N)
         dip = int(0)  # dummy index for filling contents of new_diploids
 
@@ -432,7 +440,7 @@ def wf(N, simplifier, tracker, recrate, murate, ngens):
             edges = handle_recombination_update(
                 next_id, p1g1, p1g2, edges, breakpoints)
             mutations = handle_mutation_update(
-                 mutations, next_id, mloci)
+                mutations, next_id, mloci)
             # Update offspring container for
             # offspring dip, chrom 1:
             new_diploids[2 * dip] = next_id
@@ -441,11 +449,11 @@ def wf(N, simplifier, tracker, recrate, murate, ngens):
             # Stuff is now being inherited by node next_id + 1
             breakpoints = xover(recrate)
             mloci = mutation_loci(murate, mutation_lookup)
-            
+
             edges = handle_recombination_update(
                 next_id + 1, p2g1, p2g2, edges, breakpoints)
             mutations = handle_mutation_update(
-                 mutations, next_id+1, mloci)
+                mutations, next_id + 1, mloci)
 
             new_diploids[2 * dip + 1] = next_id + 1
 
@@ -495,16 +503,16 @@ if __name__ == "__main__":
 
     if len(tracker.nodes) > 0:  # Then there's stuff that didn't get GC'd
         simplifier.simplify(ngens, tracker)
-            
+
     prior_ts = msprime.simulate(2 * args.popsize)
     nt = msprime.NodeTable()
     es = msprime.EdgeTable()
     prior_ts.dump_tables(nodes=nt, edges=es)
-    nt.set_columns(flags=nt.flags, #[2 * popsize:],
-                   population=nt.population,#[2 * popsize:],
+    nt.set_columns(flags=nt.flags,  # [2 * popsize:],
+                   population=nt.population,  # [2 * popsize:],
                    time=nt.time + ngens + 1)
     node_offset = nt.num_rows
-    
+
     # Local names for convenience.
     # I copy the tables here, too,
     # because I think that will be
@@ -531,7 +539,7 @@ if __name__ == "__main__":
     st.set_columns(position=sites.position,
                    ancestral_state=sites.ancestral_state,
                    ancestral_state_offset=sites.ancestral_state_offset)
-    
+
     mt = msprime.MutationTable()
     mt.set_columns(site=mutations.site,
                    node=mutations.node + node_offset,
@@ -542,14 +550,38 @@ if __name__ == "__main__":
     nsam_samples = np.random.choice(2 * args.popsize, args.nsam, replace=False)
     msprime.simplify_tables(samples=nsam_samples.tolist(),
                             nodes=nt, edges=es, sites=st, mutations=mt)
-    
+
+    x = msprime.load_tables(nodes=nodes, edges=edges,
+                            sites=sites, mutations=mutations)
+    count = 0
+    for mut in x.mutations():
+        pos = mut.position
+        for t in x.trees():
+            interval = t.get_interval()
+            if(interval[0] <= pos and interval[1] >= pos):
+                if(mut.node == t.root):
+                    count = count + 1
+    nonrootus = sites.num_rows - count
+
     msp_rng = msprime.RandomGenerator(args.seed)
     mutations2 = msprime.MutationTable()
     sites2 = msprime.SiteTable()
     mutgen = msprime.MutationGenerator(
         msp_rng, args.theta / float(4 * args.popsize))
     mutgen.generate(nodes, edges, sites2, mutations2)
+
     for i in range(10):
         print(sites[i])
-    print(sites.num_rows,sites2.num_rows)    
 
+    x2 = msprime.load_tables(nodes=nodes, edges=edges,
+                             sites=sites2, mutations=mutations2)
+    count = 0
+    for mut in x2.mutations():
+        pos = mut.position
+        for t in x2.trees():
+            interval = t.get_interval()
+            if(interval[0] <= pos and interval[1] >= pos):
+                if(mut.node == t.root):
+                    count = count + 1
+
+    print(nonrootus, sites2.num_rows - count)
