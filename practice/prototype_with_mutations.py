@@ -317,8 +317,29 @@ if __name__ == "__main__":
     es_c = es.copy()
     st_c = st.copy()
     mt_c = mt.copy()
-    msprime.simplify_tables(samples=samples.tolist(), nodes=nt_c, edges=es_c, sites=st_c, mutations=mt_c)
+    node_map = np.empty(len(nodes), dtype=np.int32)
+    msprime.simplify_tables(samples=samples.tolist(), nodes=nt_c, edges=es_c, sites=st_c, mutations=mt_c, node_map=node_map)
     print("num simplified mutations: ", st_c.num_rows)
+    map_nodes = np.empty(len(nt_c), dtype=np.int32)
+    for index in range(len(node_map)):
+        if(node_map[index] > -1): 
+            map_nodes[node_map[index]] = index
+    
+    for index in range(st_c.num_rows):
+         if(mt_c.node[index] < 2*popsize):
+             for index2 in range(mt.num_rows):
+                 if(mt.node[index2] == map_nodes[mt_c.node[index]]):
+                    print(mt_c.node[index], st_c.position[index], mt.node[index2], st.position[index2], index, index2) 
+                    break
+    
+    print("\n\n")
+    for index in range(st.num_rows):
+         if(mt.node[index] >= 2*SIMLEN*popsize*popsize):		
+                 for index2 in range(mt_c.num_rows):		
+                       if(mt_c.node[index2] == node_map[mt.node[index]]):  
+                            print(mt_c.node[index2], st_c.position[index2], mt.node[index], st.position[index], index, index2) 
+                            break
+                            
     # Create a tree sequence
     x = msprime.load_tables(nodes=nt_c, edges=es_c, sites=st_c, mutations=mt_c)   
     

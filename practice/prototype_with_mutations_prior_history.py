@@ -24,6 +24,11 @@ edge_dt = np.dtype([('left', np.float),
                     ('parent', np.int32),
                     ('child', np.int32)])
 
+mutation_dt = np.dtype([('position',np.float64), 
+ 						('node_id',np.int32)])
+
+# Simulation with be popsize*SIMLEN generations
+SIMLEN=20
 
 class MockAncestryTracker(object):
     """
@@ -31,11 +36,13 @@ class MockAncestryTracker(object):
     """
     __nodes = None
     __edges = None
-
+    __mutations = None
+    
     def __init__(self):
         self.nodes = np.empty([0], dtype=node_dt)
         self.edges = np.empty([0], dtype=edge_dt)
-
+        self.mutations = np.empty([0], dtype=mutation_dt)
+        
     @property
     def nodes(self):
         return self.__nodes
@@ -52,8 +59,15 @@ class MockAncestryTracker(object):
     def edges(self, value):
         self.__edges = value
 
+    @property
+    def mutations(self):
+        return self.__mutations
 
-def xover():
+    @mutations.setter
+    def mutations(self, value):
+        self.__mutations = value
+
+def random_loc():
     breakpoint = np.random.sample()
     while breakpoint == 0.0 or breakpoint == 1.0:
         breakpoint = np.random.sample()
@@ -76,6 +90,8 @@ def wf(N, tracker, ngens):
        Mendel, which means we swap parental chromosome ids 50% of the time.
     4. We do a single crossover for every mating, just so that there are
        a lot of breakpoints to handle
+       
+    For each mating, each child chromosome gets 1 mutation in a random position
     """
     diploids = np.arange(2 * N, dtype=np.uint32)
     # so we pre-allocate the space. We only need
@@ -88,6 +104,12 @@ def wf(N, tracker, ngens):
     # two new edges, and 4N new edges are formed each generation.
     tracker.edges = np.empty([ngens * 4 * N], dtype=edge_dt)
     edge_index = int(0)
+    # Our simple WF sim makes 1 mutation per parent
+    # in each mating.  Thus, each offspring inherits
+    # two new mutations, and 4N new mutations are formed each generation.
+    tracker.mutations = np.empty([ngens * 2 * N], dtype=mutation_dt)
+    mutation_index = int(0)
+    
     node_id = int(len(diploids))
     next_id = len(diploids)  # This will be the next unique ID to use
     assert(max(diploids) < next_id)
@@ -121,8 +143,8 @@ def wf(N, tracker, ngens):
 
             # Crossing-over and edges due to
             # contribution from parent 1
-            breakpoint = xover()
-
+            breakpoint = random_loc()
+            mutation_pos = random_loc()
             # Add the edges. Parent 1 will contribute [0,breakpoint)
             # from p1g1 and [breakpoint,1.0) from p1g2. Note that
             # we've already done the Mendel thing above. Both of these
@@ -131,6 +153,8 @@ def wf(N, tracker, ngens):
             tracker.edges[edge_index] = (0.0, breakpoint, p1g1, next_id)
             tracker.edges[edge_index + 1] = (breakpoint, 1.0, p1g2, next_id)
 
+            # Add mutations. Parent 1 will contribute 1 mutation at mutation_pos
+            tracker.mutations[mutation_index] = (mutation_pos, next_id)
             # Update offspring container for
             # offspring dip, chrom 1:
             new_diploids[2 * dip] = next_id
@@ -140,11 +164,13 @@ def wf(N, tracker, ngens):
 
             # Repeat process for parent 2's contribution.
             # Stuff is now being inherited by node next_id + 1
-            breakpoint = xover()
-            tracker.edges[edge_index +
-                          2] = (0.0, breakpoint, p2g1, next_id + 1)
-            tracker.edges[edge_index +
-                          3] = (breakpoint, 1.0, p2g2, next_id + 1)
+            breakpoint = random_loc()
+            mutation_pos = random_loc()
+            
+            tracker.edges[edge_index + 2] = (0.0, breakpoint, p2g1, next_id + 1)
+            tracker.edges[edge_index + 3] = (breakpoint, 1.0, p2g2, next_id + 1)
+            
+            tracker.mutations[mutation_index+1] = (mutation_pos, next_id+1)
 
             new_diploids[2 * dip + 1] = next_id + 1
 
@@ -162,6 +188,7 @@ def wf(N, tracker, ngens):
             # and added 4 edges
             node_id += 2
             next_id += 2
+            mutation_index += 2
             dip += 1
             edge_index += 4
 
@@ -179,11 +206,11 @@ def expensive_check(popsize, edges, nodes):
     nodes and edges that we generated
     in the simulation
     """
-    assert(len(edges) == 20 * popsize * 4 * popsize)
+    assert(len(edges) == SIMLEN * popsize * 4 * popsize)
 
     # Check that all parent/child IDs are
     # in expected range.
-    for gen in range(1, 20 * popsize + 1):
+    for gen in range(1, SIMLEN * popsize + 1):
         min_parental_id = 2 * popsize * (gen - 1)
         max_parental_id = 2 * popsize * (gen - 1) + 2 * popsize
         min_child_id = max_parental_id
@@ -229,26 +256,28 @@ if __name__ == "__main__":
     np.random.seed(seed)
 
     tracker = MockAncestryTracker()
-    ngens = 20 * popsize
 
+    ngens = SIMLEN * popsize
     samples = wf(popsize, tracker, ngens)
 
     # Check that our sample IDs are as expected:
     if __debug__:
-        min_sample = 20 * popsize * 2 * popsize
-        max_sample = 20 * popsize * 2 * popsize + 2 * popsize
+        min_sample = ngens * 2 * popsize
+        max_sample = ngens * 2 * popsize + 2 * popsize
         if any(i < min_sample or i >= max_sample for i in samples) is True:
             raise RuntimeError("Houston, we have a problem.")
+    assert(np.array_equal(samples,np.arange(min_sample,max_sample,dtype=samples.dtype)))
 
     # Make local names for convenience
     nodes = tracker.nodes
     edges = tracker.edges
+    mutas = tracker.mutations
 
     if __debug__:
         expensive_check(popsize, edges, nodes)
 
     max_gen = nodes['generation'].max()
-    assert(int(max_gen) == 20 * popsize)
+    assert(int(max_gen) == ngens)
 
     # Convert node times from forwards to backwards
     nodes['generation'] = nodes['generation'] - max_gen
@@ -257,7 +286,7 @@ if __name__ == "__main__":
     # Construct and populate msprime's tables
     flags = np.empty([len(nodes)], dtype=np.uint32)
     flags.fill(1)
-
+            
     prior_ts = msprime.simulate(2 * popsize)
     nt = msprime.NodeTable()
     es = msprime.EdgeTable()
@@ -276,39 +305,66 @@ if __name__ == "__main__":
                       parent=edges['parent'] + node_offset,
                       child=edges['child'] + node_offset)
 
+    st = msprime.SiteTable()
+    st.set_columns(position=mutas['position'],
+                   ancestral_state=np.zeros(len(mutas['position']),np.int8),
+                   ancestral_state_length=np.ones(len(mutas['position']),np.uint32))
+    
+    mt = msprime.MutationTable()
+    mt.set_columns(site=np.arange(len(mutas['node_id']),dtype=np.int32),
+                   node=mutas['node_id'] + node_offset,
+                   derived_state=np.ones(len(mutas['node_id']),np.int8),
+                   derived_state_length=np.ones(len(mutas['node_id']),np.uint32))
     # Sort
-    msprime.sort_tables(nodes=nt, edges=es)
-
+    msprime.sort_tables(nodes=nt, edges=es, sites=st, mutations=mt)
+    print("num total mutations: ", st.num_rows)
+     
     # Simplify: this is where the magic happens
-    # PLR: since these tables aren't valid, you gotta use simplify_tables, not load them into a tree sequence
-    msprime.simplify_tables(samples=samples.tolist(), nodes=nt, edges=es)
-
+    ## PLR: since these tables aren't valid, you gotta use simplify_tables, not load them into a tree sequence
+    nt_c = nt.copy()
+    es_c = es.copy()
+    st_c = st.copy()
+    mt_c = mt.copy()
+    node_map = np.empty(len(nodes)+ node_offset, dtype=np.int32)
+    msprime.simplify_tables(samples=samples.tolist(), nodes=nt_c, edges=es_c, sites=st_c, mutations=mt_c, node_map=node_map)
+    print("num simplified mutations: ", st_c.num_rows)
+    map_nodes = np.empty(len(nt_c), dtype=np.int32)
+    for index in range(len(node_map)):
+        if(node_map[index] > -1): 
+            map_nodes[node_map[index]] = index
+    
+    for index in range(st_c.num_rows):
+         if(mt_c.node[index] < 2*popsize):
+             for index2 in range(mt.num_rows):
+                 if(st.position[index2] == st_c.position[index]):
+                    print(mt_c.node[index], st_c.position[index], mt.node[index2], st.position[index2], index, index2, node_map[mt.node[index2]]) 
+                    break
+    
+    print("\n\n")
+    
+    for index in range(st.num_rows):
+         if(mt.node[index] >= 2*ngens*popsize):		
+                 for index2 in range(mt_c.num_rows):		
+                       if(mt_c.node[index2] == node_map[mt.node[index]]):  
+                            print(mt_c.node[index2], st_c.position[index2], mt.node[index], st.position[index], index, index2) 
+                            break
+    
+                         
     # Create a tree sequence
-    x = msprime.load_tables(nodes=nt, edges=es)
-
-    # Lets look at the MRCAS.
-    # This is where things go badly:
-    MRCAS = [t.get_time(t.get_root()) for t in x.trees()]
-    print(MRCAS)
-
-    # Throw down some mutations
-    # onto a sample of size nsam
-    # We'll copy tables here,
-    # just to see what happens.
-    # PLR: these .copy()s aren't doing anything: just overwritten before
-    nt_s = nt.copy()
-    es_s = es.copy()
-
+    x = msprime.load_tables(nodes=nt_c, edges=es_c, sites=st_c, mutations=mt_c)   
+    print([t.roots for t in x.trees()]) 
+    
+    print(max(mt_c.node))
+    print(nt_c.num_rows)
+    
+    nt_s = nt_c.copy()
+    es_s = es_c.copy()
+    st_s = st_c.copy()
+    mt_s = mt_c.copy()
+       
     nsam_samples = np.random.choice(2 * popsize, nsam, replace=False)
-    # PLR: TreeSequence.simplify() *returns* the modified tree sequence, leaving x unmodified
-    # you could alternatively do everything here with tables
     xs = x.simplify(nsam_samples.tolist())
-    xs.dump_tables(nodes=nt_s, edges=es_s)
-    msp_rng = msprime.RandomGenerator(seed)
-    mutations = msprime.MutationTable()
-    sites = msprime.SiteTable()
-    mutgen = msprime.MutationGenerator(msp_rng, theta / float(4 * popsize))
-    mutgen.generate(nt_s, es_s, sites, mutations)
-    x = msprime.load_tables(nodes=nt_s, edges=es_s,
-                            sites=sites, mutations=mutations)
-    print(sites.num_rows)
+    xs.dump_tables(nodes=nt_s, edges=es_s, sites=st_s, mutations=mt_s)
+    
+    print(max(mt_s.node))
+    print(nt_s.num_rows)
