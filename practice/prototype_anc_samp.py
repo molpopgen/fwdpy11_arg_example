@@ -7,6 +7,8 @@ import numpy as np
 import msprime
 import sys
 import argparse
+import pickle
+from collections import namedtuple
 
 node_dt = np.dtype([('id', np.uint32),
                     ('generation', np.float),
@@ -18,7 +20,8 @@ edge_dt = np.dtype([('left', np.float),
                     ('child', np.int32)])
 
 mutation_dt = np.dtype([('position', np.float64),
-                        ('node_id', np.int32)])
+                        ('node_id', np.int32),
+                        ('origin_generation', np.float64)])
 
 # Simulation with be popsize*SIMLEN generations
 SIMLEN = 20
@@ -112,6 +115,7 @@ class MockAncestryTracker(object):
         if gc_rv[0] is True:
             self.reset_data()
 
+Meta = namedtuple('Meta', 'position origin_generation')
 
 class ARGsimplifier(object):
     """
@@ -155,7 +159,8 @@ class ARGsimplifier(object):
 
         # Convert time from forwards to backwards
         tracker.convert_time()
-
+        meta_list = [Meta(mut['position'],mut['origin_generation']) for mut in tracker.mutations]
+        encoded, offset = msprime.pack_bytes(list(map(pickle.dumps, meta_list)))
         # Update internal *Tables
         self.nodes.append_columns(flags=flags,
                                   population=tracker.nodes['population'],
@@ -172,7 +177,8 @@ class ARGsimplifier(object):
                                       node=tracker.mutations['node_id'],
                                       derived_state=np.ones(
                                           len(tracker.mutations['node_id']), np.int8) + ord('0'),
-                                      derived_state_offset=np.arange(len(tracker.mutations['position']) + 1, dtype=np.uint32))
+                                      derived_state_offset=np.arange(len(tracker.mutations['position']) + 1, dtype=np.uint32),
+                                      metadata_offset=offset, metadata=encoded)
 
         # Sort and simplify
         msprime.sort_tables(nodes=self.nodes, edges=self.edges,
@@ -332,9 +338,9 @@ def mutation_loci(rate, lookup):
     return rv
 
 
-def handle_mutation_update(mutations_all, new_mutation_node_id, new_mutation_locs):
+def handle_mutation_update(mutations_all, new_mutation_node_id, generation, new_mutation_locs):
     if(len(new_mutation_locs) > 0):
-        new_mutations = [(pos, new_mutation_node_id)
+        new_mutations = [(pos, new_mutation_node_id, generation)
                          for pos in new_mutation_locs]
         mutations_all.extend(new_mutations)
     return mutations_all
@@ -438,7 +444,7 @@ def wf(N, simplifier, tracker, recrate, murate, ngens):
             edges = handle_recombination_update(
                 next_id, p1g1, p1g2, edges, breakpoints)
             mutations = handle_mutation_update(
-                mutations, next_id, mloci)
+                mutations, next_id, gen + 1, mloci)
             # Update offspring container for
             # offspring dip, chrom 1:
             new_diploids[2 * dip] = next_id
@@ -451,7 +457,7 @@ def wf(N, simplifier, tracker, recrate, murate, ngens):
             edges = handle_recombination_update(
                 next_id + 1, p2g1, p2g2, edges, breakpoints)
             mutations = handle_mutation_update(
-                mutations, next_id + 1, mloci)
+                mutations, next_id + 1, gen + 1, mloci)
 
             new_diploids[2 * dip + 1] = next_id + 1
 
@@ -542,7 +548,9 @@ if __name__ == "__main__":
     mt.set_columns(site=mutations.site,
                    node=mutations.node + node_offset,
                    derived_state=mutations.derived_state,
-                   derived_state_offset=mutations.derived_state_offset)
+                   derived_state_offset=mutations.derived_state_offset,
+                   metadata_offset=mutations.metadata_offset, 
+                   metadata=mutations.metadata)
 
     msprime.sort_tables(nodes=nt, edges=es, sites=st, mutations=mt)
     nsam_samples = np.random.choice(2 * args.popsize, args.nsam, replace=False)
@@ -571,6 +579,10 @@ if __name__ == "__main__":
     for i in range(10):
         print(sites[i])
 
+         
+    for i in range(10):
+        print(mutations[i],pickle.loads(mutations[i].metadata))    
+        
     x2 = msprime.load_tables(nodes=nodes, edges=edges,
                              sites=sites2, mutations=mutations2)
     count = 0
