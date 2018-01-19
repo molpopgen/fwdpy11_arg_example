@@ -142,9 +142,19 @@ class ARGsimplifier(object):
         :return: length of simplifed node table, which is next_id to use
         """
         # Update time in current nodes.
-        # Is this most effficient method?
-        dt = generation - self.last_gc_time
-        self.nodes.set_columns(flags=self.nodes.flags,
+        # Is this most efficient method?
+        node_offset = 0 
+        
+        if(self.last_gc_time == 0):
+             prior_ts = msprime.simulate(2 * args.popsize)
+             prior_ts.dump_tables(nodes=self.nodes, edges=self.edges)
+             self.nodes.set_columns(flags=self.nodes.flags,  # [2 * popsize:],
+                   population=self.nodes.population,  # [2 * popsize:],
+                   time=self.nodes.time + generation + 1)
+             node_offset = self.nodes.num_rows
+        else:
+             dt = generation - self.last_gc_time
+             self.nodes.set_columns(flags=self.nodes.flags,
                                population=self.nodes.population,
                                time=self.nodes.time + dt)
 
@@ -162,14 +172,14 @@ class ARGsimplifier(object):
                                   time=tracker.nodes['generation'])
         self.edges.append_columns(left=tracker.edges['left'],
                                   right=tracker.edges['right'],
-                                  parent=tracker.edges['parent'],
-                                  child=tracker.edges['child'])
+                                  parent=tracker.edges['parent'] + node_offset,
+                                  child=tracker.edges['child'] + node_offset)
         self.sites.append_columns(position=tracker.mutations['position'],
                                   ancestral_state=np.zeros(
                                       len(tracker.mutations['position']), np.int8) + ord('0'),
                                   ancestral_state_offset=np.arange(len(tracker.mutations['position']) + 1, dtype=np.uint32))
         self.mutations.append_columns(site=np.arange(len(tracker.mutations['node_id']), dtype=np.int32) + self.mutations.num_rows,
-                                      node=tracker.mutations['node_id'],
+                                      node=tracker.mutations['node_id'] + node_offset,
                                       derived_state=np.ones(
                                           len(tracker.mutations['node_id']), np.int8) + ord('0'),
                                       derived_state_offset=np.arange(len(tracker.mutations['position']) + 1, dtype=np.uint32))
@@ -502,15 +512,6 @@ if __name__ == "__main__":
     if len(tracker.nodes) > 0:  # Then there's stuff that didn't get GC'd
         simplifier.simplify(ngens, tracker)
 
-    prior_ts = msprime.simulate(2 * args.popsize)
-    nt = msprime.NodeTable()
-    es = msprime.EdgeTable()
-    prior_ts.dump_tables(nodes=nt, edges=es)
-    nt.set_columns(flags=nt.flags,  # [2 * popsize:],
-                   population=nt.population,  # [2 * popsize:],
-                   time=nt.time + ngens + 1)
-    node_offset = nt.num_rows
-
     # Local names for convenience.
     # I copy the tables here, too,
     # because I think that will be
@@ -524,30 +525,9 @@ if __name__ == "__main__":
     sites = simplifier.sites.copy()
     mutations = simplifier.mutations.copy()
 
-    nt.append_columns(flags=nodes.flags,
-                      population=nodes.population,
-                      time=nodes.time)
-
-    es.append_columns(left=edges.left,
-                      right=edges.right,
-                      parent=edges.parent + node_offset,
-                      child=edges.child + node_offset)
-
-    st = msprime.SiteTable()
-    st.set_columns(position=sites.position,
-                   ancestral_state=sites.ancestral_state,
-                   ancestral_state_offset=sites.ancestral_state_offset)
-
-    mt = msprime.MutationTable()
-    mt.set_columns(site=mutations.site,
-                   node=mutations.node + node_offset,
-                   derived_state=mutations.derived_state,
-                   derived_state_offset=mutations.derived_state_offset)
-
-    msprime.sort_tables(nodes=nt, edges=es, sites=st, mutations=mt)
     nsam_samples = np.random.choice(2 * args.popsize, args.nsam, replace=False)
     msprime.simplify_tables(samples=nsam_samples.tolist(),
-                            nodes=nt, edges=es, sites=st, mutations=mt)
+                            nodes=nodes, edges=edges, sites=sites, mutations=mutations)
 
     x = msprime.load_tables(nodes=nodes, edges=edges,
                             sites=sites, mutations=mutations)
