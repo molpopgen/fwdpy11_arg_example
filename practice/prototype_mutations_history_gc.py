@@ -146,13 +146,13 @@ class ARGsimplifier(object):
         node_offset = 0
 
         if(generation == 1):
-            prior_ts = msprime.simulate(2 * args.popsize)
+            prior_ts = msprime.simulate(sample_size = 2 * args.popsize, random_seed = args.seed)
             prior_ts.dump_tables(nodes=self.nodes, edges=self.edges)
-            self.nodes.set_columns(flags=self.nodes.flags,  # [2 * popsize:],
-                                   # [2 * popsize:],
+            self.nodes.set_columns(flags=self.nodes.flags, 
                                    population=self.nodes.population,
                                    time=self.nodes.time + generation)
             # already indexed to be after the first wave of generation (at population size 2 * args.popsize)
+            # so just need to offset by the number of additional coalescent nodes
             node_offset = self.nodes.num_rows - 2 * args.popsize
         else:
             dt = generation - self.last_gc_time
