@@ -146,9 +146,11 @@ class ARGsimplifier(object):
         node_offset = 0
 
         if(generation == 1):
-            prior_ts = msprime.simulate(sample_size = 2 * args.popsize, Ne = 2 * args.popsize, mutation_rate = args.theta / float(4 * args.popsize), random_seed = args.seed)
-            prior_ts.dump_tables(nodes=self.nodes, edges=self.edges, sites=self.sites, mutations=self.mutations)
-            self.nodes.set_columns(flags=self.nodes.flags, 
+            prior_ts = msprime.simulate(sample_size=2 * args.popsize, Ne=2 * args.popsize,
+                                        mutation_rate=args.theta / float(4 * args.popsize), random_seed=args.seed)
+            prior_ts.dump_tables(
+                nodes=self.nodes, edges=self.edges, sites=self.sites, mutations=self.mutations)
+            self.nodes.set_columns(flags=self.nodes.flags,
                                    population=self.nodes.population,
                                    time=self.nodes.time + generation)
             # already indexed to be after the first wave of generation (at population size 2 * args.popsize)
