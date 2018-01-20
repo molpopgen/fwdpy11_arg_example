@@ -35,7 +35,7 @@ class MockAncestryTracker(object):
     __edges = None
     __mutations = None
     __samples = None
-    __anc_samples = []
+    __anc_samples = None
 
     def __init__(self):
         self.nodes = np.empty([0], dtype=node_dt)
@@ -94,7 +94,7 @@ class MockAncestryTracker(object):
         self.edges = np.insert(self.edges, len(self.edges), new_edges)
         self.mutations = np.insert(
             self.mutations, len(self.mutations), new_mutations)
-        self.samples = new_samples
+        self.samples = new_samples  
         self.anc_samples = np.insert(self.anc_samples, len(self.anc_samples), new_anc_samples)
 
     def convert_time(self):
@@ -160,15 +160,15 @@ class ARGsimplifier(object):
         """
         # Update time in current nodes.
         # Is this most efficient method?
-        node_offset = 0 
+        node_offset = 0
         
-        if(self.last_gc_time == 0):
+        if(generation == 1):
              prior_ts = msprime.simulate(2 * args.popsize)
              prior_ts.dump_tables(nodes=self.nodes, edges=self.edges)
              self.nodes.set_columns(flags=self.nodes.flags,  # [2 * popsize:],
-                   population=self.nodes.population,  # [2 * popsize:],
-                   time=self.nodes.time + generation + 1)
-             node_offset = self.nodes.num_rows
+                                    population=self.nodes.population,  # [2 * popsize:],
+                                    time=self.nodes.time + generation)
+             node_offset = self.nodes.num_rows - 2 * args.popsize #already indexed to be after the first wave of generation (at population size 2 * args.popsize)
         else:
              dt = generation - self.last_gc_time
              self.nodes.set_columns(flags=self.nodes.flags,
@@ -186,41 +186,40 @@ class ARGsimplifier(object):
                      for mut in tracker.mutations]
         encoded, offset = msprime.pack_bytes(
             list(map(pickle.dumps, meta_list)))
-        # Update internal *Tables
+       
+       # Update internal *Tables
         self.nodes.append_columns(flags=flags,
                                   population=tracker.nodes['population'],
                                   time=tracker.nodes['generation'])
         self.edges.append_columns(left=tracker.edges['left'],
                                   right=tracker.edges['right'],
-                                  parent=tracker.edges['parent'] + node_offset,
-                                  child=tracker.edges['child'] + node_offset)
+                                  parent=tracker.edges['parent'], #only offset mutation and child node ids (and sample ids), for a single simulation generation, edge parents will be correct
+                                  child=tracker.edges['child']+node_offset)
         self.sites.append_columns(position=tracker.mutations['position'],
                                   ancestral_state=np.zeros(
                                       len(tracker.mutations['position']), np.int8) + ord('0'),
                                   ancestral_state_offset=np.arange(len(tracker.mutations['position']) + 1, dtype=np.uint32))
         self.mutations.append_columns(site=np.arange(len(tracker.mutations['node_id']), dtype=np.int32) + self.mutations.num_rows,
-                                      node=tracker.mutations['node_id'] + node_offset,
+                                      node=tracker.mutations['node_id']+node_offset, 
                                       derived_state=np.ones(
                                           len(tracker.mutations['node_id']), np.int8) + ord('0'),
                                       derived_state_offset=np.arange(
                                           len(tracker.mutations['position']) + 1, dtype=np.uint32),
                                       metadata_offset=offset, metadata=encoded)
-
         # Sort and simplify
         msprime.sort_tables(nodes=self.nodes, edges=self.edges,
                             sites=self.sites, mutations=self.mutations)
-        all_samples = list(set(tracker.anc_samples.tolist() + tracker.samples.tolist()))
+        all_samples = list(set((tracker.anc_samples+node_offset).tolist() + (tracker.samples+node_offset).tolist()))
         node_map = msprime.simplify_tables(samples=all_samples,
                                            nodes=self.nodes, edges=self.edges, sites=self.sites, mutations=self.mutations)
 
-        tracker.anc_samples = [node_map[int(node_id)]
-                               for node_id in tracker.anc_samples]
+        tracker.anc_samples = np.array([node_map[int(node_id)] for node_id in tracker.anc_samples])
         # Return length of NodeTable,
         # which can be used as next offspring ID
         return self.nodes.num_rows
 
     def __call__(self, generation, tracker):
-        if generation > 0 and generation % self.gc_interval == 0:
+        if generation > 0 and (generation % self.gc_interval == 0 or generation == 1):
             next_id = self.simplify(generation, tracker)
             self.last_gc_time = generation
             return (True, next_id)
@@ -398,7 +397,7 @@ def wf(N, simplifier, tracker, recrate, murate, anc_sample_gen, ngens):
     diploids = np.arange(2 * N, dtype=np.uint32)
     # so we pre-allocate the space. We only need
     # to do this once b/c N is constant.
-    tracker.nodes = np.array([(i, 0, 0) for i in diploids], dtype=node_dt)
+    tracker.nodes = np.empty([0], dtype=node_dt)
     tracker.mutations = np.empty([0], dtype=mutation_dt)
 
     mutation_lookup = dict()
@@ -541,8 +540,7 @@ if __name__ == "__main__":
     recrate = args.rho / float(4 * args.popsize)
     murate = args.theta / float(4 * args.popsize)
     ngens = SIMLEN * args.popsize
-    anc_sample_gen = [(ngens * (i + 1) / SIMLEN, args.popsize / 100)
-                      for i in range(SIMLEN - 2)]
+    anc_sample_gen = [(ngens * (i + 1) / SIMLEN, args.popsize / 100) for i in range(SIMLEN - 2)]
     samples = wf(args.popsize, simplifier, tracker,
                  recrate, murate, anc_sample_gen, ngens)
 
