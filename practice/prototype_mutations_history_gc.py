@@ -143,20 +143,22 @@ class ARGsimplifier(object):
         """
         # Update time in current nodes.
         # Is this most efficient method?
-        node_offset = 0 
-        
+        node_offset = 0
+
         if(generation == 1):
-             prior_ts = msprime.simulate(2 * args.popsize)
-             prior_ts.dump_tables(nodes=self.nodes, edges=self.edges)
-             self.nodes.set_columns(flags=self.nodes.flags,  # [2 * popsize:],
-                                    population=self.nodes.population,  # [2 * popsize:],
-                                    time=self.nodes.time + generation)
-             node_offset = self.nodes.num_rows - 2 * args.popsize #already indexed to be after the first wave of generation (at population size 2 * args.popsize)
+            prior_ts = msprime.simulate(2 * args.popsize)
+            prior_ts.dump_tables(nodes=self.nodes, edges=self.edges)
+            self.nodes.set_columns(flags=self.nodes.flags,  # [2 * popsize:],
+                                   # [2 * popsize:],
+                                   population=self.nodes.population,
+                                   time=self.nodes.time + generation)
+            # already indexed to be after the first wave of generation (at population size 2 * args.popsize)
+            node_offset = self.nodes.num_rows - 2 * args.popsize
         else:
-             dt = generation - self.last_gc_time
-             self.nodes.set_columns(flags=self.nodes.flags,
-                               population=self.nodes.population,
-                               time=self.nodes.time + dt)
+            dt = generation - self.last_gc_time
+            self.nodes.set_columns(flags=self.nodes.flags,
+                                   population=self.nodes.population,
+                                   time=self.nodes.time + dt)
 
         # Create "flags" for new nodes.
         # This is much faster than making a list
@@ -172,14 +174,16 @@ class ARGsimplifier(object):
                                   time=tracker.nodes['generation'])
         self.edges.append_columns(left=tracker.edges['left'],
                                   right=tracker.edges['right'],
-                                  parent=tracker.edges['parent'], #only offset mutation and child node ids (and sample ids), for a single simulation generation, edge parents will be correct
+                                  # only offset mutation and child node ids (and sample ids), for a single simulation generation, edge parents will be correct
+                                  parent=tracker.edges['parent'],
                                   child=tracker.edges['child'] + node_offset)
         self.sites.append_columns(position=tracker.mutations['position'],
                                   ancestral_state=np.zeros(
                                       len(tracker.mutations['position']), np.int8) + ord('0'),
                                   ancestral_state_offset=np.arange(len(tracker.mutations['position']) + 1, dtype=np.uint32))
         self.mutations.append_columns(site=np.arange(len(tracker.mutations['node_id']), dtype=np.int32) + self.mutations.num_rows,
-                                      node=tracker.mutations['node_id'] + node_offset,
+                                      node=tracker.mutations['node_id'] +
+                                      node_offset,
                                       derived_state=np.ones(
                                           len(tracker.mutations['node_id']), np.int8) + ord('0'),
                                       derived_state_offset=np.arange(len(tracker.mutations['position']) + 1, dtype=np.uint32))
@@ -187,7 +191,7 @@ class ARGsimplifier(object):
         # Sort and simplify
         msprime.sort_tables(nodes=self.nodes, edges=self.edges,
                             sites=self.sites, mutations=self.mutations)
-        msprime.simplify_tables(samples=(tracker.samples+node_offset).tolist(),
+        msprime.simplify_tables(samples=(tracker.samples + node_offset).tolist(),
                                 nodes=self.nodes, edges=self.edges, sites=self.sites, mutations=self.mutations)
         # Return length of NodeTable,
         # which can be used as next offspring ID
