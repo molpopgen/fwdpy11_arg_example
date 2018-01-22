@@ -42,7 +42,7 @@ class MockAncestryTracker(object):
         self.edges = np.empty([0], dtype=edge_dt)
         self.mutations = np.empty([0], dtype=mutation_dt)
         self.samples = None
-        self.anc_samples = []
+        self.anc_samples = np.empty([0], dtype=np.uint32)
 
     @property
     def nodes(self):
@@ -82,7 +82,7 @@ class MockAncestryTracker(object):
 
     @anc_samples.setter
     def anc_samples(self, value):
-        self.__anc_samples = np.array(value, copy=True)
+        self.__anc_samples = value
 
     def update_data(self, new_nodes, new_edges, new_mutations, new_samples, new_anc_samples):
         """
