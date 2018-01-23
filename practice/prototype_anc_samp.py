@@ -216,6 +216,7 @@ class ARGsimplifier(object):
         # Sort and simplify
         msprime.sort_tables(nodes=self.nodes, edges=self.edges,
                             sites=self.sites, mutations=self.mutations)
+        # set guards against duplicate node ids when an ancestral sample generation overlaps with a gc generation
         all_samples = list(set((tracker.anc_samples + node_offset).tolist() +
                                (tracker.samples + node_offset).tolist()))
         node_map = msprime.simplify_tables(samples=all_samples,
