@@ -549,7 +549,7 @@ if __name__ == "__main__":
     recrate = args.rho / float(4 * args.popsize)
     murate = args.theta / float(4 * args.popsize)
     ngens = SIMLEN * args.popsize
-    anc_sample_gen = [(ngens * (i + 1) / SIMLEN, args.popsize / 100)
+    anc_sample_gen = [(ngens * (i + 1) / SIMLEN, max(args.popsize / 100,1))
                       for i in range(SIMLEN - 2)]
     samples = wf(args.popsize, simplifier, tracker,
                  recrate, murate, anc_sample_gen, ngens)
@@ -570,8 +570,11 @@ if __name__ == "__main__":
     sites = simplifier.sites.copy()
     mutations = simplifier.mutations.copy()
 
+    pfun = lambda x: 1.0/(2 * args.popsize)*(x not in tracker.anc_samples)
+    parray = [pfun(node_id) for node_id in np.arange(2 * args.popsize + len(tracker.anc_samples))]
     nsam_samples = np.random.choice(
-        2 * args.popsize, args.nsam, replace=False) + len(tracker.anc_samples)
+        2 * args.popsize + len(tracker.anc_samples), args.nsam, replace=False, p = parray)
+    
     all_samples = tracker.anc_samples.tolist() + nsam_samples.tolist()
     node_map = msprime.simplify_tables(samples=all_samples,
                                        nodes=nodes, edges=edges, sites=sites, mutations=mutations)
