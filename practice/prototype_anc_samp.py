@@ -220,7 +220,7 @@ class ARGsimplifier(object):
         # sorting the set in reverse order ensures that generational samples occur *before* ancestral samples in the node table,
         # making bookkeeping easier during the WF (parents of the next generation are guaranteed to be 0-2N in the node table)
         all_samples = sorted(set((tracker.anc_samples + node_offset).tolist() +
-                               (tracker.samples + node_offset).tolist()), reverse = True)
+                                 (tracker.samples + node_offset).tolist()), reverse=True)
         node_map = msprime.simplify_tables(samples=all_samples,
                                            nodes=self.nodes, edges=self.edges, sites=self.sites, mutations=self.mutations)
 
@@ -552,7 +552,7 @@ if __name__ == "__main__":
     recrate = args.rho / float(4 * args.popsize)
     murate = args.theta / float(4 * args.popsize)
     ngens = SIMLEN * args.popsize
-    anc_sample_gen = [(ngens * (i + 1) / SIMLEN, max(args.popsize / 100,1))
+    anc_sample_gen = [(ngens * (i + 1) / SIMLEN, max(args.popsize / 100, 1))
                       for i in range(SIMLEN - 2)]
     samples = wf(args.popsize, simplifier, tracker,
                  recrate, murate, anc_sample_gen, ngens)
@@ -572,8 +572,8 @@ if __name__ == "__main__":
     edges = simplifier.edges.copy()
     sites = simplifier.sites.copy()
     mutations = simplifier.mutations.copy()
-    
-    nsam_samples = np.random.choice(2 * args.popsize, args.nsam, replace=False)  
+
+    nsam_samples = np.random.choice(2 * args.popsize, args.nsam, replace=False)
     all_samples = nsam_samples.tolist() + tracker.anc_samples.tolist()
     node_map = msprime.simplify_tables(samples=all_samples,
                                        nodes=nodes, edges=edges, sites=sites, mutations=mutations)
@@ -595,7 +595,7 @@ if __name__ == "__main__":
                     count = count + 1
     nonrootus = sites.num_rows - count
     print(sites.num_rows)
-    
+
     msp_rng = msprime.RandomGenerator(args.seed)
     mutations2 = msprime.MutationTable()
     sites2 = msprime.SiteTable()
