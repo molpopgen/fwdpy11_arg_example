@@ -217,8 +217,10 @@ class ARGsimplifier(object):
         msprime.sort_tables(nodes=self.nodes, edges=self.edges,
                             sites=self.sites, mutations=self.mutations)
         # set guards against duplicate node ids when an ancestral sample generation overlaps with a gc generation
-        all_samples = list(set((tracker.anc_samples + node_offset).tolist() +
-                               (tracker.samples + node_offset).tolist()))
+        # sorting the set in reverse order ensures that generational samples occur *before* ancestral samples in the node table,
+        # making bookkeeping easier during the WF (parents of the next generation are guaranteed to be 0-2N in the node table)
+        all_samples = sorted(set((tracker.anc_samples + node_offset).tolist() +
+                               (tracker.samples + node_offset).tolist()), reverse = True)
         node_map = msprime.simplify_tables(samples=all_samples,
                                            nodes=self.nodes, edges=self.edges, sites=self.sites, mutations=self.mutations)
 
@@ -570,13 +572,9 @@ if __name__ == "__main__":
     edges = simplifier.edges.copy()
     sites = simplifier.sites.copy()
     mutations = simplifier.mutations.copy()
-
-    pfun = lambda x: 1.0/(2 * args.popsize)*(x not in tracker.anc_samples)
-    parray = [pfun(node_id) for node_id in np.arange(2 * args.popsize + len(tracker.anc_samples))]
-    nsam_samples = np.random.choice(
-        2 * args.popsize + len(tracker.anc_samples), args.nsam, replace=False, p = parray)
     
-    all_samples = tracker.anc_samples.tolist() + nsam_samples.tolist()
+    nsam_samples = np.random.choice(2 * args.popsize, args.nsam, replace=False)  
+    all_samples = nsam_samples.tolist() + tracker.anc_samples.tolist()
     node_map = msprime.simplify_tables(samples=all_samples,
                                        nodes=nodes, edges=edges, sites=sites, mutations=mutations)
 
@@ -596,7 +594,8 @@ if __name__ == "__main__":
                 if(mut.node == t.root):
                     count = count + 1
     nonrootus = sites.num_rows - count
-
+    print(sites.num_rows)
+    
     msp_rng = msprime.RandomGenerator(args.seed)
     mutations2 = msprime.MutationTable()
     sites2 = msprime.SiteTable()
