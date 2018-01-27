@@ -128,7 +128,7 @@ class MockAncestryTracker(object):
             self.reset_data()
 
 
-Meta = namedtuple('Meta', 'position origin_generation')
+Meta = namedtuple('Meta', 'position origin_generation origin')
 
 
 class ARGsimplifier(object):
@@ -171,6 +171,11 @@ class ARGsimplifier(object):
             self.nodes.set_columns(flags=self.nodes.flags,
                                    population=self.nodes.population,
                                    time=self.nodes.time + generation)
+                                   
+            meta_list = [Meta(self.sites[mut[0]][0], self.nodes[mut[1]][1], "msprime") for mut in self.mutations]
+            encoded, offset = msprime.pack_bytes(list(map(pickle.dumps, meta_list)))
+            
+            self.mutations.set_columns(site = self.mutations.site, node = self.mutations.node, derived_state = self.mutations.derived_state, derived_state_offset = self.mutations.derived_state_offset, parent = self.mutations.parent, metadata_offset=offset, metadata=encoded)
             # already indexed to be after the first wave of generation (at population size 2 * args.popsize)
             # so just need to offset by the number of additional coalescent nodes
             node_offset = self.nodes.num_rows - 2 * args.popsize
@@ -187,10 +192,9 @@ class ARGsimplifier(object):
 
         # Convert time from forwards to backwards
         tracker.convert_time()
-        meta_list = [Meta(mut['position'], mut['origin_generation'])
+        meta_list = [Meta(mut['position'], mut['origin_generation'], "forward_sim")
                      for mut in tracker.mutations]
-        encoded, offset = msprime.pack_bytes(
-            list(map(pickle.dumps, meta_list)))
+        encoded, offset = msprime.pack_bytes(list(map(pickle.dumps, meta_list)))
 
        # Update internal *Tables
         self.nodes.append_columns(flags=flags,
@@ -612,11 +616,7 @@ if __name__ == "__main__":
         print(sites[i])
 
     for i in range(10):
-        try:
-            print(mutations[i], pickle.loads(mutations[i].metadata))
-        except:
-            # for mutations added by msprime's prior history, they don't have metadata
-            print(mutations[i])
+        print(mutations[i], pickle.loads(mutations[i].metadata))
 
     x2 = msprime.load_tables(nodes=nodes, edges=edges,
                              sites=sites2, mutations=mutations2)
