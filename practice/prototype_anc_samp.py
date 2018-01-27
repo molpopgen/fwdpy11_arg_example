@@ -449,9 +449,13 @@ def wf(N, simplifier, tracker, recrate, murate, anc_sample_gen, ngens):
         new_diploids = np.empty([len(diploids)], dtype=diploids.dtype)
 
         if(ancestral_gen_counter < len(anc_sample_gen) and gen + 1 == anc_sample_gen[ancestral_gen_counter][0]):
-            assert(anc_sample_gen[ancestral_gen_counter][1] < (2 * N))
-            ancestral_samples = np.random.choice(
-                int(2 * N), int(anc_sample_gen[ancestral_gen_counter][1]), replace=False) + next_id
+            assert(anc_sample_gen[ancestral_gen_counter][1] < N)
+            ran_samples = np.random.choice(
+                int(N), int(anc_sample_gen[ancestral_gen_counter][1]), replace=False)
+            # while sorting to get diploid chromosomes next to each other isn't strictly necessary,
+            # they will be sorted (in reverse order) before simplication anyway, no need to do it here
+            ancestral_samples = np.concatenate(
+                (2*ran_samples + next_id, 2*ran_samples + 1 + next_id))
             ancestral_gen_counter += 1
 
         # Store temp nodes for this generation.
@@ -532,7 +536,7 @@ def parse_args():
                         default=500, help="Diploid population size")
     parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu")
     parser.add_argument('--rho', '-R', type=float, default=10.0, help="4Nr")
-    parser.add_argument('--nsam', '-n', type=int, default=10,
+    parser.add_argument('--nsam', '-n', type=int, default=5,
                         help="Sample size (in chromosomes).")
     parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
     parser.add_argument('--gc', '-G', type=int,
@@ -552,7 +556,7 @@ if __name__ == "__main__":
     recrate = args.rho / float(4 * args.popsize)
     murate = args.theta / float(4 * args.popsize)
     ngens = SIMLEN * args.popsize
-    anc_sample_gen = [(ngens * (i + 1) / SIMLEN, max(args.popsize / 100, 1))
+    anc_sample_gen = [(ngens * (i + 1) / SIMLEN, max(round(args.popsize / 200), 1))
                       for i in range(SIMLEN - 2)]
     samples = wf(args.popsize, simplifier, tracker,
                  recrate, murate, anc_sample_gen, ngens)
@@ -573,8 +577,9 @@ if __name__ == "__main__":
     sites = simplifier.sites.copy()
     mutations = simplifier.mutations.copy()
 
-    nsam_samples = np.random.choice(2 * args.popsize, args.nsam, replace=False)
-    all_samples = nsam_samples.tolist() + tracker.anc_samples.tolist()
+    ran_samples = np.random.choice(args.popsize, args.nsam, replace=False)
+    nsam_samples = sorted(np.concatenate((2*ran_samples, 2*ran_samples + 1)))
+    all_samples = nsam_samples + tracker.anc_samples.tolist()
     node_map = msprime.simplify_tables(samples=all_samples,
                                        nodes=nodes, edges=edges, sites=sites, mutations=mutations)
 
