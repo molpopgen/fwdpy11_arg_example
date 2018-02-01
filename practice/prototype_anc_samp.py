@@ -159,8 +159,6 @@ class ARGsimplifier(object):
 
         :return: length of simplifed node table, which is next_id to use
         """
-        # Update time in current nodes.
-        # Is this most efficient method?
         node_offset = 0
 
         if(generation == 1):
@@ -180,6 +178,8 @@ class ARGsimplifier(object):
             # so just need to offset by the number of additional coalescent nodes
             node_offset = self.nodes.num_rows - 2 * args.popsize
         else:
+            # Update time in current nodes.
+            # Is this most efficient method?
             dt = generation - self.last_gc_time
             self.nodes.set_columns(flags=self.nodes.flags,
                                    population=self.nodes.population,
