@@ -179,7 +179,6 @@ def wf(N, simplifier, tracker, anc_sample_gen, ngens):
 
     ancestral_gen_counter = 0
     next_id = len(diploids)  # This will be the next unique ID to use
-    assert(max(diploids) < next_id)
     for gen in range(ngens):
         ancestral_samples = []
         # Let's see if we will do some GC:
@@ -187,10 +186,6 @@ def wf(N, simplifier, tracker, anc_sample_gen, ngens):
         # If so, let the tracker clean up:
         tracker.post_gc_cleanup(gc_rv)
         if gc_rv[0] is True:
-            assert(len(tracker.nodes) == 0)
-            assert(len(tracker.edges) == 0)
-            assert(len(tracker.mutations) == 0)
-
             # If we did GC, we need to reset
             # some variables.  Internally,
             # when msprime simplifies tables,
@@ -209,7 +204,6 @@ def wf(N, simplifier, tracker, anc_sample_gen, ngens):
         new_diploids = np.empty([len(diploids)], dtype=diploids.dtype)
 
         if(ancestral_gen_counter < len(anc_sample_gen) and gen + 1 == anc_sample_gen[ancestral_gen_counter][0]):
-            assert(anc_sample_gen[ancestral_gen_counter][1] < N)
             ran_samples = np.random.choice(int(N), int(anc_sample_gen[ancestral_gen_counter][1]), replace=False)
             # while sorting to get diploid chromosomes next to each other isn't strictly necessary,
             # they will be sorted (in reverse order) before simplication anyway, no need to do it here
@@ -229,7 +223,6 @@ def wf(N, simplifier, tracker, anc_sample_gen, ngens):
 
         # Pick 2N parents:
         parents = np.random.randint(0, N, 2 * N)
-        assert(parents.max() < N)
         dip = int(0)  # dummy index for filling contents of new_diploids
 
         # Iterate over our chosen parents via fancy indexing.
@@ -237,8 +230,6 @@ def wf(N, simplifier, tracker, anc_sample_gen, ngens):
             # p1g1 = parent 1, gamete (chrom) 1, etc.:
             p1g1, p1g2 = diploids[2 * parent1], diploids[2 * parent1 + 1]
             p2g1, p2g2 = diploids[2 * parent2], diploids[2 * parent2 + 1]
-            assert(p1g2 - p1g1 == 1)
-            assert(p2g2 - p2g1 == 1)
 
             # Apply Mendel to p1g1 et al.
             mendel = np.random.random_sample(2)
@@ -262,11 +253,8 @@ def wf(N, simplifier, tracker, anc_sample_gen, ngens):
             next_id += 2
             dip += 1
 
-        assert(dip == N)
-        assert(len(new_diploids) == 2 * N)
         diploids = new_diploids
         tracker.update_data(nodes, edges, diploids, ancestral_samples)
-        assert(max(diploids) < next_id)
 
     return (diploids)
     
