@@ -76,7 +76,6 @@ class ARGsimplifier(object):
     """
     nodes = None
     edges = None
-    sites = None
     gc_interval = None
     last_gc_time = None
 
