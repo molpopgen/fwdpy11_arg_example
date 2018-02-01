@@ -213,7 +213,7 @@ def handle_mutation_update(mutations_all, new_mutation_node_id, generation, new_
     return mutations_all
 
 
-def wf(N, simplifier, tracker, recrate, murate, anc_sample_gen, ngens):
+def wf(N, simplifier, tracker, murate, anc_sample_gen, ngens):
     """
     For N diploids, the diploids list contains 2N values.
     For the i-th diploids, diploids[2*i] and diploids[2*i+1]
@@ -349,7 +349,6 @@ def parse_args():
     parser = argparse.ArgumentParser(description=dstring, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--popsize', '-N', type=int, default=500, help="Diploid population size")
     parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu")
-    parser.add_argument('--rho', '-R', type=float, default=10.0, help="4Nr")
     parser.add_argument('--nsam', '-n', type=int, default=5, help="Sample size (in chromosomes).")
     parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
     parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")
@@ -365,11 +364,10 @@ if __name__ == "__main__":
 
     simplifier = ARGsimplifier(args.gc)
     tracker = MockAncestryTracker()
-    recrate = args.rho / float(4 * args.popsize)
     murate = args.theta / float(4 * args.popsize)
     ngens = SIMLEN * args.popsize
     anc_sample_gen = [(ngens * (i + 1) / SIMLEN, max(round(args.popsize / 200), 1)) for i in range(SIMLEN - 2)]
-    samples = wf(args.popsize, simplifier, tracker, recrate, murate, anc_sample_gen, ngens)
+    samples = wf(args.popsize, simplifier, tracker, murate, anc_sample_gen, ngens)
 
     if len(tracker.nodes) > 0:  # Then there's stuff that didn't get GC'd
         simplifier.simplify(ngens, tracker)
