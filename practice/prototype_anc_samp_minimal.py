@@ -123,8 +123,7 @@ class ARGsimplifier(object):
 
         if(generation == 1):
             prior_ts = msprime.simulate(sample_size=2 * args.popsize, Ne=2 * args.popsize, mutation_rate=args.theta / float(4 * args.popsize), random_seed=args.seed)
-            prior_ts.dump_tables(
-                nodes=self.nodes, edges=self.edges, sites=self.sites, mutations=self.mutations)
+            prior_ts.dump_tables(nodes=self.nodes, edges=self.edges, sites=self.sites, mutations=self.mutations)
             self.nodes.set_columns(flags=self.nodes.flags, population=self.nodes.population, time=self.nodes.time + generation)
                                    
             meta_list = [Meta(self.sites[mut[0]][0], self.nodes[mut[1]][1], "msprime") for mut in self.mutations]
@@ -174,8 +173,7 @@ class ARGsimplifier(object):
         all_samples = sorted(set((tracker.anc_samples + node_offset).tolist() + (tracker.samples + node_offset).tolist()), reverse=True)
         node_map = msprime.simplify_tables(samples=all_samples, nodes=self.nodes, edges=self.edges, sites=self.sites, mutations=self.mutations)
 
-        tracker.anc_samples = np.array(
-            [node_map[int(node_id)] for node_id in tracker.anc_samples])
+        tracker.anc_samples = np.array([node_map[int(node_id)] for node_id in tracker.anc_samples])
         # Return length of NodeTable,
         # which can be used as next offspring ID
         return self.nodes.num_rows
