@@ -541,7 +541,7 @@ def parse_args():
     parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu")
     parser.add_argument('--rho', '-R', type=float, default=10.0, help="4Nr")
     parser.add_argument('--nsam', '-n', type=int, default=5,
-                        help="Sample size (in chromosomes).")
+                        help="Sample size (in diploids).")
     parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
     parser.add_argument('--gc', '-G', type=int,
                         default=100, help="GC interval")

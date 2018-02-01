@@ -274,7 +274,7 @@ def parse_args():
     dstring = "Prototype implementation of ARG tracking and regular garbage collection."
     parser = argparse.ArgumentParser(description=dstring, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--popsize', '-N', type=int, default=500, help="Diploid population size")
-    parser.add_argument('--nsam', '-n', type=int, default=5, help="Sample size (in chromosomes).")
+    parser.add_argument('--nsam', '-n', type=int, default=5, help="Sample size (in diploids).")
     parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
     parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")
 
