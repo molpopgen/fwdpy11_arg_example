@@ -8,14 +8,8 @@ import msprime
 import sys
 import argparse
 
-node_dt = np.dtype([('id', np.uint32),
-                    ('generation', np.float),
-                    ('population', np.int32)])
-
-edge_dt = np.dtype([('left', np.float),
-                    ('right', np.float),
-                    ('parent', np.int32),
-                    ('child', np.int32)])
+node_dt = np.dtype([('id', np.uint32), ('generation', np.float), ('population', np.int32)])
+edge_dt = np.dtype([('left', np.float), ('right', np.float), ('parent', np.int32), ('child', np.int32)])
 
 # Simulation with be popsize*SIMLEN generations
 SIMLEN = 20
@@ -123,14 +117,9 @@ class ARGsimplifier(object):
         tracker.convert_time()
 
        # Update internal *Tables
-        self.nodes.append_columns(flags=flags,
-                                  population=tracker.nodes['population'],
-                                  time=tracker.nodes['generation'])
-        self.edges.append_columns(left=tracker.edges['left'],
-                                  right=tracker.edges['right'],
+        self.nodes.append_columns(flags=flags, population=tracker.nodes['population'], time=tracker.nodes['generation'])
+        self.edges.append_columns(left=tracker.edges['left'], right=tracker.edges['right'], parent=tracker.edges['parent'], child=tracker.edges['child'] + node_offset)
                                   # only offset child node ids (and sample ids), for a single simulation generation, edge parents will be correct
-                                  parent=tracker.edges['parent'],
-                                  child=tracker.edges['child'] + node_offset)
 
         # Sort and simplify
         msprime.sort_tables(nodes=self.nodes, edges=self.edges)
@@ -265,13 +254,12 @@ def parse_args():
     parser.add_argument('--nsam', '-n', type=int, default=5, help="Sample size (in diploids).")
     parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
     parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")
-
+    
     return parser
 
 if __name__ == "__main__":
     parser = parse_args()
     args = parser.parse_args(sys.argv[1:])
-
     np.random.seed(args.seed)
 
     simplifier = ARGsimplifier(args.gc)
@@ -283,18 +271,7 @@ if __name__ == "__main__":
     if len(tracker.nodes) > 0:  # Then there's stuff that didn't get GC'd
         simplifier.simplify(ngens, tracker)
 
-    # Local names for convenience.
-    # I copy the tables here, too,
-    # because I think that will be
-    # done in practice: you will
-    # often want to simplify and
-    # ARG down to a smaller sample
-    # but still have the complete
-    # history of the pop'n.
-    nodes = simplifier.nodes.copy()
-    edges = simplifier.edges.copy()
-
     ran_samples = np.random.choice(args.popsize, args.nsam, replace=False)
     nsam_samples = sorted(np.concatenate((2*ran_samples, 2*ran_samples + 1)))
     all_samples = nsam_samples + tracker.anc_samples.tolist()
-    node_map = msprime.simplify_tables(samples=all_samples, nodes=nodes, edges=edges)
+    node_map = msprime.simplify_tables(samples=all_samples, nodes=simplifier.nodes, edges=simplifier.edges)
