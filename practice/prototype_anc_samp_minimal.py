@@ -31,58 +31,18 @@ class MockAncestryTracker(object):
     """
     Mimicking the public API of AncestryTracker.
     """
-    __nodes = None
-    __edges = None
-    __mutations = None
-    __samples = None
-    __anc_samples = None
+    nodes = None
+    edges = None
+    mutations = None
+    samples = None
+    anc_samples = None
 
     def __init__(self):
         self.nodes = np.empty([0], dtype=node_dt)
         self.edges = np.empty([0], dtype=edge_dt)
         self.mutations = np.empty([0], dtype=mutation_dt)
-        self.samples = None
+        self.samples = np.empty([0], dtype=np.uint32)
         self.anc_samples = np.empty([0], dtype=np.uint32)
-
-    @property
-    def nodes(self):
-        return self.__nodes
-
-    @nodes.setter
-    def nodes(self, value):
-        self.__nodes = value
-
-    @property
-    def edges(self):
-        return self.__edges
-
-    @edges.setter
-    def edges(self, value):
-        self.__edges = value
-
-    @property
-    def mutations(self):
-        return self.__mutations
-
-    @mutations.setter
-    def mutations(self, value):
-        self.__mutations = value
-
-    @property
-    def samples(self):
-        return self.__samples
-
-    @samples.setter
-    def samples(self, value):
-        self.__samples = np.array(value, copy=True)
-
-    @property
-    def anc_samples(self):
-        return self.__anc_samples
-
-    @anc_samples.setter
-    def anc_samples(self, value):
-        self.__anc_samples = value
 
     def update_data(self, new_nodes, new_edges, new_mutations, new_samples, new_anc_samples):
         """
@@ -135,18 +95,18 @@ class ARGsimplifier(object):
     class to collect simulated
     results and process them via msprime
     """
-    __nodes = None
-    __edges = None
-    __mutations = None
-    __sites = None
-    __gc_interval = None
-    __last_gc_time = None
+    nodes = None
+    edges = None
+    mutations = None
+    sites = None
+    gc_interval = None
+    last_gc_time = None
 
     def __init__(self, gc_interval=None):
-        self.__nodes = msprime.NodeTable()
-        self.__edges = msprime.EdgeTable()
-        self.__mutations = msprime.MutationTable()
-        self.__sites = msprime.SiteTable()
+        self.nodes = msprime.NodeTable()
+        self.edges = msprime.EdgeTable()
+        self.mutations = msprime.MutationTable()
+        self.sites = msprime.SiteTable()
         self.gc_interval = gc_interval
         self.last_gc_time = 0
 
@@ -227,54 +187,6 @@ class ARGsimplifier(object):
             return (True, next_id)
 
         return (False, None)
-
-    @property
-    def gc_interval(self):
-        return self.__gc_interval
-
-    @gc_interval.setter
-    def gc_interval(self, value):
-        self.__gc_interval = int(value)
-
-    @property
-    def last_gc_time(self):
-        return self.__last_gc_time
-
-    @last_gc_time.setter
-    def last_gc_time(self, value):
-        self.__last_gc_time = int(value)
-
-    @property
-    def nodes(self):
-        return self.__nodes
-
-    @nodes.setter
-    def nodes(self, value):
-        self.__nodes = value
-
-    @property
-    def edges(self):
-        return self.__edges
-
-    @edges.setter
-    def edges(self, value):
-        self.__edges = value
-
-    @property
-    def sites(self):
-        return self.__sites
-
-    @sites.setter
-    def sites(self, value):
-        self.__sites = value
-
-    @property
-    def mutations(self):
-        return self.__mutations
-
-    @mutations.setter
-    def mutations(self, value):
-        self.__mutations = value
 
 
 def mutation_loci(rate, lookup):
