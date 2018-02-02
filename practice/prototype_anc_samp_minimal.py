@@ -1,7 +1,5 @@
-# Advanced prototype:
-# Does GC at user-specified intervals
-# Random number of edges due to modeling
-# recombination as a Poisson process.
+# Minimal prototype:
+# Does GC at user-specified intervals, ancestral sampling, prior history
 
 import numpy as np
 import msprime
@@ -155,10 +153,6 @@ def wf(N, simplifier, tracker, anc_sample_gen, ngens):
        for each parental index 'p'.
     3. We pass one parental index on to each offspring, according to
        Mendel, which means we swap parental chromosome ids 50% of the time.
-    4. Crossing over is a Poisson process, and the code used here (above)
-       is modeled after that in our C++ implementation.
-    5. Mutation is a Poisson process, mutations are added according to each
-       parental index. 
     """
     diploids = np.arange(2 * N, dtype=np.uint32)
     # so we pre-allocate the space. We only need

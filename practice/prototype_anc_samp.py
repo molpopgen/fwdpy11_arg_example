@@ -133,7 +133,7 @@ Meta = namedtuple('Meta', 'position origin_generation origin')
 
 class ARGsimplifier(object):
     """
-    Mimicking the API if our Python
+    Mimicking the API of our Python
     class to collect simulated
     results and process them via msprime
     """
