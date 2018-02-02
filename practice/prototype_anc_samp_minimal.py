@@ -15,9 +15,11 @@ class ARGsimplifier(object):
     class to collect simulated
     results and process them via msprime
     """
-    def __init__(self, gc_interval=None):
-        self.nodes = msprime.NodeTable()
-        self.edges = msprime.EdgeTable()
+    def __init__(self, ngens, gc_interval=None):
+        self.nodes, self.edges = msprime.NodeTable(), msprime.EdgeTable()
+        prior_ts = msprime.simulate(sample_size=2 * args.popsize, Ne=2 * args.popsize, random_seed=args.seed)
+        prior_ts.dump_tables(nodes=self.nodes, edges=self.edges)
+        self.nodes.set_columns(flags=self.nodes.flags, population=self.nodes.population, time=self.nodes.time + ngens)
         self.gc_interval = gc_interval
 
     def simplify(self, generation, ngens, samples, anc_samples):
@@ -27,22 +29,16 @@ class ARGsimplifier(object):
         :return: length of simplifed node table, which is next_id to use
         """
         diploids = np.arange(2 * args.popsize, dtype=np.uint32)
-        if(generation == 0):
-            prior_ts = msprime.simulate(sample_size=2 * args.popsize, Ne=2 * args.popsize, random_seed=args.seed)
-            prior_ts.dump_tables(nodes=self.nodes, edges=self.edges)
-            self.nodes.set_columns(flags=self.nodes.flags, population=self.nodes.population, time=self.nodes.time + ngens)
-            
-            return self.nodes.num_rows, diploids, diploids + self.nodes.num_rows, np.empty([0], dtype=np.uint32)
-
-        # Sort and simplify
-        msprime.sort_tables(nodes=self.nodes, edges=self.edges)
-        # set guards against duplicate node ids when an ancestral sample generation overlaps with a gc generation
-        # sorting the set in reverse order ensures that generational samples occur *before* ancestral samples in the node table,
-        # making bookkeeping easier during the WF (parents of the next generation are guaranteed to be 0-2N in the node table)
-        all_samples = sorted(set(anc_samples.tolist() + samples.tolist()), reverse=True)
-        node_map = msprime.simplify_tables(samples=all_samples, nodes=self.nodes, edges=self.edges)
-        anc_samples = np.array([node_map[int(node_id)] for node_id in anc_samples])
-        # Return length of NodeTable, which can be used as next offspring ID and reset diploids (parent gen to 0, 2N)
+        if(generation > 0): 
+            # Sort and simplify
+            msprime.sort_tables(nodes=self.nodes, edges=self.edges)
+            # set guards against duplicate node ids when an ancestral sample generation overlaps with a gc generation
+            # sorting the set in reverse order ensures that generational samples occur *before* ancestral samples in the node table,
+            # making bookkeeping easier during the WF (parents of the next generation are guaranteed to be 0-2N in the node table)
+            all_samples = sorted(set(anc_samples.tolist() + samples.tolist()), reverse=True)
+            node_map = msprime.simplify_tables(samples=all_samples, nodes=self.nodes, edges=self.edges)
+            anc_samples = np.array([node_map[int(node_id)] for node_id in anc_samples])
+            # Return length of NodeTable, which can be used as next offspring ID and reset diploids (parent gen to 0, 2N)
         return self.nodes.num_rows, diploids, diploids + self.nodes.num_rows, anc_samples
 
 def wf(N, simplifier, anc_sample_gen, ngens):
@@ -120,8 +116,8 @@ if __name__ == "__main__":
     args = parser.parse_args(sys.argv[1:])
     np.random.seed(args.seed)
 
-    simplifier = ARGsimplifier(args.gc)
     ngens = SIMLEN * args.popsize
+    simplifier = ARGsimplifier(ngens,args.gc)
     anc_sample_gen = [(ngens * (i + 1) / SIMLEN, max(round(args.popsize / 200), 1)) for i in range(SIMLEN - 2)]
     samples, anc_samples = wf(args.popsize, simplifier, anc_sample_gen, ngens)
 
