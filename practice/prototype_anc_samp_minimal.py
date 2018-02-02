@@ -9,34 +9,18 @@ import argparse
 # Simulation with be popsize*SIMLEN generations
 SIMLEN = 20
 
-class MockAncestryTracker(object):
-    samples = None
-    anc_samples = None
-
-    def __init__(self):
-        self.samples = np.empty([0], dtype=np.uint32)
-        self.anc_samples = np.empty([0], dtype=np.uint32)
-
-    def update_samples(self, new_samples, new_anc_samples):
-        """
-        new_samples is the list of node IDs corresponding to the current children.
-        """
-        self.samples = new_samples
-        self.anc_samples = np.insert(self.anc_samples, len(self.anc_samples), new_anc_samples)
-
 class ARGsimplifier(object):
     """
     Mimicking the API of our Python
     class to collect simulated
     results and process them via msprime
     """
-
     def __init__(self, gc_interval=None):
         self.nodes = msprime.NodeTable()
         self.edges = msprime.EdgeTable()
         self.gc_interval = gc_interval
 
-    def simplify(self, generation, ngens, tracker):
+    def simplify(self, generation, ngens, samples, anc_samples):
         """
         Details of simplifying.
 
@@ -48,21 +32,20 @@ class ARGsimplifier(object):
             prior_ts.dump_tables(nodes=self.nodes, edges=self.edges)
             self.nodes.set_columns(flags=self.nodes.flags, population=self.nodes.population, time=self.nodes.time + ngens)
             
-            return self.nodes.num_rows, diploids, diploids + self.nodes.num_rows
+            return self.nodes.num_rows, diploids, diploids + self.nodes.num_rows, np.empty([0], dtype=np.uint32)
 
         # Sort and simplify
         msprime.sort_tables(nodes=self.nodes, edges=self.edges)
         # set guards against duplicate node ids when an ancestral sample generation overlaps with a gc generation
         # sorting the set in reverse order ensures that generational samples occur *before* ancestral samples in the node table,
         # making bookkeeping easier during the WF (parents of the next generation are guaranteed to be 0-2N in the node table)
-        all_samples = sorted(set(tracker.anc_samples.tolist() + tracker.samples.tolist()), reverse=True)
+        all_samples = sorted(set(anc_samples.tolist() + samples.tolist()), reverse=True)
         node_map = msprime.simplify_tables(samples=all_samples, nodes=self.nodes, edges=self.edges)
-
-        tracker.anc_samples = np.array([node_map[int(node_id)] for node_id in tracker.anc_samples])
+        anc_samples = np.array([node_map[int(node_id)] for node_id in anc_samples])
         # Return length of NodeTable, which can be used as next offspring ID and reset diploids (parent gen to 0, 2N)
-        return self.nodes.num_rows, diploids, diploids + self.nodes.num_rows
+        return self.nodes.num_rows, diploids, diploids + self.nodes.num_rows, anc_samples
 
-def wf(N, simplifier, tracker, anc_sample_gen, ngens):
+def wf(N, simplifier, anc_sample_gen, ngens):
     """
     For N diploids, the diploids list contains 2N values.
     For the i-th diploids, diploids[2*i] and diploids[2*i+1]
@@ -77,16 +60,14 @@ def wf(N, simplifier, tracker, anc_sample_gen, ngens):
     3. We pass one parental index on to each offspring, according to
        Mendel, which means we swap parental chromosome ids 50% of the time.
     """
-    next_id, diploids, new_diploids = simplifier.simplify(0, ngens, tracker)  #  Based on prior history, this will be the next unique ID to use
-    
+    next_id, diploids, new_diploids, ancestral_samples = simplifier.simplify(0, ngens, np.empty([0], dtype=np.uint32), np.empty([0], dtype=np.uint32))  #  Based on prior history, this will be the next unique ID to use
     ancestral_gen_counter = 0
     for gen in range(ngens):
-        ancestral_samples = []
         if(ancestral_gen_counter < len(anc_sample_gen) and gen + 1 == anc_sample_gen[ancestral_gen_counter][0]):
             ran_samples = np.random.choice(int(N), int(anc_sample_gen[ancestral_gen_counter][1]), replace=False)
             # while sorting to get diploid chromosomes next to each other isn't strictly necessary,
             # they will be sorted (in reverse order) before simplication anyway, no need to do it here
-            ancestral_samples = np.concatenate((2*ran_samples + next_id, 2*ran_samples + 1 + next_id))
+            ancestral_samples = np.insert(ancestral_samples, len(ancestral_samples), np.concatenate((2*ran_samples + next_id, 2*ran_samples + 1 + next_id)))
             ancestral_gen_counter += 1
 
         # Store nodes for this generation.
@@ -107,7 +88,6 @@ def wf(N, simplifier, tracker, anc_sample_gen, ngens):
             next_id += 2
 
         diploids = new_diploids
-        tracker.update_samples(diploids, ancestral_samples)
         new_diploids = diploids + 2*N
         # Let's see if we will do some GC:
         if ((gen+1) % simplifier.gc_interval == 0) or (gen == ngens):
@@ -121,9 +101,9 @@ def wf(N, simplifier, tracker, anc_sample_gen, ngens):
             # length of the current NodeTable,
             # keeping risk of integer overflow
             # to a minimum.
-            next_id,diploids,new_diploids = simplifier.simplify(gen, ngens, tracker)
+            next_id, diploids, new_diploids, ancestral_samples = simplifier.simplify(gen, ngens, diploids, ancestral_samples)
 
-    return (diploids)
+    return diploids, ancestral_samples
     
 def parse_args():
     dstring = "Prototype implementation of ARG tracking and regular garbage collection."
@@ -141,12 +121,11 @@ if __name__ == "__main__":
     np.random.seed(args.seed)
 
     simplifier = ARGsimplifier(args.gc)
-    tracker = MockAncestryTracker()
     ngens = SIMLEN * args.popsize
     anc_sample_gen = [(ngens * (i + 1) / SIMLEN, max(round(args.popsize / 200), 1)) for i in range(SIMLEN - 2)]
-    samples = wf(args.popsize, simplifier, tracker, anc_sample_gen, ngens)
+    samples, anc_samples = wf(args.popsize, simplifier, anc_sample_gen, ngens)
 
     ran_samples = np.random.choice(args.popsize, args.nsam, replace=False)
     nsam_samples = sorted(np.concatenate((2*ran_samples, 2*ran_samples + 1)))
-    all_samples = nsam_samples + tracker.anc_samples.tolist()
+    all_samples = nsam_samples + anc_samples.tolist()
     node_map = msprime.simplify_tables(samples=all_samples, nodes=simplifier.nodes, edges=simplifier.edges)
