@@ -107,25 +107,18 @@ def wf(N, simplifier, tracker, anc_sample_gen, ngens):
 
         # Iterate over our chosen parents via fancy indexing.
         for parent1, parent2 in zip(parents[::2], parents[1::2]):
-            # p1g1 = parent 1, gamete (chrom) 1, etc.:
-            p1g1, p1g2 = diploids[2 * parent1], diploids[2 * parent1 + 1]
-            p2g1, p2g2 = diploids[2 * parent2], diploids[2 * parent2 + 1]
-
-            # Apply Mendel to p1g1 et al.
             mendel = np.random.random_sample(2)
-            if mendel[0] < 0.5:
-                p1g1, p1g2 = p1g2, p1g1
-            if mendel[1] < 0.5:
-                p2g1, p2g2 = p2g2, p2g1
+            p1 = diploids[2 * parent1 + (mendel[0] < 0.5)]
+            p2 = diploids[2 * parent2 + (mendel[1] < 0.5)]
 
-            simplifier.edges.add_row(0.0, 1.0, p1g1, next_id)
+            simplifier.edges.add_row(0.0, 1.0, p1, next_id)
             # Update offspring container for
             # offspring dip, chrom 1:
             new_diploids[2 * dip] = next_id
 
             # Repeat process for parent 2's contribution.
             # Stuff is now being inherited by node next_id + 1
-            simplifier.edges.add_row(0.0, 1.0, p2g1, next_id+1)
+            simplifier.edges.add_row(0.0, 1.0, p2, next_id+1)
 
             new_diploids[2 * dip + 1] = next_id + 1
 
