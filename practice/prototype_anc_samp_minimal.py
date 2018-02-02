@@ -30,9 +30,6 @@ class ARGsimplifier(object):
     class to collect simulated
     results and process them via msprime
     """
-    nodes = None
-    edges = None
-    gc_interval = None
 
     def __init__(self, gc_interval=None):
         self.nodes = msprime.NodeTable()
