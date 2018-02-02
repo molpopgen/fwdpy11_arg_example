@@ -65,14 +65,10 @@ def wf(N, simplifier, anc_sample_gen, ngens):
             # they will be sorted (in reverse order) before simplication anyway, no need to do it here
             ancestral_samples = np.insert(ancestral_samples, len(ancestral_samples), np.concatenate((2*ran_samples + next_id, 2*ran_samples + 1 + next_id)))
             ancestral_gen_counter += 1
-
         # Store nodes for this generation.
         for i in range(2*N): simplifier.nodes.add_row(1,(ngens - (gen+1)),0)
-
         # Pick 2N parents:
         parents = np.random.randint(0, N, 2 * N)
-        dip = int(0)  # dummy index for filling contents of new_diploids
-
         # Iterate over our chosen parents via fancy indexing.
         for parent1, parent2 in zip(parents[::2], parents[1::2]):
             mendel = np.random.random_sample(2)
@@ -82,7 +78,6 @@ def wf(N, simplifier, anc_sample_gen, ngens):
             simplifier.edges.add_row(0.0, 1.0, p2, next_id+1)
             # Update our dummy variable.
             next_id += 2
-
         diploids = new_diploids
         new_diploids = diploids + 2*N
         # Let's see if we will do some GC:
@@ -98,7 +93,6 @@ def wf(N, simplifier, anc_sample_gen, ngens):
             # keeping risk of integer overflow
             # to a minimum.
             next_id, diploids, new_diploids, ancestral_samples = simplifier.simplify(gen, ngens, diploids, ancestral_samples)
-
     return diploids, ancestral_samples
     
 def parse_args():
@@ -107,20 +101,17 @@ def parse_args():
     parser.add_argument('--popsize', '-N', type=int, default=500, help="Diploid population size")
     parser.add_argument('--nsam', '-n', type=int, default=5, help="Sample size (in diploids).")
     parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
-    parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")
-    
+    parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")  
     return parser
 
 if __name__ == "__main__":
     parser = parse_args()
     args = parser.parse_args(sys.argv[1:])
     np.random.seed(args.seed)
-
     ngens = SIMLEN * args.popsize
     simplifier = ARGsimplifier(ngens,args.gc)
     anc_sample_gen = [(ngens * (i + 1) / SIMLEN, max(round(args.popsize / 200), 1)) for i in range(SIMLEN - 2)]
     samples, anc_samples = wf(args.popsize, simplifier, anc_sample_gen, ngens)
-
     ran_samples = np.random.choice(args.popsize, args.nsam, replace=False)
     nsam_samples = sorted(np.concatenate((2*ran_samples, 2*ran_samples + 1)))
     all_samples = nsam_samples + anc_samples.tolist()
