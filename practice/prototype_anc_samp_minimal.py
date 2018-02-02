@@ -45,12 +45,13 @@ class ARGsimplifier(object):
 
         :return: length of simplifed node table, which is next_id to use
         """
+        diploids = np.arange(2 * args.popsize, dtype=np.uint32)
         if(generation == 0):
             prior_ts = msprime.simulate(sample_size=2 * args.popsize, Ne=2 * args.popsize, random_seed=args.seed)
             prior_ts.dump_tables(nodes=self.nodes, edges=self.edges)
             self.nodes.set_columns(flags=self.nodes.flags, population=self.nodes.population, time=self.nodes.time + ngens)
             
-            return self.nodes.num_rows
+            return self.nodes.num_rows, diploids, diploids + self.nodes.num_rows
 
         # Sort and simplify
         msprime.sort_tables(nodes=self.nodes, edges=self.edges)
@@ -61,9 +62,8 @@ class ARGsimplifier(object):
         node_map = msprime.simplify_tables(samples=all_samples, nodes=self.nodes, edges=self.edges)
 
         tracker.anc_samples = np.array([node_map[int(node_id)] for node_id in tracker.anc_samples])
-        # Return length of NodeTable,
-        # which can be used as next offspring ID
-        return self.nodes.num_rows
+        # Return length of NodeTable, which can be used as next offspring ID and reset diploids (parent gen to 0, 2N)
+        return self.nodes.num_rows, diploids, diploids + self.nodes.num_rows
 
 def wf(N, simplifier, tracker, anc_sample_gen, ngens):
     """
@@ -80,17 +80,11 @@ def wf(N, simplifier, tracker, anc_sample_gen, ngens):
     3. We pass one parental index on to each offspring, according to
        Mendel, which means we swap parental chromosome ids 50% of the time.
     """
-    next_id = simplifier.simplify(0, ngens, tracker)  #  Based on prior history, this will be the next unique ID to use
-    diploids = np.arange(2 * N, dtype=np.uint32)
+    next_id, diploids, new_diploids = simplifier.simplify(0, ngens, tracker)  #  Based on prior history, this will be the next unique ID to use
     
     ancestral_gen_counter = 0
     for gen in range(ngens):
         ancestral_samples = []
-
-        # Empty offspring list.
-        # We also use this to mark the "samples" for simplify
-        new_diploids = np.empty([len(diploids)], dtype=diploids.dtype)
-
         if(ancestral_gen_counter < len(anc_sample_gen) and gen + 1 == anc_sample_gen[ancestral_gen_counter][0]):
             ran_samples = np.random.choice(int(N), int(anc_sample_gen[ancestral_gen_counter][1]), replace=False)
             # while sorting to get diploid chromosomes next to each other isn't strictly necessary,
@@ -110,24 +104,14 @@ def wf(N, simplifier, tracker, anc_sample_gen, ngens):
             mendel = np.random.random_sample(2)
             p1 = diploids[2 * parent1 + (mendel[0] < 0.5)]
             p2 = diploids[2 * parent2 + (mendel[1] < 0.5)]
-
             simplifier.edges.add_row(0.0, 1.0, p1, next_id)
-            # Update offspring container for
-            # offspring dip, chrom 1:
-            new_diploids[2 * dip] = next_id
-
-            # Repeat process for parent 2's contribution.
-            # Stuff is now being inherited by node next_id + 1
             simplifier.edges.add_row(0.0, 1.0, p2, next_id+1)
-
-            new_diploids[2 * dip + 1] = next_id + 1
-
-            # Update our dummy variables.
+            # Update our dummy variable.
             next_id += 2
-            dip += 1
 
         diploids = new_diploids
         tracker.update_samples(diploids, ancestral_samples)
+        new_diploids = diploids + 2*N
         # Let's see if we will do some GC:
         if ((gen+1) % simplifier.gc_interval == 0) or (gen == ngens):
             # If we do GC, we need to reset
@@ -135,13 +119,12 @@ def wf(N, simplifier, tracker, anc_sample_gen, ngens):
             # when msprime simplifies tables,
             # the 2N tips are entries 0 to 2*N-1
             # in the NodeTable, hence the
-            # re-assignment if diploids.
+            # re-assignment of diploids.
             # We can also reset next_id to the
             # length of the current NodeTable,
             # keeping risk of integer overflow
             # to a minimum.
-            next_id = simplifier.simplify(gen, ngens, tracker)
-            diploids = np.arange(2 * N, dtype=np.uint32)
+            next_id,diploids,new_diploids = simplifier.simplify(gen, ngens, tracker)
 
     return (diploids)
     
