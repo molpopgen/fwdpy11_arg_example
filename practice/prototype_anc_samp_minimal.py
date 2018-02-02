@@ -6,7 +6,7 @@ import sys
 import argparse
 
 # Simulation constants
-popsize, ngens, nsam, seed, gc_interval = 500, 20*500, 5, 42, 100
+popsize, ngens, nsam, seed, anc_sample_interval, gc_interval = 500, 20*500, 5, 42, 500, 100
 
 class ARGsimplifier(object):
     """
@@ -39,7 +39,7 @@ class ARGsimplifier(object):
             # Return length of NodeTable, which can be used as next offspring ID and reset diploids (parent gen to 0, 2N)
         return self.nodes.num_rows, diploids, diploids + self.nodes.num_rows, anc_samples
 
-def wf(N, simplifier, anc_sample_gen):
+def wf(N, simplifier):
     """
     For N diploids, the diploids list contains 2N values.
     For the i-th diploids, diploids[2*i] and diploids[2*i+1]
@@ -55,14 +55,12 @@ def wf(N, simplifier, anc_sample_gen):
        Mendel, which means we swap parental chromosome ids 50% of the time.
     """
     next_id, diploids, new_diploids, ancestral_samples = simplifier.simplify(0, np.empty([0], dtype=np.uint32), np.empty([0], dtype=np.uint32))  #  Based on prior history, this will be the next unique ID to use
-    ancestral_gen_counter = 0
     for gen in range(ngens):
-        if(ancestral_gen_counter < len(anc_sample_gen) and gen + 1 == anc_sample_gen[ancestral_gen_counter][0]):
-            ran_samples = np.random.choice(int(N), int(anc_sample_gen[ancestral_gen_counter][1]), replace=False)
+        if (((gen + 1) % anc_sample_interval) == 0) and ((gen+1) != ngens): #take 1 ancestral sample every anc_sample_interval generations
+            ran_samples = np.random.choice(int(N), int(1), replace=False)[0] 
             # while sorting to get diploid chromosomes next to each other isn't strictly necessary,
             # they will be sorted (in reverse order) before simplication anyway, no need to do it here
-            ancestral_samples = np.insert(ancestral_samples, len(ancestral_samples), np.concatenate((2*ran_samples + next_id, 2*ran_samples + 1 + next_id)))
-            ancestral_gen_counter += 1
+            ancestral_samples = np.insert(ancestral_samples, len(ancestral_samples), np.array([2*ran_samples + next_id, 2*ran_samples + next_id + 1],dtype=np.uint32))
         # Store nodes for this generation.
         for i in range(2*N): simplifier.nodes.add_row(1,(ngens - (gen+1)),0)
         # Pick 2N parents:
@@ -79,7 +77,7 @@ def wf(N, simplifier, anc_sample_gen):
         diploids = new_diploids
         new_diploids = diploids + 2*N
         # Let's see if we will do some GC:
-        if ((gen+1) % gc_interval == 0) or (gen == ngens):
+        if ((gen+1) % gc_interval == 0) or ((gen+1) == ngens):
             # If we do GC, we need to reset
             # some variables.  Internally,
             # when msprime simplifies tables,
@@ -95,8 +93,7 @@ def wf(N, simplifier, anc_sample_gen):
     
 if __name__ == "__main__":
     simplifier = ARGsimplifier()
-    anc_sample_gen = [(ngens * (i + 1) / 20, max(round(popsize / 200), 1)) for i in range(20 - 2)]
-    samples, anc_samples = wf(popsize, simplifier, anc_sample_gen)
+    samples, anc_samples = wf(popsize, simplifier)
     ran_samples = np.random.choice(popsize, nsam, replace=False)
     nsam_samples = sorted(np.concatenate((2*ran_samples, 2*ran_samples + 1)))
     all_samples = nsam_samples + anc_samples.tolist()
