@@ -1,13 +1,12 @@
 # Minimal prototype:
 # Does GC at user-specified intervals, ancestral sampling, prior history
-
 import numpy as np
 import msprime
 import sys
 import argparse
 
 # Simulation constants
-popsize, SIMLEN, nsam, seed, gc = 500, 20, 5, 42, 100
+popsize, SIMLEN, nsam, seed, gc_interval = 500, 20, 5, 42, 100
 
 class ARGsimplifier(object):
     """
@@ -20,7 +19,6 @@ class ARGsimplifier(object):
         prior_ts = msprime.simulate(sample_size=2*popsize, Ne=2*popsize, random_seed=seed)
         prior_ts.dump_tables(nodes=self.nodes, edges=self.edges)
         self.nodes.set_columns(flags=self.nodes.flags, population=self.nodes.population, time=self.nodes.time + ngens)
-        self.gc_interval = gc
 
     def simplify(self, generation, ngens, samples, anc_samples):
         """
@@ -81,7 +79,7 @@ def wf(N, simplifier, anc_sample_gen, ngens):
         diploids = new_diploids
         new_diploids = diploids + 2*N
         # Let's see if we will do some GC:
-        if ((gen+1) % simplifier.gc_interval == 0) or (gen == ngens):
+        if ((gen+1) % gc_interval == 0) or (gen == ngens):
             # If we do GC, we need to reset
             # some variables.  Internally,
             # when msprime simplifies tables,
