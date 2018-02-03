@@ -76,7 +76,7 @@ class ArgSimplifier(object):
         sample_map = msprime.simplify_tables(samples=samples.tolist(),
                                              nodes=self.__nodes, edges=self.__edges)
         for i in samples:
-            assert(sample_map[i]!=-1)
+            assert(sample_map[i] != -1)
         # Release any locks on the ancestry object
         ancestry.release()
         self.__last_edge_start = len(self.__edges)
