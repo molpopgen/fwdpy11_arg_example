@@ -30,10 +30,10 @@ class ARGsimplifier(object):
         if(generation > 0): 
             # Sort and simplify
             msprime.sort_tables(nodes=self.nodes, edges=self.edges)
-            # set guards against duplicate node ids when an ancestral sample generation overlaps with a gc generation
-            # sorting the set in reverse order ensures that generational samples occur *before* ancestral samples in the node table,
-            # making bookkeeping easier during the WF (parents of the next generation are guaranteed to be 0-2N in the node table)
-            all_samples = sorted(set(anc_samples.tolist() + samples.tolist()), reverse=True)
+            # below guards against duplicate node ids when an ancestral sample generation overlaps with a gc generation,
+            # ensures that generational samples stay in the same order as in the fw sim and occur *before* ancestral samples in the node table,
+            # makes bookkeeping easier during the WF (parents of the next generation are guaranteed to be 0-2N in the node table)
+            all_samples = samples.tolist() + [i for i in sorted(anc_samples.tolist()) if i not in samples.tolist()]
             node_map = msprime.simplify_tables(samples=all_samples, nodes=self.nodes, edges=self.edges)
             anc_samples = np.array([node_map[int(node_id)] for node_id in anc_samples])
             # Return length of NodeTable, which can be used as next offspring ID and reset diploids (parent gen to 0, 2N)
