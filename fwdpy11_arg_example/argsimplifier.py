@@ -95,8 +95,9 @@ class ArgSimplifier(object):
 
         :returns: A bool and an int
         """
-        if generation > 0 and generation % self.gc_interval == 0.0:
-            return self.simplify(generation, ancestry)
+        if len(ancestry.nodes) > 0 and len(ancestry.edges) > 0:
+            if generation > 0 and generation % self.gc_interval == 0.0:
+                return self.simplify(generation, ancestry)
         # Keep tuple size constant,
         # for sake of sanity.
         return (False, None)
