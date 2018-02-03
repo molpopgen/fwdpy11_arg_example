@@ -44,7 +44,7 @@ class ArgSimplifier(object):
                 flags=flags, population=self.__nodes.population, time=tc)
 
         before = time.process_time()
-        # Acquire mutex 
+        # Acquire mutex
         ancestry.acquire()
         self.reverse_time(ancestry.nodes)
         na = np.array(ancestry.nodes, copy=False)
@@ -53,7 +53,8 @@ class ArgSimplifier(object):
         new_max_id = na['id'][-1]
         delta = new_min_id - len(self.__nodes)
         if delta != 0:
-            self.update_indexes(ancestry.edges,ancestry.samples,delta, new_min_id, new_max_id)
+            self.update_indexes(ancestry.edges, ancestry.samples,
+                                delta, new_min_id, new_max_id)
         samples = np.array(ancestry.samples, copy=False)
         flags = np.ones(len(na), dtype=np.uint32)
         self.__time_prepping += time.process_time() - before
@@ -66,15 +67,16 @@ class ArgSimplifier(object):
 
         before = time.process_time()
         self.__edges.append_columns(left=ea['left'],
-                right=ea['right'],
-                parent=ea['parent'],
-                child=ea['child'])
-        msprime.sort_tables(nodes=self.__nodes,edges=self.__edges)
+                                    right=ea['right'],
+                                    parent=ea['parent'],
+                                    child=ea['child'])
+        msprime.sort_tables(nodes=self.__nodes, edges=self.__edges)
         self.__time_sorting += time.process_time() - before
         before = time.process_time()
-        msprime.simplify_tables(samples=samples.tolist(),
-                                nodes=self.__nodes, edges=self.__edges)
-
+        sample_map = msprime.simplify_tables(samples=samples.tolist(),
+                                             nodes=self.__nodes, edges=self.__edges)
+        for i in samples:
+            assert(sample_map[i]!=-1)
         # Release any locks on the ancestry object
         ancestry.release()
         self.__last_edge_start = len(self.__edges)
