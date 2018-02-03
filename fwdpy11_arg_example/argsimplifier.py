@@ -63,41 +63,14 @@ class ArgSimplifier(object):
         self.__nodes.append_columns(flags=flags,
                                     population=na['population'],
                                     time=na['generation'])
-        # Copy the already sorted edges to local arrays
-        left = self.__edges.left[:]
-        right = self.__edges.right[:]
-        parent = self.__edges.parent[:]
-        child = self.__edges.child[:]
-        # Get the new edges and reverse them. After this, we know that all edges
-        # are correctly sorted with respect to time. We then sort each time slice
-        # individually, reducing the overall cost of the sort.
-        new_left = ea['left'][::-1]
-        new_right = ea['right'][::-1]
-        new_parent = ea['parent'][::-1]
-        new_child = ea['child'][::-1]
-
-        parent_time = self.__nodes.time[new_parent]
-        breakpoints = np.where(parent_time[1:] != parent_time[:-1])[0] + 1
-        self.__edges.reset()
-        self.__time_appending += time.process_time() - before
 
         before = time.process_time()
-        start = 0
-        for end in itertools.chain(breakpoints, [-1]):
-            assert np.all(parent_time[start: end] == parent_time[start])
-            self.__edges.append_columns(left=new_left[start: end],
-                                        right=new_right[start: end],
-                                        parent=new_parent[start: end],
-                                        child=new_child[start: end])
-            msprime.sort_tables(nodes=self.__nodes,
-                                edges=self.__edges,
-                                edge_start=start)
-            start = end
+        self.__edges.append_columns(left=ea['left'],
+                right=ea['right'],
+                parent=ea['parent'],
+                child=ea['child'])
+        msprime.sort_tables(nodes=self.__nodes,edges=self.__edges)
         self.__time_sorting += time.process_time() - before
-
-        # Append the old sorted edges to the table.
-        self.__edges.append_columns(
-            left=left, right=right, parent=parent, child=child)
         before = time.process_time()
         msprime.simplify_tables(samples=samples.tolist(),
                                 nodes=self.__nodes, edges=self.__edges)
