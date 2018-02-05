@@ -133,7 +133,7 @@ Meta = namedtuple('Meta', 'position origin_generation origin')
 
 class ARGsimplifier(object):
     """
-    Mimicking the API if our Python
+    Mimicking the API of our Python
     class to collect simulated
     results and process them via msprime
     """
@@ -159,8 +159,6 @@ class ARGsimplifier(object):
 
         :return: length of simplifed node table, which is next_id to use
         """
-        # Update time in current nodes.
-        # Is this most efficient method?
         node_offset = 0
 
         if(generation == 1):
@@ -171,15 +169,20 @@ class ARGsimplifier(object):
             self.nodes.set_columns(flags=self.nodes.flags,
                                    population=self.nodes.population,
                                    time=self.nodes.time + generation)
-                                   
-            meta_list = [Meta(self.sites[mut[0]][0], self.nodes[mut[1]][1], "msprime") for mut in self.mutations]
-            encoded, offset = msprime.pack_bytes(list(map(pickle.dumps, meta_list)))
-            
-            self.mutations.set_columns(site = self.mutations.site, node = self.mutations.node, derived_state = self.mutations.derived_state, derived_state_offset = self.mutations.derived_state_offset, parent = self.mutations.parent, metadata_offset=offset, metadata=encoded)
+
+            meta_list = [Meta(self.sites[mut[0]][0], self.nodes[mut[1]]
+                              [1], "msprime") for mut in self.mutations]
+            encoded, offset = msprime.pack_bytes(
+                list(map(pickle.dumps, meta_list)))
+
+            self.mutations.set_columns(site=self.mutations.site, node=self.mutations.node, derived_state=self.mutations.derived_state,
+                                       derived_state_offset=self.mutations.derived_state_offset, parent=self.mutations.parent, metadata_offset=offset, metadata=encoded)
             # already indexed to be after the first wave of generation (at population size 2 * args.popsize)
             # so just need to offset by the number of additional coalescent nodes
             node_offset = self.nodes.num_rows - 2 * args.popsize
         else:
+            # Update time in current nodes.
+            # Is this most efficient method?
             dt = generation - self.last_gc_time
             self.nodes.set_columns(flags=self.nodes.flags,
                                    population=self.nodes.population,
@@ -194,7 +197,8 @@ class ARGsimplifier(object):
         tracker.convert_time()
         meta_list = [Meta(mut['position'], mut['origin_generation'], "forward_sim")
                      for mut in tracker.mutations]
-        encoded, offset = msprime.pack_bytes(list(map(pickle.dumps, meta_list)))
+        encoded, offset = msprime.pack_bytes(
+            list(map(pickle.dumps, meta_list)))
 
        # Update internal *Tables
         self.nodes.append_columns(flags=flags,
@@ -220,11 +224,11 @@ class ARGsimplifier(object):
         # Sort and simplify
         msprime.sort_tables(nodes=self.nodes, edges=self.edges,
                             sites=self.sites, mutations=self.mutations)
-        # set guards against duplicate node ids when an ancestral sample generation overlaps with a gc generation
-        # sorting the set in reverse order ensures that generational samples occur *before* ancestral samples in the node table,
-        # making bookkeeping easier during the WF (parents of the next generation are guaranteed to be 0-2N in the node table)
-        all_samples = sorted(set((tracker.anc_samples + node_offset).tolist() +
-                                 (tracker.samples + node_offset).tolist()), reverse=True)
+        # below guards against duplicate node ids when an ancestral sample generation overlaps with a gc generation,
+        # ensures that generational samples stay in the same order as in the fw sim and occur *before* ancestral samples in the node table,
+        # makes bookkeeping easier during the WF (parents of the next generation are guaranteed to be 0-2N in the node table)
+        all_samples = (tracker.samples + node_offset).tolist() + [i + node_offset for i in sorted(
+            tracker.anc_samples.tolist()) if i not in tracker.samples.tolist()]
         node_map = msprime.simplify_tables(samples=all_samples,
                                            nodes=self.nodes, edges=self.edges, sites=self.sites, mutations=self.mutations)
 
@@ -459,7 +463,7 @@ def wf(N, simplifier, tracker, recrate, murate, anc_sample_gen, ngens):
             # while sorting to get diploid chromosomes next to each other isn't strictly necessary,
             # they will be sorted (in reverse order) before simplication anyway, no need to do it here
             ancestral_samples = np.concatenate(
-                (2*ran_samples + next_id, 2*ran_samples + 1 + next_id))
+                (2 * ran_samples + next_id, 2 * ran_samples + 1 + next_id))
             ancestral_gen_counter += 1
 
         # Store temp nodes for this generation.
@@ -541,7 +545,7 @@ def parse_args():
     parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu")
     parser.add_argument('--rho', '-R', type=float, default=10.0, help="4Nr")
     parser.add_argument('--nsam', '-n', type=int, default=5,
-                        help="Sample size (in chromosomes).")
+                        help="Sample size (in diploids).")
     parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
     parser.add_argument('--gc', '-G', type=int,
                         default=100, help="GC interval")
@@ -582,7 +586,8 @@ if __name__ == "__main__":
     mutations = simplifier.mutations.copy()
 
     ran_samples = np.random.choice(args.popsize, args.nsam, replace=False)
-    nsam_samples = sorted(np.concatenate((2*ran_samples, 2*ran_samples + 1)))
+    nsam_samples = sorted(np.concatenate(
+        (2 * ran_samples, 2 * ran_samples + 1)))
     all_samples = nsam_samples + tracker.anc_samples.tolist()
     node_map = msprime.simplify_tables(samples=all_samples,
                                        nodes=nodes, edges=edges, sites=sites, mutations=mutations)
