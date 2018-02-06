@@ -44,7 +44,7 @@ class ArgSimplifier(object):
                 flags=flags, population=self.__nodes.population, time=tc)
 
         before = time.process_time()
-        # Acquire mutex 
+        # Acquire mutex
         ancestry.acquire()
         self.reverse_time(ancestry.nodes)
         na = np.array(ancestry.nodes, copy=False)
@@ -53,7 +53,8 @@ class ArgSimplifier(object):
         new_max_id = na['id'][-1]
         delta = new_min_id - len(self.__nodes)
         if delta != 0:
-            self.update_indexes(ancestry.edges,ancestry.samples,delta, new_min_id, new_max_id)
+            self.update_indexes(ancestry.edges, ancestry.samples,
+                                delta, new_min_id, new_max_id)
         samples = np.array(ancestry.samples, copy=False)
         flags = np.ones(len(na), dtype=np.uint32)
         self.__time_prepping += time.process_time() - before
@@ -63,45 +64,19 @@ class ArgSimplifier(object):
         self.__nodes.append_columns(flags=flags,
                                     population=na['population'],
                                     time=na['generation'])
-        # Copy the already sorted edges to local arrays
-        left = self.__edges.left[:]
-        right = self.__edges.right[:]
-        parent = self.__edges.parent[:]
-        child = self.__edges.child[:]
-        # Get the new edges and reverse them. After this, we know that all edges
-        # are correctly sorted with respect to time. We then sort each time slice
-        # individually, reducing the overall cost of the sort.
-        new_left = ea['left'][::-1]
-        new_right = ea['right'][::-1]
-        new_parent = ea['parent'][::-1]
-        new_child = ea['child'][::-1]
-
-        parent_time = self.__nodes.time[new_parent]
-        breakpoints = np.where(parent_time[1:] != parent_time[:-1])[0] + 1
-        self.__edges.reset()
-        self.__time_appending += time.process_time() - before
 
         before = time.process_time()
-        start = 0
-        for end in itertools.chain(breakpoints, [-1]):
-            assert np.all(parent_time[start: end] == parent_time[start])
-            self.__edges.append_columns(left=new_left[start: end],
-                                        right=new_right[start: end],
-                                        parent=new_parent[start: end],
-                                        child=new_child[start: end])
-            msprime.sort_tables(nodes=self.__nodes,
-                                edges=self.__edges,
-                                edge_start=start)
-            start = end
+        self.__edges.append_columns(left=ea['left'],
+                                    right=ea['right'],
+                                    parent=ea['parent'],
+                                    child=ea['child'])
+        msprime.sort_tables(nodes=self.__nodes, edges=self.__edges)
         self.__time_sorting += time.process_time() - before
-
-        # Append the old sorted edges to the table.
-        self.__edges.append_columns(
-            left=left, right=right, parent=parent, child=child)
         before = time.process_time()
-        msprime.simplify_tables(samples=samples.tolist(),
-                                nodes=self.__nodes, edges=self.__edges)
-
+        sample_map = msprime.simplify_tables(samples=samples.tolist(),
+                                             nodes=self.__nodes, edges=self.__edges)
+        for i in samples:
+            assert(sample_map[i] != -1)
         # Release any locks on the ancestry object
         ancestry.release()
         self.__last_edge_start = len(self.__edges)
@@ -120,8 +95,9 @@ class ArgSimplifier(object):
 
         :returns: A bool and an int
         """
-        if generation > 0 and generation % self.gc_interval == 0.0:
-            return self.simplify(generation, ancestry)
+        if len(ancestry.nodes) > 0 and len(ancestry.edges) > 0:
+            if generation > 0 and generation % self.gc_interval == 0.0:
+                return self.simplify(generation, ancestry)
         # Keep tuple size constant,
         # for sake of sanity.
         return (False, None)
