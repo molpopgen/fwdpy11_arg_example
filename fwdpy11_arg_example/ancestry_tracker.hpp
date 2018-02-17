@@ -27,7 +27,7 @@
 
 #include "node.hpp"
 #include "edge.hpp"
-
+#include "mutation.hpp"
 
 inline void
 reverse_time(std::vector<node>& nodes)
@@ -71,9 +71,11 @@ struct ancestry_data
     std::vector<node> nodes;
     /// The ARG:
     std::vector<edge> edges;
+    /// Mutations:
+    std::vector<mutation> mutations;
     std::vector<integer_type> samples;
     pybind11::object lock_;
-    ancestry_data() : nodes{}, edges{}, samples{}, lock_{}
+    ancestry_data() : nodes{}, edges{}, mutations{}, samples{}, lock_{}
     {
         pybind11::module threading = pybind11::module::import("threading");
         lock_ = threading.attr("Lock")();
@@ -89,6 +91,8 @@ struct ancestry_tracker
     std::vector<edge> edges;
     /// The edges generated for each generation:
     std::vector<edge> temp;
+    /// Mutations:
+    std::vector<mutation> mutations;
     /// This is used as the sample indexes for msprime:
     std::vector<integer_type> offspring_indexes;
     integer_type generation, next_index, first_parental_index;
@@ -97,7 +101,7 @@ struct ancestry_tracker
     ancestry_tracker(const integer_type N, const bool init_with_TreeSequence,
                      const integer_type next_index_)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
-          temp{ std::vector<edge>() },
+          temp{ std::vector<edge>() }, mutations{ std::vector<mutation>() }, 
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
           next_index{ next_index_ }, first_parental_index{ 0 },
           lastN{ static_cast<std::uint32_t>(N) }, last_gc_time{ 0.0 }
@@ -105,6 +109,7 @@ struct ancestry_tracker
         nodes.reserve(2 * N);
         edges.reserve(2 * N);
         temp.reserve(N);
+        //no need to reserve mutation space
 
         //Initialize 2N nodes for the generation 0
         if (init_with_TreeSequence == false)
@@ -148,6 +153,17 @@ struct ancestry_tracker
     }
 
     void
+    add_mutations(const std::vector<double>& positions,
+              const double origin_generation, const integer_type node_id)
+    {
+        for (auto&& pos : positions)
+            {
+                mutations.emplace_back(
+                    make_mutation(pos, origin_generation, node_id));
+            }
+    }
+
+    void
     finish_generation()
     {
         for (auto&& oi : offspring_indexes)
@@ -185,6 +201,7 @@ struct ancestry_tracker
     {
         nodes.swap(a.nodes);
         edges.swap(a.edges);
+        mutations.swap(a.mutations);
         a.samples.assign(offspring_indexes.begin(), offspring_indexes.end());
         nodes.clear();
         edges.clear();
