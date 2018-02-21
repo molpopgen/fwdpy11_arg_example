@@ -11,6 +11,7 @@ namespace py = pybind11;
 //Register vectors of nodes and edges as "opaque"
 PYBIND11_MAKE_OPAQUE(std::vector<node>);
 PYBIND11_MAKE_OPAQUE(std::vector<edge>);
+PYBIND11_MAKE_OPAQUE(std::vector<mutation>);
 PYBIND11_MAKE_OPAQUE(std::vector<ancestry_tracker::integer_type>);
 
 PYBIND11_MODULE(wfarg, m)
@@ -21,6 +22,7 @@ PYBIND11_MODULE(wfarg, m)
     //Register nodes and edges as NumPy dtypes:
     PYBIND11_NUMPY_DTYPE(node, id, population, generation);
     PYBIND11_NUMPY_DTYPE(edge, left, right, parent, child);
+    PYBIND11_NUMPY_DTYPE(mutation, position, origin_generation, node_id);
 
     //Create Python classes of node/edge containers.
     //These types support Python's buffer protocol, creating
@@ -33,6 +35,11 @@ PYBIND11_MODULE(wfarg, m)
 
     py::bind_vector<std::vector<edge>>(
         m, "EdgeArray", "Container of edges.  This can be cast to a NumPy "
+                        "record array without making a copy",
+        py::buffer_protocol());
+        
+    py::bind_vector<std::vector<mutation>>(
+        m, "MutationArray", "Container of mutations.  This can be cast to a NumPy "
                         "record array without making a copy",
         py::buffer_protocol());
 
@@ -52,7 +59,9 @@ PYBIND11_MODULE(wfarg, m)
         .def_readwrite("nodes", &ancestry_tracker::nodes,
                        "Data for msprime.NodeTable.")
         .def_readwrite("edges", &ancestry_tracker::edges,
-                       "Data for msprime.EdgesetTable.")
+                       "Data for msprime.EdgeTable.")
+        .def_readwrite("mutations", &ancestry_tracker::mutations,
+                       "Data for msprime.MutationTable and msprime.SiteTable.")
         .def_readwrite("samples", &ancestry_tracker::offspring_indexes,
                        "Sample indexes.")
         .def_readonly(
@@ -76,7 +85,9 @@ PYBIND11_MODULE(wfarg, m)
         .def_readwrite("nodes", &ancestry_data::nodes,
                        "Data for msprime.NodeTable.")
         .def_readwrite("edges", &ancestry_data::edges,
-                       "Data for msprime.EdgesetTable.")
+                       "Data for msprime.EdgeTable.")
+        .def_readwrite("mutations", &ancestry_data::mutations,
+                       "Data for msprime.MutationTable and msprime.SiteTable.")
         .def_readwrite("samples", &ancestry_data::samples, "Sample indexes.")
         .def("release", [](ancestry_data& a) { a.lock_.attr("release")(); })
         .def("acquire", [](ancestry_data& a) { a.lock_.attr("acquire")(); });
