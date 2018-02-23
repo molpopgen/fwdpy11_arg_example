@@ -153,13 +153,12 @@ struct ancestry_tracker
     }
 
     void
-    add_mutations(const std::vector<double>& positions,
-              const double origin_generation, const integer_type node_id)
+    add_mutations(const std::vector<std::uint32_t>& mutation_ids, const integer_type node_id)
     {
-        for (auto&& pos : positions)
+        for (auto&& mut_id : mutation_ids)
             {
                 mutations.emplace_back(
-                    make_mutation(pos, origin_generation, node_id));
+                    make_mutation(node_id, mut_id));
             }
     }
 
