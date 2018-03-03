@@ -1,4 +1,4 @@
-#include "handle_recombination.hpp"
+#include "handle_mut_rec.hpp"
 #include <fwdpp/debug.hpp>
 #include <fwdpp/recombination.hpp>
 
@@ -31,7 +31,7 @@ split_breakpoints(const std::vector<double>& breakpoints, const double start,
 }
 
 KTfwd::uint_t
-ancestry_recombination_details(
+ancestry_rec_mut_details(
     fwdpy11::singlepop_t& pop, ancestry_tracker& ancestry,
     std::queue<std::size_t>& gamete_recycling_bin,
     const KTfwd::uint_t parental_gamete1, const KTfwd::uint_t parental_gamete2,

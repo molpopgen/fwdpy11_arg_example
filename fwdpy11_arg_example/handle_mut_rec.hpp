@@ -14,7 +14,7 @@ split_breakpoints(const std::vector<double>& breakpoints,
 // breakpoints is passed in non-const.  We filter out
 // double x-overs in this function. Really bad things will
 // happen if breakpoints is not up to fwdpp's spec!
-KTfwd::uint_t ancestry_recombination_details(
+KTfwd::uint_t ancestry_rec_mut_details(
     fwdpy11::singlepop_t& pop, ancestry_tracker& ancestry,
     std::queue<std::size_t>& gamete_recycling_bin,
     const KTfwd::uint_t parental_gamete1, const KTfwd::uint_t parental_gamete2,
