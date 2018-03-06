@@ -1,5 +1,6 @@
 #include <fwdpp/diploid.hh>
 #include "handle_mut_rec.hpp"
+#include <fwdpp/mutate_recombine.hpp>
 
 void
 evolve_generation(
@@ -55,15 +56,15 @@ evolve_generation(
             if (swap2)
                 std::swap(p2g1, p2g2);
 
-            auto breakpoints = recmodel(pop.gametes[p1g1], pop.gametes[p1g2],
-                                        pop.mutations);
+            auto breakpoints = generate_breakpoints(p1g1, 
+                        p1g2, pop.gametes, pop.mutations, recmodel);                            
             auto pid = ancestry.get_parent_ids(p1, swap1);
             auto offspring_indexes = ancestry.get_next_indexes();
             dip.first = ancestry_rec_mut_details(
                 pop, ancestry, gamete_recycling_bin, p1g1, p1g2, breakpoints,
                 pid, std::get<0>(offspring_indexes));
-            breakpoints = recmodel(pop.gametes[p2g1], pop.gametes[p2g2],
-                                   pop.mutations);
+            breakpoints = generate_breakpoints(p2g1, 
+                        p2g2, pop.gametes, pop.mutations, recmodel);
             pid = ancestry.get_parent_ids(p2, swap2);
 
             dip.second = ancestry_rec_mut_details(
