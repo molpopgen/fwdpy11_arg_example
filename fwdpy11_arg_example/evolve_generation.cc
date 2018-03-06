@@ -60,11 +60,15 @@ evolve_generation(
                         p1g2, pop.gametes, pop.mutations, recmodel);                            
             auto pid = ancestry.get_parent_ids(p1, swap1);
             auto offspring_indexes = ancestry.get_next_indexes();
+            auto new_mutations = generate_new_mutations(
+                mutation_recycling_bin, rng.get(), mu, pop.gametes, pop.mutations, p1g1, mmodel);
             dip.first = ancestry_rec_mut_details(
                 pop, ancestry, gamete_recycling_bin, p1g1, p1g2, breakpoints,
                 pid, std::get<0>(offspring_indexes));
             breakpoints = generate_breakpoints(p2g1, 
                         p2g2, pop.gametes, pop.mutations, recmodel);
+            new_mutations = generate_new_mutations(
+                mutation_recycling_bin, rng.get(), mu, pop.gametes, pop.mutations, p2g1, mmodel);
             pid = ancestry.get_parent_ids(p2, swap2);
 
             dip.second = ancestry_rec_mut_details(
@@ -73,16 +77,6 @@ evolve_generation(
 
             pop.gametes[dip.first].n++;
             pop.gametes[dip.second].n++;
-
-            // now, add new mutations
-            dip.first = KTfwd::mutate_gamete_recycle(
-                mutation_recycling_bin, gamete_recycling_bin, rng.get(), mu,
-                pop.gametes, pop.mutations, dip.first, mmodel,
-                KTfwd::emplace_back());
-            dip.second = KTfwd::mutate_gamete_recycle(
-                mutation_recycling_bin, gamete_recycling_bin, rng.get(), mu,
-                pop.gametes, pop.mutations, dip.second, mmodel,
-                KTfwd::emplace_back());
 
             assert(pop.gametes[dip.first].n);
             assert(pop.gametes[dip.second].n);
