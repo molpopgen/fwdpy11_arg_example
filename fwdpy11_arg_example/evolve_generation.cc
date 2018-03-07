@@ -63,7 +63,7 @@ evolve_generation(
             auto new_mutations = generate_new_mutations(
                 mutation_recycling_bin, rng.get(), mu, pop.gametes, pop.mutations, p1g1, mmodel);
             dip.first = ancestry_rec_mut_details(
-                pop, ancestry, gamete_recycling_bin, p1g1, p1g2, breakpoints,
+                pop, ancestry, gamete_recycling_bin, p1g1, p1g2, breakpoints, new_mutations,
                 pid, std::get<0>(offspring_indexes));
             breakpoints = generate_breakpoints(p2g1, 
                         p2g2, pop.gametes, pop.mutations, recmodel);
@@ -72,7 +72,7 @@ evolve_generation(
             pid = ancestry.get_parent_ids(p2, swap2);
 
             dip.second = ancestry_rec_mut_details(
-                pop, ancestry, gamete_recycling_bin, p2g1, p2g2, breakpoints,
+                pop, ancestry, gamete_recycling_bin, p2g1, p2g2, breakpoints, new_mutations,
                 pid, std::get<1>(offspring_indexes));
 
             pop.gametes[dip.first].n++;

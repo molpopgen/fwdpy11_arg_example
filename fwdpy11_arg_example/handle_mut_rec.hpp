@@ -19,6 +19,7 @@ KTfwd::uint_t ancestry_rec_mut_details(
     std::queue<std::size_t>& gamete_recycling_bin,
     const KTfwd::uint_t parental_gamete1, const KTfwd::uint_t parental_gamete2,
     std::vector<double>& breakpoints,
+    const std::vector<KTfwd::uint_t>& new_mutations,
     const std::tuple<ancestry_tracker::integer_type,
                      ancestry_tracker::integer_type>& pid,
     const ancestry_tracker::integer_type offspring_index);

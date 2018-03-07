@@ -1,6 +1,7 @@
 #include "handle_mut_rec.hpp"
 #include <fwdpp/debug.hpp>
 #include <fwdpp/recombination.hpp>
+#include <fwdpp/mutate_recombine.hpp>
 
 namespace py = pybind11;
 
@@ -36,6 +37,7 @@ ancestry_rec_mut_details(
     std::queue<std::size_t>& gamete_recycling_bin,
     const KTfwd::uint_t parental_gamete1, const KTfwd::uint_t parental_gamete2,
     std::vector<double>& breakpoints,
+    const std::vector<KTfwd::uint_t>& new_mutations,
     const std::tuple<ancestry_tracker::integer_type,
                      ancestry_tracker::integer_type>& pid,
     const ancestry_tracker::integer_type offspring_index)
@@ -60,4 +62,5 @@ ancestry_rec_mut_details(
     return KTfwd::recombine_gametes(
         breakpoints, pop.gametes, pop.mutations, parental_gamete1,
         parental_gamete2, gamete_recycling_bin, pop.neutral, pop.selected);
+    ancestry.add_mutations(new_mutations, offspring_index);
 }
