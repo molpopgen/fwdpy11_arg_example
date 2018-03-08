@@ -59,8 +59,8 @@ ancestry_rec_mut_details(
                        offspring_index);
     ancestry.add_edges(breakpoints_per_parental_chrom.second, std::get<1>(pid),
                        offspring_index);
-    return KTfwd::recombine_gametes(
-        breakpoints, pop.gametes, pop.mutations, parental_gamete1,
-        parental_gamete2, gamete_recycling_bin, pop.neutral, pop.selected);
     ancestry.add_mutations(new_mutations, offspring_index);
+    return KTfwd::mutate_recombine(new_mutations, breakpoints, parental_gamete1, parental_gamete2,
+                                     pop.gametes, pop.mutations, gamete_recycling_bin,
+                                     pop.neutral, pop.selected);
 }
