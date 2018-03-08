@@ -56,21 +56,21 @@ evolve_generation(
             if (swap2)
                 std::swap(p2g1, p2g2);
 
-            auto breakpoints = generate_breakpoints(p1g1, 
+            auto breakpoints = KTfwd::generate_breakpoints(p1g1, 
                         p1g2, pop.gametes, pop.mutations, recmodel);                            
+            auto new_mutations = KTfwd::generate_new_mutations(
+                mutation_recycling_bin, rng.get(), mu, pop.gametes, pop.mutations, p1g1, mmodel);
             auto pid = ancestry.get_parent_ids(p1, swap1);
             auto offspring_indexes = ancestry.get_next_indexes();
-            auto new_mutations = generate_new_mutations(
-                mutation_recycling_bin, rng.get(), mu, pop.gametes, pop.mutations, p1g1, mmodel);
             dip.first = ancestry_rec_mut_details(
                 pop, ancestry, gamete_recycling_bin, p1g1, p1g2, breakpoints, new_mutations,
                 pid, std::get<0>(offspring_indexes));
-            breakpoints = generate_breakpoints(p2g1, 
+                
+            breakpoints = KTfwd::generate_breakpoints(p2g1, 
                         p2g2, pop.gametes, pop.mutations, recmodel);
-            new_mutations = generate_new_mutations(
+            new_mutations = KTfwd::generate_new_mutations(
                 mutation_recycling_bin, rng.get(), mu, pop.gametes, pop.mutations, p2g1, mmodel);
             pid = ancestry.get_parent_ids(p2, swap2);
-
             dip.second = ancestry_rec_mut_details(
                 pop, ancestry, gamete_recycling_bin, p2g1, p2g2, breakpoints, new_mutations,
                 pid, std::get<1>(offspring_indexes));
