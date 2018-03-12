@@ -104,6 +104,4 @@ PYBIND11_MODULE(wfarg, m)
           &evolve_singlepop_regions_track_ancestry_python_queue);
     m.def("reverse_time", &reverse_time,
           py::call_guard<py::gil_scoped_release>());
-    m.def("update_indexes", &update_indexes,
-          py::call_guard<py::gil_scoped_release>());
 }

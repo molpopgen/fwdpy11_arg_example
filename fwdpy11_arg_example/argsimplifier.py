@@ -11,7 +11,6 @@ class ArgSimplifier(object):
     """
 
     from .wfarg import reverse_time
-    from .wfarg import update_indexes
 
     def __init__(self, gc_interval, trees=None):
         """
@@ -49,12 +48,7 @@ class ArgSimplifier(object):
         self.reverse_time(ancestry.nodes)
         na = np.array(ancestry.nodes, copy=False)
         ea = np.array(ancestry.edges, copy=False)
-        new_min_id = na['id'][0]
-        new_max_id = na['id'][-1]
-        delta = new_min_id - len(self.__nodes)
-        if delta != 0:
-            self.update_indexes(ancestry.edges, ancestry.samples,
-                                delta, new_min_id, new_max_id)
+        
         samples = np.array(ancestry.samples, copy=False)
         flags = np.ones(len(na), dtype=np.uint32)
         self.__time_prepping += time.process_time() - before

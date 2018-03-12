@@ -45,25 +45,6 @@ reverse_time(std::vector<node>& nodes)
         }
 }
 
-inline void
-update_indexes(std::vector<edge>& edges,
-               std::vector<decltype(edge::parent)>& offspring_indexes,
-               const decltype(edge::parent) delta,
-               const decltype(edge::parent) mindex,
-               const decltype(edge::parent) maxdex)
-{
-    for (auto& e : edges)
-        {
-            e.child -= delta;
-            if (!(e.parent < mindex) && !(e.parent > maxdex))
-                {
-                    e.parent -= delta;
-                }
-        }
-    for (auto& i : offspring_indexes)
-        i -= delta;
-}
-
 struct ancestry_data
 {
     using integer_type = decltype(edge::parent);
