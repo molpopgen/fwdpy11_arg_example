@@ -3,6 +3,7 @@ import msprime
 import time
 import itertools
 
+InitMeta = namedtuple('InitMeta', 'position origin_generation origin')
 
 class ArgSimplifier(object):
     """
@@ -21,17 +22,24 @@ class ArgSimplifier(object):
         self.last_gc_time = 0.0
         self.__nodes = msprime.NodeTable()
         self.__edges = msprime.EdgeTable()
+        self.__sites = msprime.SiteTable()
+        self.__mutations = msprime.MutationTable()
         self.__process = True
         if trees is not None:
             self.__process = False
-            trees.dump_tables(nodes=self.__nodes, edges=self.__edges)
+            trees.dump_tables(nodes=self.__nodes, edges=self.__edges, sites = self.__sites, mutations = self.__mutations)
+            if(len(self.__mutations.metadata) == 0):
+            	meta_list = [InitMeta(self.__sites[mut[0]][0], self.__nodes[mut[1]][1], "initial tree") for mut in self.__mutations]
+            	encoded, offset = msprime.pack_bytes(list(map(pickle.dumps, meta_list)))
+            	self.mutations.set_columns(site=self.__mutations.site, node=self.__mutations.node, derived_state=self.__mutations.derived_state, derived_state_offset=self.__mutations.derived_state_offset, parent=self.__mutations.parent, metadata_offset=offset, metadata=encoded)
         self.__time_sorting = 0.0
         self.__time_appending = 0.0
         self.__time_simplifying = 0.0
         self.__time_prepping = 0.0
 
-    def simplify(self, generation, ancestry):
+    def simplify(self, pop, ancestry):
         # print(type(ancestry))
+        generation = pop.generation
         # update node times:
         if self.__nodes.num_rows > 0:
             tc = self.__nodes.time
@@ -46,29 +54,43 @@ class ArgSimplifier(object):
         # Acquire mutex
         ancestry.acquire()
         self.reverse_time(ancestry.nodes)
-        na = np.array(ancestry.nodes, copy=False)
-        ea = np.array(ancestry.edges, copy=False)
+        ana = np.array(ancestry.nodes, copy=False)
+        aea = np.array(ancestry.edges, copy=False)
+        ama = np.array(ancestry.mutations, copy=False)
+        pma = np.array(pop.mutations) #must be copy
+        asa = np.array(ancestry.samples, copy=False)
+        flags = np.ones(len(ana), dtype=np.uint32)
         
-        samples = np.array(ancestry.samples, copy=False)
-        flags = np.ones(len(na), dtype=np.uint32)
         self.__time_prepping += time.process_time() - before
 
         before = time.process_time()
         clen = len(self.__nodes)
         self.__nodes.append_columns(flags=flags,
-                                    population=na['population'],
-                                    time=na['generation'])
+                                    population=ana['population'],
+                                    time=ana['generation'])
 
         before = time.process_time()
-        self.__edges.append_columns(left=ea['left'],
-                                    right=ea['right'],
-                                    parent=ea['parent'],
-                                    child=ea['child'])
-        msprime.sort_tables(nodes=self.__nodes, edges=self.__edges)
+        self.__edges.append_columns(left=aea['left'],
+                                    right=aea['right'],
+                                    parent=aea['parent'],
+                                    child=aea['child'])
+        before = time.process_time()
+        self.__sites.append_columns(pma['pos'][ama['mutation_id']],
+                                  ancestral_state=np.zeros(len(ama), np.int8) + ord('0'),
+                                  ancestral_state_offset=np.arange(len(ama) + 1, dtype=np.uint32)))
+
+        before = time.process_time()
+        encoded, offset = msprime.pack_bytes(list(map(pickle.dumps,pma[ama['mutation_id']]))
+        self.__mutations.append_columns(site=np.arange(len(ama), dtype=np.int32) + self.__mutations.num_rows,
+                                      node=ama['node_id'],
+                                      derived_state=np.ones(len(ama), np.int8) + ord('0'),
+                                      derived_state_offset=np.arange(len(ama) + 1, dtype=np.uint32),
+                                      metadata_offset=offset, metadata=encoded))
+        msprime.sort_tables(nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
         self.__time_sorting += time.process_time() - before
         before = time.process_time()
-        sample_map = msprime.simplify_tables(samples=samples.tolist(),
-                                             nodes=self.__nodes, edges=self.__edges)
+        sample_map = msprime.simplify_tables(samples=asa.tolist(),
+                                             nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
         for i in samples:
             assert(sample_map[i] != -1)
         # Release any locks on the ancestry object
@@ -109,6 +131,20 @@ class ArgSimplifier(object):
         A NumPy record array representing the edge sets.
         """
         return self.__edges
+
+    @property
+    def sites(self):
+        """
+        A NumPy record array representing the sites.
+        """
+        return self.__sites
+
+    @property
+    def mutations(self):
+        """
+        A NumPy record array representing the mutations.
+        """
+        return self.__mutations
 
     @property
     def gc_interval(self):

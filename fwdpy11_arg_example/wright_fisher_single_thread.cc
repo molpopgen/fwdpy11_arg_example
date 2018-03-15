@@ -71,7 +71,7 @@ evolve_singlepop_regions_track_ancestry(
         {
             //Ask if we need to garbage collect:
             py::tuple processor_rv
-                = ancestry_processor(pop.generation, ancestry);
+                = ancestry_processor(pop, ancestry);
             //If we did GC, then the ancestry_tracker has
             //some cleaning up to do:
             ancestry.post_process_gc(processor_rv);
