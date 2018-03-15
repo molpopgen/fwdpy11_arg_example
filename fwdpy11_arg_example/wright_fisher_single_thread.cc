@@ -73,7 +73,7 @@ evolve_singlepop_regions_track_ancestry(
             py::tuple processor_rv
                 = ancestry_processor(pop.generation, ancestry);
             //If we did GC, then the ancestry_tracker has
-            //some cleaning upto do:
+            //some cleaning up to do:
             ancestry.post_process_gc(processor_rv);
 
             //This is not great API design, but

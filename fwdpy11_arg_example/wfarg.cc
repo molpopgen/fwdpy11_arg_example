@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-//Register vectors of nodes and edges as "opaque"
+//Register vectors of nodes, edges, and mutations as "opaque"
 PYBIND11_MAKE_OPAQUE(std::vector<node>);
 PYBIND11_MAKE_OPAQUE(std::vector<edge>);
 PYBIND11_MAKE_OPAQUE(std::vector<mutation>);

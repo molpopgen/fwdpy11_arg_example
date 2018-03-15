@@ -173,6 +173,7 @@ struct ancestry_tracker
             {
                 nodes.clear();
                 edges.clear();
+                mutations.clear();
             }
     }
 
