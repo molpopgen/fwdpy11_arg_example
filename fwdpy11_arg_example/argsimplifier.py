@@ -100,11 +100,11 @@ class ArgSimplifier(object):
         self.__process = True
         return (True, self.__nodes.num_rows)
 
-    def __call__(self, generation, ancestry):
+    def __call__(self, pop, ancestry):
         """
         This is called from C++ during a simulation.
 
-        :param generation: Current generation in a simulation.
+        :param pop: An instance of SlocusPop
         :param ancestry: An instance of AncestryTracker
 
         :rtype: tuple
@@ -112,8 +112,8 @@ class ArgSimplifier(object):
         :returns: A bool and an int
         """
         if len(ancestry.nodes) > 0 and len(ancestry.edges) > 0:
-            if generation > 0 and generation % self.gc_interval == 0.0:
-                return self.simplify(generation, ancestry)
+            if pop.generation > 0 and pop.generation % self.gc_interval == 0.0:
+                return self.simplify(pop, ancestry)
         # Keep tuple size constant,
         # for sake of sanity.
         return (False, None)
