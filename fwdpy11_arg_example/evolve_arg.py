@@ -5,7 +5,7 @@ import numpy as np
 import msprime
 
 
-def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, msprime_seed=None, async=False, use_queue=False, qsize=2, wthreads=2):
+def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, msprime_seed=None):
     """
     Evolve a population and track its ancestry using msprime.
 
@@ -25,9 +25,6 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
         # Will throw exception if anything is wrong:
         params.validate()
 
-    if async is True and use_queue is True:
-        raise ValueError("async and use_queue cannot both be True")
-
     # Enforce min left end of 0.0, which is an msprime
     # requirement:
     if any(i.b < 0.0 for i in params.nregions) is True:
@@ -44,8 +41,6 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
     rm = makeRecombinationRegions(params.recregions)
 
     from .wfarg import evolve_singlepop_regions_track_ancestry, AncestryTracker
-    from .wfarg import evolve_singlepop_regions_track_ancestry_async
-    from .wfarg import evolve_singlepop_regions_track_ancestry_python_queue
     from .argsimplifier import ArgSimplifier
     initial_TreeSequence = None
     next_index = 2 * pop.N
@@ -59,40 +54,11 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
         next_index = initial_TreeSequence.num_nodes
     simplifier = ArgSimplifier(gc_interval, initial_TreeSequence)
     atracker = AncestryTracker(pop.N, init_with_TreeSequence, next_index)
-    if async is False and use_queue is False:
-        tsim = evolve_singlepop_regions_track_ancestry(rng, pop, atracker, simplifier,
+    tsim = evolve_singlepop_regions_track_ancestry(rng, pop, atracker, simplifier,
                                                        params.demography,
                                                        params.mutrate_s,
                                                        params.recrate, mm, rm,
                                                        params.gvalue, params.pself)
-    elif async is True:
-        tsim = evolve_singlepop_regions_track_ancestry_async(rng, pop, atracker, simplifier,
-                                                             gc_interval,
-                                                             params.demography,
-                                                             params.mutrate_s,
-                                                             params.recrate, mm, rm,
-                                                             params.gvalue, params.pself)
-    else:
-        import threading
-        import queue
-        q = queue.Queue(qsize)
-
-        def worker():
-            while True:
-                data = q.get()
-                if data is None:
-                    break
-                simplifier(data[0], data[1])
-                q.task_done()
-        t = threading.Thread(target=worker)
-        t.start()
-        tsim = evolve_singlepop_regions_track_ancestry_python_queue(rng, pop, atracker, q,
-                                                                    gc_interval,
-                                                                    params.demography, params.mutrate_s,
-                                                                    params.recrate, mm, rm,
-                                                                    params.gvalue, params.pself, wthreads)
-        q.put(None)
-        t.join()
 
     if len(atracker.nodes) > 0:
         # TODO

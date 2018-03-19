@@ -98,10 +98,10 @@ PYBIND11_MODULE(wfarg, m)
     //the rest of the fwdpy11 world.
     m.def("evolve_singlepop_regions_track_ancestry",
           &evolve_singlepop_regions_track_ancestry);
-    m.def("evolve_singlepop_regions_track_ancestry_async",
+    /*m.def("evolve_singlepop_regions_track_ancestry_async",
           &evolve_singlepop_regions_track_ancestry_async);
     m.def("evolve_singlepop_regions_track_ancestry_python_queue",
-          &evolve_singlepop_regions_track_ancestry_python_queue);
+          &evolve_singlepop_regions_track_ancestry_python_queue);*/
     m.def("reverse_time", &reverse_time,
           py::call_guard<py::gil_scoped_release>());
 }

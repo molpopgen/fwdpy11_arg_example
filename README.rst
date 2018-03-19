@@ -49,7 +49,13 @@ Make a local build and run the unit tests:
     #on Linux.
     python setup.py build_ext -i --gcc
     python -m unittest discover tests
+    
+Changelog
+----------------------------------
 
+Version 0.0.2: Removed multi-threaded versions of simulation in order to implement mutation and ancient sample tracking.  The multi-threaded versions may or may not return in a later release. Requires fwdpy11 0.1.4.
+
+Version 0.0.1: Release version used in Kelleher et al.
 
 Test simulation
 +++++++++++++++++++++++++++++++++
