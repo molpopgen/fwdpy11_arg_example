@@ -14,7 +14,7 @@ print(tsim,simplifier.times)
 np.random.seed(seed)
 
 # Get a sample of size n = 10 
-msprime.simplify_tables(np.random.choice(2*N, 10, replace = False).tolist(), nodes = simplifier.nodes, edges = simplifier.edges)
+msprime.simplify_tables(np.random.choice(2*N, 10, replace = False).tolist(), nodes = simplifier.nodes, edges = simplifier.edges, sites = simplifier.sites, mutations = simplifier.mutations)
 msp_rng = msprime.RandomGenerator(seed)
 sites = msprime.SiteTable()
 mutations = msprime.MutationTable()
