@@ -2,6 +2,7 @@ import numpy as np
 import msprime
 import time
 import itertools
+import pickle
 from collections import namedtuple
 
 InitMeta = namedtuple('InitMeta', 'position origin_generation origin')
@@ -58,7 +59,7 @@ class ArgSimplifier(object):
         ana = np.array(ancestry.nodes, copy=False)
         aea = np.array(ancestry.edges, copy=False)
         ama = np.array(ancestry.mutations, copy=False)
-        pma = np.array(pop.mutations) #must be copy
+        pma = np.array(pop.mutations.array()) #must be copy
         asa = np.array(ancestry.samples, copy=False)
         flags = np.ones(len(ana), dtype=np.uint32)
         
