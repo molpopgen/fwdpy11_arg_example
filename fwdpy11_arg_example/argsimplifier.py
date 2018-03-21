@@ -71,25 +71,26 @@ class ArgSimplifier(object):
                                     population=ana['population'],
                                     time=ana['generation'])
 
-        before = time.process_time()
         self.__edges.append_columns(left=aea['left'],
                                     right=aea['right'],
                                     parent=aea['parent'],
                                     child=aea['child'])
         if(len(ama) > 0):
-           before = time.process_time()
            self.__sites.append_columns(pma['pos'][ama['mutation_id']],
                                   ancestral_state=np.zeros(len(ama), np.int8) + ord('0'),
                                   ancestral_state_offset=np.arange(len(ama) + 1, dtype=np.uint32))
-
-           before = time.process_time()
+           ###encodes full mutation info as metadata in mutation table in order of numpy pop.mutations.array dtype 
+           ###(which is not the same order as pickling a pop.mutations object)
            encoded, offset = msprime.pack_bytes(list(map(pickle.dumps,pma[ama['mutation_id']])))
            self.__mutations.append_columns(site=np.arange(len(ama), dtype=np.int32) + self.__mutations.num_rows,
                                       node=ama['node_id'],
                                       derived_state=np.ones(len(ama), np.int8) + ord('0'),
                                       derived_state_offset=np.arange(len(ama) + 1, dtype=np.uint32),
                                       metadata_offset=offset, metadata=encoded)
-                                      
+        
+        self.__time_appending += time.process_time() - before
+        
+        before = time.process_time()                              
         msprime.sort_tables(nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
         self.__time_sorting += time.process_time() - before
         before = time.process_time()
