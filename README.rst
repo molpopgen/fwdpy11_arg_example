@@ -11,7 +11,7 @@ GPLv3 or later (see COPYING)
 Overview
 ----------------------------------
 
-We define a C++ class called "ancestry_tracker", which stores nodes and edges as they appear forwards in time.  These data structures, and their updating, are non-intrusive, meaning that they don't care about any of the fwdpp_ internals.  Rather, we simply have to define a new "iterate a generation" function that uses both fwdpp_ machinery and updates an ancestry_tracker as appropriate.
+We define a C++ class called "ancestry_tracker", which stores nodes, edges, and mutations as they appear forwards in time.  These data structures, and their updating, are non-intrusive, meaning that they don't care about any of the fwdpp_ internals.  Rather, we simply have to define a new "iterate a generation" function that uses both fwdpp_ machinery and updates an ancestry_tracker as appropriate.
 
 Using pybind11_, we make ancestry_trackers visible to Python as an AncestryTracker class.  The Python class has access to the nodes and edges as NumPy structured arrays, which can be viewed "for free", meaning that no copy from C++ to Python is required to look at them.
 

@@ -14,10 +14,10 @@ print(tsim,simplifier.times)
 np.random.seed(seed)
 
 # Get a sample of size n = 10 
-msprime.simplify_tables(np.random.choice(2*N, 10, replace = False).tolist(), nodes = simplifier.nodes, edgesets = simplifier.edgesets)
+msprime.simplify_tables(np.random.choice(2*N, 10, replace = False).tolist(), nodes = simplifier.nodes, edges = simplifier.edges)
 msp_rng = msprime.RandomGenerator(seed)
 sites = msprime.SiteTable()
 mutations = msprime.MutationTable()
 mutgen = msprime.MutationGenerator(msp_rng, theta/float(4*N)) # rho = theta
-mutgen.generate(simplifier.nodes, simplifier.edgesets, sites, mutations)
+mutgen.generate(simplifier.nodes, simplifier.edges, sites, mutations)
 print(sites.num_rows)

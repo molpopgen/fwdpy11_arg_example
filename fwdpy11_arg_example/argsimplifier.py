@@ -2,6 +2,7 @@ import numpy as np
 import msprime
 import time
 import itertools
+from collections import namedtuple
 
 InitMeta = namedtuple('InitMeta', 'position origin_generation origin')
 
@@ -74,24 +75,26 @@ class ArgSimplifier(object):
                                     right=aea['right'],
                                     parent=aea['parent'],
                                     child=aea['child'])
-        before = time.process_time()
-        self.__sites.append_columns(pma['pos'][ama['mutation_id']],
+        if(len(ama) > 0):
+           before = time.process_time()
+           self.__sites.append_columns(pma['pos'][ama['mutation_id']],
                                   ancestral_state=np.zeros(len(ama), np.int8) + ord('0'),
-                                  ancestral_state_offset=np.arange(len(ama) + 1, dtype=np.uint32)))
+                                  ancestral_state_offset=np.arange(len(ama) + 1, dtype=np.uint32))
 
-        before = time.process_time()
-        encoded, offset = msprime.pack_bytes(list(map(pickle.dumps,pma[ama['mutation_id']]))
-        self.__mutations.append_columns(site=np.arange(len(ama), dtype=np.int32) + self.__mutations.num_rows,
+           before = time.process_time()
+           encoded, offset = msprime.pack_bytes(list(map(pickle.dumps,pma[ama['mutation_id']])))
+           self.__mutations.append_columns(site=np.arange(len(ama), dtype=np.int32) + self.__mutations.num_rows,
                                       node=ama['node_id'],
                                       derived_state=np.ones(len(ama), np.int8) + ord('0'),
                                       derived_state_offset=np.arange(len(ama) + 1, dtype=np.uint32),
-                                      metadata_offset=offset, metadata=encoded))
+                                      metadata_offset=offset, metadata=encoded)
+                                      
         msprime.sort_tables(nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
         self.__time_sorting += time.process_time() - before
         before = time.process_time()
         sample_map = msprime.simplify_tables(samples=asa.tolist(),
                                              nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
-        for i in samples:
+        for i in asa:
             assert(sample_map[i] != -1)
         # Release any locks on the ancestry object
         ancestry.release()
@@ -106,7 +109,7 @@ class ArgSimplifier(object):
 
         :param pop: An instance of SlocusPop
         :param ancestry: An instance of AncestryTracker
-        :param override: override the gc interval and forces simplification
+        :param override: override the gc interval and forces simplification if there are nodes/edges to simplify
 
         :rtype: tuple
 
