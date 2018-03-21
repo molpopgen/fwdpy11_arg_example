@@ -59,12 +59,6 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
                                                        params.mutrate_s,
                                                        params.recrate, mm, rm,
                                                        params.gvalue, params.pself)
-
-    if len(atracker.nodes) > 0:
-        # TODO
-        # The + 1 is b/c we have a bit of a book-keeping
-        # thing that we need to document...
-        simplifier.simplify(pop.generation + 1, atracker)
     return (simplifier, atracker, tsim)
 
 
