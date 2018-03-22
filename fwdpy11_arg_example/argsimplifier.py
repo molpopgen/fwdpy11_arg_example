@@ -80,7 +80,9 @@ class ArgSimplifier(object):
                                   ancestral_state=np.zeros(len(ama), np.int8) + ord('0'),
                                   ancestral_state_offset=np.arange(len(ama) + 1, dtype=np.uint32))
            ###encodes full mutation info as metadata in mutation table in order of numpy pop.mutations.array dtype 
-           ###(which is not the same order as pickling a pop.mutations object)
+           ###unpickled and transformed into a tuple can be used to construct a fwdpy11.Mutation
+           ###e.g. fwdpy11.Mutation(tuple(pickle.loads(simplifier.mutations[i].metadata))[:-1])
+           ###uses everything but the last element
            encoded, offset = msprime.pack_bytes(list(map(pickle.dumps,pma[ama['mutation_id']])))
            self.__mutations.append_columns(site=np.arange(len(ama), dtype=np.int32) + self.__mutations.num_rows,
                                       node=ama['node_id'],
