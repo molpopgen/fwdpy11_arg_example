@@ -62,7 +62,6 @@ struct ancestry_tracker
     std::vector<integer_type> offspring_indexes;
     integer_type generation, total_generations, next_index, first_parental_index;
     std::uint32_t lastN;
-    decltype(node::generation) last_gc_time;
     ancestry_tracker(const integer_type N, 
                      const integer_type next_index_,
                      const integer_type total_generations_)
@@ -71,7 +70,7 @@ struct ancestry_tracker
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
           total_generations{ total_generations_ },
           next_index{ next_index_ }, first_parental_index{ 0 },
-          lastN{ static_cast<std::uint32_t>(N) }, last_gc_time{ 0.0 }
+          lastN{ static_cast<std::uint32_t>(N) }
     {
         nodes.reserve(2 * N);
         edges.reserve(2 * N);
@@ -153,7 +152,6 @@ struct ancestry_tracker
         if (!gc)
             return;
 
-        last_gc_time = generation;
         next_index = t[1].cast<integer_type>();
         // establish last parental index:
         first_parental_index = 0;

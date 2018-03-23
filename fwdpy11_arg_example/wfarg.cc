@@ -68,8 +68,6 @@ PYBIND11_MODULE(wfarg, m)
         .def_readonly(
             "offspring_generation", &ancestry_tracker::generation,
             "Read-only access to current offspring/children generation.")
-        .def_readonly("last_gc_time", &ancestry_tracker::last_gc_time,
-                      "Last time point where garbage collection happened.")
         .def("release", [](ancestry_tracker& a) {})
         .def("acquire", [](ancestry_tracker& a) {});
     //.def("update_indexes", &ancestry_tracker::update_indexes)

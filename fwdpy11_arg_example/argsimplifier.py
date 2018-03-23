@@ -19,12 +19,10 @@ class ArgSimplifier(object):
         :param trees: An instance of :class:`msprime.TreeSequence`
         """
         self.gc_interval = gc_interval
-        self.last_gc_time = 0.0
         self.__nodes = msprime.NodeTable()
         self.__edges = msprime.EdgeTable()
         self.__sites = msprime.SiteTable()
         self.__mutations = msprime.MutationTable()
-        self.__process = True
         
         if trees is not None:
             self.__process = False
@@ -99,9 +97,7 @@ class ArgSimplifier(object):
             assert(sample_map[i] != -1)
         # Release any locks on the ancestry object
         ancestry.release()
-        self.__last_edge_start = len(self.__edges)
         self.__time_simplifying += time.process_time() - before
-        self.__process = True
         return (True, self.__nodes.num_rows)
         
     def __call__(self, pop, ancestry, override):
@@ -165,17 +161,6 @@ class ArgSimplifier(object):
         if value <= 0:
             raise ValueError("GC interval must be and integer > 0")
         self.__gc_interval = int(value)
-
-    @property
-    def last_gc_time(self):
-        """
-        The last time GC was performed
-        """
-        return self.__last_gc_time
-
-    @last_gc_time.setter
-    def last_gc_time(self, value):
-        self.__last_gc_time = float(value)
 
     @property
     def times(self):
