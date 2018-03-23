@@ -76,12 +76,6 @@ evolve_singlepop_regions_track_ancestry(
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
-            //Ask if we need to garbage collect:
-            processor_rv = ancestry_processor(pop, ancestry, false);
-            //If we did GC, then the ancestry_tracker has
-            //some cleaning up to do:
-            ancestry.post_process_gc(processor_rv);
-
             //This is not great API design, but
             //we need to clear the offspring indexes here:
             ancestry.offspring_indexes.clear();
@@ -108,6 +102,11 @@ evolve_singlepop_regions_track_ancestry(
             auto stop = std::clock();
             auto dur = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
             time_simulating += dur;
+            //Ask if we need to garbage collect:
+            processor_rv = ancestry_processor(pop, ancestry, false);
+            //If we did GC, then the ancestry_tracker has
+            //some cleaning up to do:
+            ancestry.post_process_gc(processor_rv);
         }
     processor_rv = ancestry_processor(pop, ancestry, true);
     --pop.generation;
