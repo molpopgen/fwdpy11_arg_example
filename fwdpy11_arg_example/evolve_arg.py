@@ -98,4 +98,4 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
 
     params = fwdpy11.model_params.SlocusParams(**pdict)
     rng = fwdpy11.GSLrng(seed)
-    return evolve_track(rng, pop, params, gc_interval)
+    return evolve_track(rng, pop, params, gc_interval, True, seed)
