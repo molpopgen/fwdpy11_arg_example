@@ -30,7 +30,7 @@ class ArgSimplifier(object):
         if trees is not None:
             self.__process = False
             trees.dump_tables(nodes=self.__nodes, edges=self.__edges, sites = self.__sites, mutations = self.__mutations)
-            if(len(self.__mutations.metadata) == 0):
+            if(self.__mutations.num_rows > 0 and len(self.__mutations.metadata) == 0):
             	meta_list = [InitMeta(self.__sites[mut[0]][0], self.__nodes[mut[1]][1], "initial tree") for mut in self.__mutations]
             	encoded, offset = msprime.pack_bytes(list(map(pickle.dumps, meta_list)))
             	self.mutations.set_columns(site=self.__mutations.site, node=self.__mutations.node, derived_state=self.__mutations.derived_state, derived_state_offset=self.__mutations.derived_state_offset, parent=self.__mutations.parent, metadata_offset=offset, metadata=encoded)

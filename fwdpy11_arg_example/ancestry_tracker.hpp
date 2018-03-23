@@ -91,15 +91,16 @@ struct ancestry_tracker
         temp.reserve(N);
         //no need to reserve mutation space
 
-        //Initialize 2N nodes for the generation 0
         //if next_index == 0, then did not initialize with tree sequence
-        if (next_index_ == 0)
+        //so emplace back 2N nodes for the generation 0 and set next_index to 2N
+        if (next_index == 0)
             {
                 for (integer_type i = 0; i < 2 * N; ++i)
                     {
                         //ID, time 0, population 0
                         nodes.emplace_back(make_node(i, 0.0, 0));
                     }
+                next_index = 2 * N;
             }
     }
 
