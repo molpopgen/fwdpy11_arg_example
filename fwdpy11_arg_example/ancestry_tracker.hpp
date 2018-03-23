@@ -119,8 +119,7 @@ struct ancestry_tracker
     {
         for (auto&& bi : breakpoints)
             {
-                temp.emplace_back(
-                    make_edge(bi.first, bi.second, parent, child));
+                temp.emplace_back(edge{bi.first, bi.second, parent, child});
             }
     }
 

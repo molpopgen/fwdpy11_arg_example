@@ -10,7 +10,11 @@ std::pair<std::vector<std::pair<double, double>>,
 split_breakpoints(const std::vector<double>& breakpoints, const double start,
                   const double stop)
 {
-    std::vector<std::pair<double, double>> r1, r2;
+    using break_array = std::vector<std::pair<double, double>>;
+    if (breakpoints.empty())
+    	return std::make_pair(break_array{std::make_pair(0.,1.)},break_array{});
+    
+    break_array r1, r2;
     if (breakpoints.front() != 0.0)
         {
             r1.emplace_back(std::make_pair(start, breakpoints.front()));
@@ -48,17 +52,11 @@ ancestry_rec_mut_details(
 	// later, but doing it here is less code.
     breakpoints.erase(std::unique(breakpoints.begin(), breakpoints.end()),
                       breakpoints.end());
-    if (breakpoints.empty())
-        {
-            ancestry.temp.emplace_back(
-                make_edge(0., 1., std::get<0>(pid), offspring_index));
-            return parental_gamete1;
-        }
-    auto breakpoints_per_parental_chrom = split_breakpoints(breakpoints);
-    ancestry.add_edges(breakpoints_per_parental_chrom.first, std::get<0>(pid),
-                       offspring_index);
-    ancestry.add_edges(breakpoints_per_parental_chrom.second, std::get<1>(pid),
-                       offspring_index);
+    //split breakpoints among parental chromosomes and add edges
+    auto breaks_pchrom = split_breakpoints(breakpoints);
+    ancestry.add_edges(breaks_pchrom.first, std::get<0>(pid), offspring_index);
+    ancestry.add_edges(breaks_pchrom.second, std::get<1>(pid), offspring_index);
+    //add mutations
     ancestry.add_mutations(new_mutations, offspring_index);
     return KTfwd::mutate_recombine(new_mutations, breakpoints, parental_gamete1, parental_gamete2,
                                      pop.gametes, pop.mutations, gamete_recycling_bin,

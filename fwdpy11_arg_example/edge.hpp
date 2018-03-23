@@ -10,17 +10,6 @@ struct edge
     std::int32_t parent, child;
 };
 
-inline edge
-make_edge(double left, double right, std::int32_t parent, std::int32_t child)
-{
-    edge e;
-    e.left = left;
-    e.right = right;
-    e.parent = parent;
-    e.child = child;
-    return e;
-}
-
 inline auto
 get_tied_edge(const edge& e)
     -> decltype(std::tie(e.child, e.parent, e.left, e.right))
