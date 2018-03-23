@@ -29,23 +29,23 @@
 #include "edge.hpp"
 #include "mutation.hpp"
 
-struct ancestry_data
-{
-    using integer_type = decltype(edge::parent);
-    /// Nodes:
-    std::vector<node> nodes;
-    /// The ARG:
-    std::vector<edge> edges;
-    /// Mutations:
-    std::vector<mutation> mutations;
-    std::vector<integer_type> samples;
-    pybind11::object lock_;
-    ancestry_data() : nodes{}, edges{}, mutations{}, samples{}, lock_{}
-    {
-        pybind11::module threading = pybind11::module::import("threading");
-        lock_ = threading.attr("Lock")();
-    }
-};
+// struct ancestry_data
+// {
+//     using integer_type = decltype(edge::parent);
+//     /// Nodes:
+//     std::vector<node> nodes;
+//     /// The ARG:
+//     std::vector<edge> edges;
+//     /// Mutations:
+//     std::vector<mutation> mutations;
+//     std::vector<integer_type> samples;
+//     pybind11::object lock_;
+//     ancestry_data() : nodes{}, edges{}, mutations{}, samples{}, lock_{}
+//     {
+//         pybind11::module threading = pybind11::module::import("threading");
+//         lock_ = threading.attr("Lock")();
+//     }
+// };
 
 struct ancestry_tracker
 {
@@ -165,17 +165,17 @@ struct ancestry_tracker
             }
     }
 
-    void
-    exchange_for_async(ancestry_data& a)
-    {
-        nodes.swap(a.nodes);
-        edges.swap(a.edges);
-        mutations.swap(a.mutations);
-        a.samples.assign(offspring_indexes.begin(), offspring_indexes.end());
-        nodes.clear();
-        edges.clear();
-        first_parental_index = 0;
-    }
+//     void
+//     exchange_for_async(ancestry_data& a)
+//     {
+//         nodes.swap(a.nodes);
+//         edges.swap(a.edges);
+//         mutations.swap(a.mutations);
+//         a.samples.assign(offspring_indexes.begin(), offspring_indexes.end());
+//         nodes.clear();
+//         edges.clear();
+//         first_parental_index = 0;
+//     }
 };
 
 #endif

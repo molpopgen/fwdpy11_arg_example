@@ -79,19 +79,19 @@ PYBIND11_MODULE(wfarg, m)
     //     "Releases the spin lock.  Used in multi-threaded applications of "
     //     "the msprime machinery.");
 
-    py::class_<ancestry_data>(
-        m, "_AncestryData",
-        "Used internally for data-swapping in multi-threaded scenarios")
-        .def(py::init<>())
-        .def_readwrite("nodes", &ancestry_data::nodes,
-                       "Data for msprime.NodeTable.")
-        .def_readwrite("edges", &ancestry_data::edges,
-                       "Data for msprime.EdgeTable.")
-        .def_readwrite("mutations", &ancestry_data::mutations,
-                       "Data for msprime.MutationTable and msprime.SiteTable.")
-        .def_readwrite("samples", &ancestry_data::samples, "Sample indexes.")
-        .def("release", [](ancestry_data& a) { a.lock_.attr("release")(); })
-        .def("acquire", [](ancestry_data& a) { a.lock_.attr("acquire")(); });
+//     py::class_<ancestry_data>(
+//         m, "_AncestryData",
+//         "Used internally for data-swapping in multi-threaded scenarios")
+//         .def(py::init<>())
+//         .def_readwrite("nodes", &ancestry_data::nodes,
+//                        "Data for msprime.NodeTable.")
+//         .def_readwrite("edges", &ancestry_data::edges,
+//                        "Data for msprime.EdgeTable.")
+//         .def_readwrite("mutations", &ancestry_data::mutations,
+//                        "Data for msprime.MutationTable and msprime.SiteTable.")
+//         .def_readwrite("samples", &ancestry_data::samples, "Sample indexes.")
+//         .def("release", [](ancestry_data& a) { a.lock_.attr("release")(); })
+//         .def("acquire", [](ancestry_data& a) { a.lock_.attr("acquire")(); });
 
     //Make our C++ functions callable from Python.
     //This is NOT part of a user-facing Python API.
