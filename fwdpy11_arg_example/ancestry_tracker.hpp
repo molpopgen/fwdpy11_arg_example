@@ -129,8 +129,7 @@ struct ancestry_tracker
     {
         for (auto&& mut_id : mutation_ids)
             {
-                mutations.emplace_back(
-                    make_mutation(node_id, mut_id));
+                mutations.emplace_back(mutation{node_id, mut_id});
             }
     }
 
