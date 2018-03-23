@@ -29,22 +29,6 @@
 #include "edge.hpp"
 #include "mutation.hpp"
 
-inline void
-reverse_time(std::vector<node>& nodes)
-{
-    if (nodes.empty())
-        return;
-
-    //convert forward time to backwards time
-    auto max_gen = nodes.back().generation;
-
-    for (auto& n : nodes)
-        {
-            n.generation -= max_gen;
-            n.generation *= -1.0;
-        }
-}
-
 struct ancestry_data
 {
     using integer_type = decltype(edge::parent);
@@ -76,13 +60,16 @@ struct ancestry_tracker
     std::vector<mutation> mutations;
     /// This is used as the sample indexes for msprime:
     std::vector<integer_type> offspring_indexes;
-    integer_type generation, next_index, first_parental_index;
+    integer_type generation, total_generations, next_index, first_parental_index;
     std::uint32_t lastN;
     decltype(node::generation) last_gc_time;
-    ancestry_tracker(const integer_type N, const integer_type next_index_)
+    ancestry_tracker(const integer_type N, 
+                     const integer_type next_index_,
+                     const integer_type total_generations_)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() }, mutations{ std::vector<mutation>() }, 
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
+          total_generations{ total_generations_ },
           next_index{ next_index_ }, first_parental_index{ 0 },
           lastN{ static_cast<std::uint32_t>(N) }, last_gc_time{ 0.0 }
     {
@@ -98,7 +85,7 @@ struct ancestry_tracker
                 for (integer_type i = 0; i < 2 * N; ++i)
                     {
                         //ID, time 0, population 0
-                        nodes.emplace_back(make_node(i, 0.0, 0));
+                        nodes.emplace_back(make_node(i, total_generations, 0));
                     }
                 next_index = 2 * N;
             }
@@ -149,7 +136,7 @@ struct ancestry_tracker
     {
         for (auto&& oi : offspring_indexes)
             {
-                nodes.emplace_back(make_node(oi, generation, 0));
+                nodes.emplace_back(make_node(oi, total_generations - generation, 0));
             }
         edges.insert(edges.end(), temp.begin(), temp.end());
         lastN = next_index - first_parental_index;

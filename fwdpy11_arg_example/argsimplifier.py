@@ -13,9 +13,7 @@ class ArgSimplifier(object):
     AncestryTracker and msprime
     """
 
-    from .wfarg import reverse_time
-
-    def __init__(self, gc_interval, trees=None):
+    def __init__(self, gc_interval, params, trees=None):
         """
         :param gc_interval: Garbage collection interval
         :param trees: An instance of :class:`msprime.TreeSequence`
@@ -27,13 +25,25 @@ class ArgSimplifier(object):
         self.__sites = msprime.SiteTable()
         self.__mutations = msprime.MutationTable()
         self.__process = True
+        
         if trees is not None:
             self.__process = False
             trees.dump_tables(nodes=self.__nodes, edges=self.__edges, sites = self.__sites, mutations = self.__mutations)
-            if(self.__mutations.num_rows > 0 and len(self.__mutations.metadata) == 0):
+            
+            if self.__nodes.num_rows > 0: #add simulation time to input trees
+               total_generations = len(params.demography) 
+               tc = self.__nodes.time
+               dt = float(total_generations)
+               tc += dt
+               flags = np.ones(self.__nodes.num_rows, dtype=np.uint32)
+               self.__nodes.set_columns(
+                   flags=flags, population=self.__nodes.population, time=tc)
+                   
+            if(self.__mutations.num_rows > 0 and len(self.__mutations.metadata) == 0): #add default mutation metadata if none present
             	meta_list = [InitMeta(self.__sites[mut[0]][0], self.__nodes[mut[1]][1], "initial tree") for mut in self.__mutations]
             	encoded, offset = msprime.pack_bytes(list(map(pickle.dumps, meta_list)))
             	self.mutations.set_columns(site=self.__mutations.site, node=self.__mutations.node, derived_state=self.__mutations.derived_state, derived_state_offset=self.__mutations.derived_state_offset, parent=self.__mutations.parent, metadata_offset=offset, metadata=encoded)
+        
         self.__time_sorting = 0.0
         self.__time_appending = 0.0
         self.__time_simplifying = 0.0
@@ -42,31 +52,19 @@ class ArgSimplifier(object):
     def simplify(self, pop, ancestry):
         # print(type(ancestry))
         generation = pop.generation
-        # update node times:
-        if self.__nodes.num_rows > 0:
-            tc = self.__nodes.time
-            dt = float(generation) - self.last_gc_time
-            tc += dt
-            self.last_gc_time = generation
-            flags = np.ones(self.__nodes.num_rows, dtype=np.uint32)
-            self.__nodes.set_columns(
-                flags=flags, population=self.__nodes.population, time=tc)
-
+        
         before = time.process_time()
         # Acquire mutex
         ancestry.acquire()
-        self.reverse_time(ancestry.nodes)
         ana = np.array(ancestry.nodes, copy=False)
         aea = np.array(ancestry.edges, copy=False)
         ama = np.array(ancestry.mutations, copy=False)
         pma = np.array(pop.mutations.array()) #must be copy
         asa = np.array(ancestry.samples, copy=False)
-        flags = np.ones(len(ana), dtype=np.uint32)
-        
+        flags = np.ones(len(ana), dtype=np.uint32)       
         self.__time_prepping += time.process_time() - before
-
+        
         before = time.process_time()
-        clen = len(self.__nodes)
         self.__nodes.append_columns(flags=flags,
                                     population=ana['population'],
                                     time=ana['generation'])
@@ -88,8 +86,7 @@ class ArgSimplifier(object):
                                       node=ama['node_id'],
                                       derived_state=np.ones(len(ama), np.int8) + ord('0'),
                                       derived_state_offset=np.arange(len(ama) + 1, dtype=np.uint32),
-                                      metadata_offset=offset, metadata=encoded)
-        
+                                      metadata_offset=offset, metadata=encoded)        
         self.__time_appending += time.process_time() - before
         
         before = time.process_time()                              

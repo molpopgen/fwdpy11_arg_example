@@ -36,10 +36,8 @@ evolve_singlepop_regions_track_ancestry(
             throw std::runtime_error(
                 "this population has already been evolved.");
         }
+        
     const auto generations = popsizes.size();
-    py::tuple processor_rv = ancestry_processor(pop, nullptr, false);
-	int next_index = processor_rv[1].cast<int>();
-    ancestry_tracker ancestry(pop.N, next_index);
     
     if (!generations)
         throw std::runtime_error("empty list of population sizes");
@@ -53,6 +51,11 @@ evolve_singlepop_regions_track_ancestry(
             throw std::runtime_error("negative recombination rate: "
                                      + std::to_string(recrate));
         }
+    
+    py::tuple processor_rv = ancestry_processor(pop, nullptr, false);
+	int next_index = processor_rv[1].cast<int>();
+    ancestry_tracker ancestry(pop.N, next_index, generations);
+    
     pop.mutations.reserve(
         std::ceil(std::log(2 * pop.N)
                   * (4. * double(pop.N) * (mu_selected)

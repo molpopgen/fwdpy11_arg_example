@@ -52,9 +52,10 @@ PYBIND11_MODULE(wfarg, m)
     //We only expose the stuff that a user really needs
     //to see.
     py::class_<ancestry_tracker>(m, "AncestryTracker")
-        .def(py::init<decltype(edge::parent), decltype(edge::parent)>(),
+        .def(py::init<decltype(edge::parent), decltype(edge::parent), decltype(edge::parent)>(),
              py::arg("N"), 
-             py::arg("next_index"))
+             py::arg("next_index"),
+             py::arg("total_generations"))
         .def(py::init<ancestry_tracker&>())
         .def_readwrite("nodes", &ancestry_tracker::nodes,
                        "Data for msprime.NodeTable.")
@@ -102,6 +103,4 @@ PYBIND11_MODULE(wfarg, m)
           &evolve_singlepop_regions_track_ancestry_async);
     m.def("evolve_singlepop_regions_track_ancestry_python_queue",
           &evolve_singlepop_regions_track_ancestry_python_queue);*/
-    m.def("reverse_time", &reverse_time,
-          py::call_guard<py::gil_scoped_release>());
 }
