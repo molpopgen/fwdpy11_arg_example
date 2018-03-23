@@ -84,7 +84,8 @@ struct ancestry_tracker
                 for (integer_type i = 0; i < 2 * N; ++i)
                     {
                         //ID, time 0, population 0
-                        nodes.emplace_back(make_node(i, total_generations, 0));
+                        double rev_gen = total_generations;
+                        nodes.emplace_back(node{i, 0, rev_gen});
                     }
                 next_index = 2 * N;
             }
@@ -103,6 +104,9 @@ struct ancestry_tracker
     get_next_indexes()
     {
         auto rv = std::make_tuple(next_index, next_index + 1);
+        double rev_gen = total_generations - generation;
+        nodes.emplace_back(node{std::get<0>(rv), 0, rev_gen});
+        nodes.emplace_back(node{std::get<1>(rv), 0, rev_gen});
         next_index += 2;
         offspring_indexes.push_back(std::get<0>(rv));
         offspring_indexes.push_back(std::get<1>(rv));
@@ -133,10 +137,6 @@ struct ancestry_tracker
     void
     finish_generation()
     {
-        for (auto&& oi : offspring_indexes)
-            {
-                nodes.emplace_back(make_node(oi, total_generations - generation, 0));
-            }
         edges.insert(edges.end(), temp.begin(), temp.end());
         lastN = next_index - first_parental_index;
         first_parental_index = offspring_indexes.front();
