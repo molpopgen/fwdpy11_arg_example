@@ -8,7 +8,7 @@ rho = float(sys.argv[2])
 theta = float(sys.argv[3])
 gc_interval = int(sys.argv[4])
 seed = int(sys.argv[5])
-simplifier,atracker,tsim = ea.evolve_track_wrapper(popsize=N, rho=rho, seed=seed, gc_interval=gc_interval, mu=theta/float(4*N))
+simplifier,tsim = ea.evolve_track_wrapper(popsize=N, rho=rho, seed=seed, gc_interval=gc_interval, mu=theta/float(4*N))
 
 print(tsim,simplifier.times)
 np.random.seed(seed)

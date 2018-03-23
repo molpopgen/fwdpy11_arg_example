@@ -25,9 +25,9 @@ namespace py = pybind11;
 double
 evolve_singlepop_regions_track_ancestry(
     const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,
-    ancestry_tracker& ancestry, py::function ancestry_processor,
-    py::array_t<std::uint32_t> popsizes, const double mu_selected,
-    const double recrate, const KTfwd::extensions::discrete_mut_model& mmodel,
+    py::function ancestry_processor, py::array_t<std::uint32_t> popsizes, 
+    const double mu_selected, const double recrate, 
+    const KTfwd::extensions::discrete_mut_model& mmodel,
     const KTfwd::extensions::discrete_rec_model& rmodel,
     fwdpy11::single_locus_fitness& fitness, const double selfing_rate)
 {
@@ -37,6 +37,10 @@ evolve_singlepop_regions_track_ancestry(
                 "this population has already been evolved.");
         }
     const auto generations = popsizes.size();
+    py::tuple processor_rv = ancestry_processor(pop, nullptr, false);
+	int next_index = processor_rv[1].cast<int>();
+    ancestry_tracker ancestry(pop.N, next_index);
+    
     if (!generations)
         throw std::runtime_error("empty list of population sizes");
     if (mu_selected < 0.)
@@ -70,7 +74,7 @@ evolve_singlepop_regions_track_ancestry(
          ++generation, ++pop.generation)
         {
             //Ask if we need to garbage collect:
-            py::tuple processor_rv = ancestry_processor(pop, ancestry, false);
+            processor_rv = ancestry_processor(pop, ancestry, false);
             //If we did GC, then the ancestry_tracker has
             //some cleaning up to do:
             ancestry.post_process_gc(processor_rv);
@@ -102,7 +106,7 @@ evolve_singlepop_regions_track_ancestry(
             auto dur = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
             time_simulating += dur;
         }
-    py::tuple processor_rv = ancestry_processor(pop, ancestry, true);
+    processor_rv = ancestry_processor(pop, ancestry, true);
     --pop.generation;
     return time_simulating;
 }

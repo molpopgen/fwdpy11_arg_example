@@ -106,7 +106,7 @@ class ArgSimplifier(object):
         self.__time_simplifying += time.process_time() - before
         self.__process = True
         return (True, self.__nodes.num_rows)
-
+        
     def __call__(self, pop, ancestry, override):
         """
         This is called from C++ during a simulation.
@@ -119,12 +119,10 @@ class ArgSimplifier(object):
 
         :returns: A bool and an int
         """
-        if len(ancestry.nodes) > 0 and len(ancestry.edges) > 0:
+        if ancestry is not None and len(ancestry.nodes) > 0 and len(ancestry.edges) > 0:
             if pop.generation > 0 and (pop.generation % self.gc_interval == 0.0 or override):
                 return self.simplify(pop, ancestry)
-        # Keep tuple size constant,
-        # for sake of sanity.
-        return (False, None)
+        return (False, self.__nodes.num_rows)
 
     @property
     def nodes(self):

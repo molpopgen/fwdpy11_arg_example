@@ -40,7 +40,7 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
     mm = makeMutationRegions(params.nregions, params.sregions)
     rm = makeRecombinationRegions(params.recregions)
 
-    from .wfarg import evolve_singlepop_regions_track_ancestry, AncestryTracker
+    from .wfarg import evolve_singlepop_regions_track_ancestry
     from .argsimplifier import ArgSimplifier
     initial_TreeSequence = None
     next_index = 2 * pop.N
@@ -51,15 +51,13 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
                 "msprime_seed is None. Results will not be reprodicible.")
         initial_TreeSequence = msprime.simulate(
             2 * pop.N, recombination_rate=params.recrate / 2.0, Ne=pop.N, random_seed=msprime_seed)
-        next_index = initial_TreeSequence.num_nodes
     simplifier = ArgSimplifier(gc_interval, initial_TreeSequence)
-    atracker = AncestryTracker(pop.N, init_with_TreeSequence, next_index)
-    tsim = evolve_singlepop_regions_track_ancestry(rng, pop, atracker, simplifier,
+    tsim = evolve_singlepop_regions_track_ancestry(rng, pop, simplifier,
                                                        params.demography,
                                                        params.mutrate_s,
                                                        params.recrate, mm, rm,
                                                        params.gvalue, params.pself)
-    return (simplifier, atracker, tsim)
+    return (simplifier, tsim)
 
 
 def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,

@@ -79,8 +79,7 @@ struct ancestry_tracker
     integer_type generation, next_index, first_parental_index;
     std::uint32_t lastN;
     decltype(node::generation) last_gc_time;
-    ancestry_tracker(const integer_type N, const bool init_with_TreeSequence,
-                     const integer_type next_index_)
+    ancestry_tracker(const integer_type N, const integer_type next_index_)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() }, mutations{ std::vector<mutation>() }, 
           offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
@@ -93,7 +92,8 @@ struct ancestry_tracker
         //no need to reserve mutation space
 
         //Initialize 2N nodes for the generation 0
-        if (init_with_TreeSequence == false)
+        //if next_index == 0, then did not initialize with tree sequence
+        if (next_index_ == 0)
             {
                 for (integer_type i = 0; i < 2 * N; ++i)
                     {
