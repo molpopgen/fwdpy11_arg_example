@@ -59,8 +59,6 @@ struct ancestry_tracker
     std::vector<edge> temp;
     /// Mutations:
     std::vector<mutation> mutations;
-    /// This is used as the sample indexes for msprime:
-    std::vector<integer_type> offspring_indexes;
     /// strided per-population, per-generation indexes for argsimplifier:
     index_vec pop_gen_indexes;
     // current generation, total generation, next node ID to use, current index generation
@@ -69,8 +67,7 @@ struct ancestry_tracker
                      const integer_type next_index_,
                      const integer_type total_generations_)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
-          temp{ std::vector<edge>() }, mutations{ std::vector<mutation>() }, 
-          offspring_indexes{ std::vector<integer_type>() },
+          temp{ std::vector<edge>() }, mutations{ std::vector<mutation>() },
           pop_gen_indexes{ index_vec(1) }, 
           generation{ 1 }, total_generations{ total_generations_ },
           next_index{ next_index_ }, index_gen{ 1 }
@@ -113,8 +110,6 @@ struct ancestry_tracker
         nodes.emplace_back(node{std::get<0>(rv), 0, rev_gen});
         nodes.emplace_back(node{std::get<1>(rv), 0, rev_gen});
         next_index += 2;
-        offspring_indexes.push_back(std::get<0>(rv));
-        offspring_indexes.push_back(std::get<1>(rv));
         return rv;
     }
 

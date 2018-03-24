@@ -76,9 +76,6 @@ evolve_singlepop_regions_track_ancestry(
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
-            //This is not great API design, but
-            //we need to clear the offspring indexes here:
-            ancestry.offspring_indexes.clear();
             const auto N_next = popsizes.at(generation);
             auto start = std::clock();
             evolve_generation(

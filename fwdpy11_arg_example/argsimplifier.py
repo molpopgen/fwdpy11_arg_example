@@ -58,7 +58,8 @@ class ArgSimplifier(object):
         aea = np.array(ancestry.edges, copy=False)
         ama = np.array(ancestry.mutations, copy=False)
         pma = np.array(pop.mutations.array()) #must be copy
-        asa = np.array(ancestry.samples, copy=False)
+        aia = np.array(ancestry.indexes, copy=False)
+        index_generation = ancestry.index_generation
         flags = np.ones(len(ana), dtype=np.uint32)       
         self.__time_prepping += time.process_time() - before
         
@@ -91,11 +92,12 @@ class ArgSimplifier(object):
         msprime.sort_tables(nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
         self.__time_sorting += time.process_time() - before
         before = time.process_time()
-        sample_map = msprime.simplify_tables(samples=asa.tolist(),
+        samples = list(range(aia[index_generation-1],aia[index_generation]))
+        sample_map = msprime.simplify_tables(samples= samples,
                                              nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
-        for i in asa:
+        for i in samples:
             assert(sample_map[i] != -1)
-            
+           
         # Release any locks on the ancestry object
         ancestry.release()
         self.__time_simplifying += time.process_time() - before
