@@ -12,7 +12,7 @@ namespace py = pybind11;
 PYBIND11_MAKE_OPAQUE(std::vector<node>);
 PYBIND11_MAKE_OPAQUE(std::vector<edge>);
 PYBIND11_MAKE_OPAQUE(std::vector<mutation>);
-PYBIND11_MAKE_OPAQUE(std::vector<ancestry_tracker::integer_type>);
+PYBIND11_MAKE_OPAQUE(ancestry_tracker::index_vec);
 
 PYBIND11_MODULE(wfarg, m)
 {
@@ -43,7 +43,7 @@ PYBIND11_MODULE(wfarg, m)
                         "record array without making a copy",
         py::buffer_protocol());
 
-    py::bind_vector<std::vector<ancestry_tracker::integer_type>>(
+    py::bind_vector<ancestry_tracker::index_vec>(
         m, "VecInt32", "Vector of 32-bit, signed integers.  Castable to Numpy "
                        "array without copy.",
         py::buffer_protocol());

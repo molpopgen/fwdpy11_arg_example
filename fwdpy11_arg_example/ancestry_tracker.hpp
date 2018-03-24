@@ -50,6 +50,7 @@
 struct ancestry_tracker
 {
     using integer_type = decltype(edge::parent);
+    using index_vec = std::vector<integer_type>;
     /// Nodes:
     std::vector<node> nodes;
     /// The ARG:
@@ -60,15 +61,19 @@ struct ancestry_tracker
     std::vector<mutation> mutations;
     /// This is used as the sample indexes for msprime:
     std::vector<integer_type> offspring_indexes;
-    integer_type generation, total_generations, next_index, first_parental_index;
+    /// strided per-population, per-generation indexes for argsimplifier:
+    index_vec pop_gen_indexes;
+    // current generation, total generation, next node ID to use, current index generation
+    integer_type generation, total_generations, next_index, index_gen;
     ancestry_tracker(const integer_type N, 
                      const integer_type next_index_,
                      const integer_type total_generations_)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() }, mutations{ std::vector<mutation>() }, 
-          offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
-          total_generations{ total_generations_ },
-          next_index{ next_index_ }, first_parental_index{ 0 }
+          offspring_indexes{ std::vector<integer_type>() },
+          pop_gen_indexes{ index_vec(1) }, 
+          generation{ 1 }, total_generations{ total_generations_ },
+          next_index{ next_index_ }, index_gen{ 1 }
     {
         nodes.reserve(2 * N);
         edges.reserve(2 * N);
@@ -87,11 +92,13 @@ struct ancestry_tracker
                     }
                 next_index = 2 * N;
             }
+        pop_gen_indexes.emplace_back(next_index);
     }
 
     std::tuple<integer_type, integer_type>
     get_parent_ids(const std::uint32_t p, const int did_swap)
     {
+        integer_type first_parental_index = pop_gen_indexes[index_gen-1];
         return std::make_tuple(
             first_parental_index + 2 * static_cast<integer_type>(p) + did_swap,
             first_parental_index + 2 * static_cast<integer_type>(p)
@@ -134,9 +141,9 @@ struct ancestry_tracker
     finish_generation()
     {
         edges.insert(edges.end(), temp.begin(), temp.end());
-        first_parental_index = offspring_indexes.front();
-
         temp.clear();
+        pop_gen_indexes.emplace_back(next_index);
+        ++index_gen;
         ++generation;
     }
 
@@ -148,8 +155,13 @@ struct ancestry_tracker
             return;
 
         next_index = t[1].cast<integer_type>();
-        // establish last parental index:
-        first_parental_index = 0;
+        // reset last parental index to 0 (doesn't matter for earlier indices):
+        // this is the last generation to be processed by GC 
+        index_gen = 1;
+        // reset current parental index to next_index:
+        pop_gen_indexes.resize(1);
+        pop_gen_indexes.emplace_back(next_index);
+        
         if (clear)
             {
                 nodes.clear();

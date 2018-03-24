@@ -18,7 +18,7 @@ class ArgSimplifier(object):
         :param gc_interval: Garbage collection interval
         :param trees: An instance of :class:`msprime.TreeSequence`
         """
-        self.gc_interval = gc_interval
+        self.__gc_interval = gc_interval
         self.__nodes = msprime.NodeTable()
         self.__edges = msprime.EdgeTable()
         self.__sites = msprime.SiteTable()
@@ -41,7 +41,7 @@ class ArgSimplifier(object):
             	meta_list = [InitMeta(self.__sites[mut[0]][0], self.__nodes[mut[1]][1], "initial tree") for mut in self.__mutations]
             	encoded, offset = msprime.pack_bytes(list(map(pickle.dumps, meta_list)))
             	self.mutations.set_columns(site=self.__mutations.site, node=self.__mutations.node, derived_state=self.__mutations.derived_state, derived_state_offset=self.__mutations.derived_state_offset, parent=self.__mutations.parent, metadata_offset=offset, metadata=encoded)
-        
+            
         self.__time_sorting = 0.0
         self.__time_appending = 0.0
         self.__time_simplifying = 0.0
@@ -95,6 +95,7 @@ class ArgSimplifier(object):
                                              nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
         for i in asa:
             assert(sample_map[i] != -1)
+            
         # Release any locks on the ancestry object
         ancestry.release()
         self.__time_simplifying += time.process_time() - before
@@ -113,7 +114,7 @@ class ArgSimplifier(object):
         :returns: A bool and an int
         """
         if ancestry is not None and len(ancestry.nodes) > 0 and len(ancestry.edges) > 0:
-            if pop.generation > 0 and (pop.generation % self.gc_interval == 0.0 or override):
+            if pop.generation > 0 and (pop.generation % self.__gc_interval == 0.0 or override):
                 return self.simplify(pop, ancestry)
         return (False, self.__nodes.num_rows)
 
