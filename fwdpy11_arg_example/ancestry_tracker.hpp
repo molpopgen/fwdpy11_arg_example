@@ -51,6 +51,7 @@ struct ancestry_tracker
 {
     using integer_type = decltype(edge::parent);
     using index_vec = std::vector<integer_type>;
+    using index_pair = std::pair<integer_type,integer_type>;
     /// Nodes:
     std::vector<node> nodes;
     /// The ARG:
@@ -59,24 +60,23 @@ struct ancestry_tracker
     std::vector<edge> temp;
     /// Mutations:
     std::vector<mutation> mutations;
-    /// strided per-population, per-generation indexes for argsimplifier:
-    index_vec pop_gen_indexes;
+    /// start-end node IDs for a generation:
+    index_pair node_indexes;
     // current generation, total generation, next node ID to use, current index generation
-    integer_type generation, total_generations, next_index, index_gen;
+    integer_type generation, total_generations, next_index;
     ancestry_tracker(const integer_type N, 
                      const integer_type next_index_,
                      const integer_type total_generations_)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
-          temp{ std::vector<edge>() }, mutations{ std::vector<mutation>() },
-          pop_gen_indexes{ index_vec(1) }, 
+          temp{ std::vector<edge>() }, mutations{ std::vector<mutation>() }, 
           generation{ 1 }, total_generations{ total_generations_ },
-          next_index{ next_index_ }, index_gen{ 1 }
+          next_index{ next_index_ }
     {
         nodes.reserve(2 * N);
         edges.reserve(2 * N);
         temp.reserve(N);
         //no need to reserve mutation space
-
+		
         //if next_index == 0, then did not initialize with tree sequence
         //so emplace back 2N nodes for the generation 0 and set next_index to 2N
         if (next_index == 0)
@@ -89,13 +89,13 @@ struct ancestry_tracker
                     }
                 next_index = 2 * N;
             }
-        pop_gen_indexes.emplace_back(next_index);
+        node_indexes = std::make_pair(0,next_index);
     }
 
     std::tuple<integer_type, integer_type>
     get_parent_ids(const std::uint32_t p, const int did_swap)
     {
-        integer_type first_parental_index = pop_gen_indexes[index_gen-1];
+        integer_type first_parental_index = node_indexes.first;
         return std::make_tuple(
             first_parental_index + 2 * static_cast<integer_type>(p) + did_swap,
             first_parental_index + 2 * static_cast<integer_type>(p)
@@ -137,8 +137,8 @@ struct ancestry_tracker
     {
         edges.insert(edges.end(), temp.begin(), temp.end());
         temp.clear();
-        pop_gen_indexes.emplace_back(next_index);
-        ++index_gen;
+        node_indexes.first = node_indexes.second;
+        node_indexes.second = next_index; 
         ++generation;
     }
 
@@ -150,12 +150,8 @@ struct ancestry_tracker
             return;
 
         next_index = t[1].cast<integer_type>();
-        // reset last parental index to 0 (doesn't matter for earlier indices):
-        // this is the last generation to be processed by GC 
-        index_gen = 1;
-        // reset current parental index to next_index:
-        pop_gen_indexes.resize(1);
-        pop_gen_indexes.emplace_back(next_index);
+        node_indexes.first = 0;
+        node_indexes.second = next_index; 
         
         if (clear)
             {
