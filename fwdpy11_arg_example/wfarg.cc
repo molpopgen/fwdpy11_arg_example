@@ -63,10 +63,9 @@ PYBIND11_MODULE(wfarg, m)
                        "Data for msprime.EdgeTable.")
         .def_readwrite("mutations", &ancestry_tracker::mutations,
                        "Data for msprime.MutationTable and msprime.SiteTable.")
-        //.def_readwrite("indexes", &ancestry_tracker::pop_gen_indexes,
-        //               "pop-gen indexes.")
-        .def_readonly(
-            "node_indexes", &ancestry_tracker::node_indexes,
+        .def_readwrite("anc_samples", &ancestry_tracker::ancestral_samples,
+                       "node IDs of ancestral samples.")
+        .def_readonly("node_indexes", &ancestry_tracker::node_indexes,
             "Read-only access to current generation's node start-end indexes.")
         .def("release", [](ancestry_tracker& a) {})
         .def("acquire", [](ancestry_tracker& a) {});

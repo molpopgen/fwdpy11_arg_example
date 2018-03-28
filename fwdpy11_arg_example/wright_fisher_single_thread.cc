@@ -53,8 +53,9 @@ evolve_singlepop_regions_track_ancestry(
         }
     
     py::tuple processor_rv = ancestry_processor(pop, nullptr, false);
-	int next_index = processor_rv[1].cast<int>();
-    ancestry_tracker ancestry(pop.N, next_index, generations);
+    ancestry_tracker::integer_type next_index = processor_rv[1].cast<ancestry_tracker::integer_type>();
+    ancestry_tracker::index_vec sample({pop.N/2});
+    ancestry_tracker ancestry(pop.N, next_index, generations, sample);
     
     pop.mutations.reserve(
         std::ceil(std::log(2 * pop.N)

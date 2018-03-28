@@ -62,13 +62,17 @@ struct ancestry_tracker
     std::vector<mutation> mutations;
     /// start-end node IDs for a generation:
     index_pair node_indexes;
+    /// vector of ancestral sample node IDs to be taken during a GC interval
+    index_vec ancestral_samples;
     // current generation, total generation, next node ID to use, current index generation
     integer_type generation, total_generations, next_index;
     ancestry_tracker(const integer_type N, 
                      const integer_type next_index_,
-                     const integer_type total_generations_)
+                     const integer_type total_generations_,
+                     const index_vec samples = index_vec())
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() }, mutations{ std::vector<mutation>() }, 
+          ancestral_samples{ samples },
           generation{ 1 }, total_generations{ total_generations_ },
           next_index{ next_index_ }
     {
@@ -100,6 +104,13 @@ struct ancestry_tracker
             first_parental_index + 2 * static_cast<integer_type>(p) + did_swap,
             first_parental_index + 2 * static_cast<integer_type>(p)
                 + !did_swap);
+    }
+    
+    void 
+    add_ancestral_samples(const index_vec samples)
+    {
+    	ancestral_samples.insert(ancestral_samples.end(), 
+    	                         samples.cbegin(), samples.cend());
     }
 
     std::tuple<integer_type, integer_type>
@@ -152,7 +163,7 @@ struct ancestry_tracker
         next_index = t[1].cast<integer_type>();
         node_indexes.first = 0;
         node_indexes.second = next_index; 
-        
+		pybind11::print(ancestral_samples[0],ancestral_samples.size());     
         if (clear)
             {
                 nodes.clear();

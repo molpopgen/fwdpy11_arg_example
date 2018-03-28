@@ -23,6 +23,7 @@ class ArgSimplifier(object):
         self.__edges = msprime.EdgeTable()
         self.__sites = msprime.SiteTable()
         self.__mutations = msprime.MutationTable()
+        self.__temp = 0
         
         if trees is not None:
             self.__process = False
@@ -59,6 +60,7 @@ class ArgSimplifier(object):
         ama = np.array(ancestry.mutations, copy=False)
         pma = np.array(pop.mutations.array()) #must be copy
         node_indexes = ancestry.node_indexes
+        anc_samples = ancestry.anc_samples
         flags = np.ones(len(ana), dtype=np.uint32)       
         self.__time_prepping += time.process_time() - before
         
@@ -92,10 +94,18 @@ class ArgSimplifier(object):
         self.__time_sorting += time.process_time() - before
         before = time.process_time()
         samples = list(range(node_indexes[0],node_indexes[1]))
-        sample_map = msprime.simplify_tables(samples= samples,
+        all_samples = samples + [i for i in anc_samples if i not in samples]
+        sample_map = msprime.simplify_tables(samples= all_samples,
                                              nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
-        for i in samples:
-            assert(sample_map[i] != -1)
+        for idx, val in enumerate(ancestry.anc_samples):
+            print(anc_samples[idx],sample_map[val],sample_map[ancestry.anc_samples[0]],ancestry.anc_samples[idx])
+            ancestry.anc_samples[idx] = sample_map[val]
+            print(idx,anc_samples[idx],ancestry.anc_samples[idx])
+        
+        print(self.__temp)
+        self.__temp = anc_samples[0]
+        print(self.__temp)
+        #print(all_samples,ancestry.anc_samples[0])
            
         # Release any locks on the ancestry object
         ancestry.release()
