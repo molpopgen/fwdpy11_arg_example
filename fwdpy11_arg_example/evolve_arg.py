@@ -16,7 +16,7 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
 
     :rtype: tuple
 
-    :return: An instance of ARGsimplifier, an instance of AncestryTracker, and the total time spent simulating.
+    :return: An instance of ARGsimplifier.
     """
     import warnings
     # Test parameters while suppressing warnings
@@ -36,14 +36,9 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
     if any(i.b < 0.0 for i in params.sregions) is True:
         raise RuntimeError("Minimum possible position is 0.0")
 
-    from fwdpy11.internal import makeMutationRegions, makeRecombinationRegions
-    mm = makeMutationRegions(params.nregions, params.sregions)
-    rm = makeRecombinationRegions(params.recregions)
-
-    from .wfarg import evolve_singlepop_regions_track_ancestry
     from .argsimplifier import ArgSimplifier
     initial_TreeSequence = None
-    next_index = 2 * pop.N
+
     if init_with_TreeSequence is True:
         if msprime_seed is None:
             import warnings
@@ -51,13 +46,8 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
                 "msprime_seed is None. Results will not be reprodicible.")
         initial_TreeSequence = msprime.simulate(
             2 * pop.N, recombination_rate=params.recrate / 2.0, Ne=pop.N, random_seed=msprime_seed)
-    simplifier = ArgSimplifier(gc_interval, params, initial_TreeSequence)
-    tsim = evolve_singlepop_regions_track_ancestry(rng, pop, simplifier,
-                                                       params.demography,
-                                                       params.mutrate_s,
-                                                       params.recrate, mm, rm,
-                                                       params.gvalue, params.pself)
-    return (simplifier, tsim)
+    
+    return ArgSimplifier(rng, gc_interval, pop, params, initial_TreeSequence)
 
 
 def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,

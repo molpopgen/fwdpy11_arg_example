@@ -72,7 +72,7 @@ struct ancestry_tracker
                      const index_vec samples = index_vec())
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() }, mutations{ std::vector<mutation>() }, 
-          ancestral_samples{ samples },
+          ancestral_samples{ index_vec({N/2}) },
           generation{ 1 }, total_generations{ total_generations_ },
           next_index{ next_index_ }
     {

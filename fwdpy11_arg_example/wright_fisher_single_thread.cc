@@ -24,8 +24,8 @@ namespace py = pybind11;
 // The return value is the time spent simulating.
 double
 evolve_singlepop_regions_track_ancestry(
-    const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,
-    py::function ancestry_processor, py::array_t<std::uint32_t> popsizes, 
+    const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,  ancestry_tracker & ancestry, 
+    py::function arg_simplifier, py::array_t<std::uint32_t> popsizes, 
     const double mu_selected, const double recrate, 
     const KTfwd::extensions::discrete_mut_model& mmodel,
     const KTfwd::extensions::discrete_rec_model& rmodel,
@@ -51,11 +51,6 @@ evolve_singlepop_regions_track_ancestry(
             throw std::runtime_error("negative recombination rate: "
                                      + std::to_string(recrate));
         }
-    
-    py::tuple processor_rv = ancestry_processor(pop, nullptr, false);
-    ancestry_tracker::integer_type next_index = processor_rv[1].cast<ancestry_tracker::integer_type>();
-    ancestry_tracker::index_vec sample({pop.N/2});
-    ancestry_tracker ancestry(pop.N, next_index, generations, sample);
     
     pop.mutations.reserve(
         std::ceil(std::log(2 * pop.N)
@@ -101,12 +96,13 @@ evolve_singlepop_regions_track_ancestry(
             auto dur = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
             time_simulating += dur;
             //Ask if we need to garbage collect:
-            processor_rv = ancestry_processor(pop, ancestry, false);
+            py::tuple processor_rv = arg_simplifier(false);
             //If we did GC, then the ancestry_tracker has
             //some cleaning up to do:
             ancestry.post_process_gc(processor_rv);
         }
-    processor_rv = ancestry_processor(pop, ancestry, true);
+        
+    arg_simplifier(true);
     --pop.generation;
     return time_simulating;
 }

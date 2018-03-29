@@ -4,6 +4,7 @@ import time
 import itertools
 import pickle
 from collections import namedtuple
+from .wfarg import AncestryTracker
 
 InitMeta = namedtuple('InitMeta', 'position origin_generation origin')
 
@@ -13,24 +14,30 @@ class ArgSimplifier(object):
     AncestryTracker and msprime
     """
 
-    def __init__(self, gc_interval, params, trees=None):
+    def __init__(self, rng, gc_interval, pop, params, trees=None):
         """
+        :param rng: Random Number Generator
         :param gc_interval: Garbage collection interval
-        :param trees: An instance of :class:`msprime.TreeSequence`
+        :param pop: An instance of :class:`fwdpy11:SLpop`
+        :param params: An instance of :class:`fwdpy11:SLpop`
+        :param trees: An instance of :class:`fwdpy11.model_params.SlocusParams`
         """
         self.__gc_interval = gc_interval
         self.__nodes = msprime.NodeTable()
         self.__edges = msprime.EdgeTable()
         self.__sites = msprime.SiteTable()
         self.__mutations = msprime.MutationTable()
-        self.__temp = 0
+        self.__rng = rng
+        self.__pop = pop
+        self.__params = params
+        total_generations = len(params.demography) 
         
         if trees is not None:
             self.__process = False
             trees.dump_tables(nodes=self.__nodes, edges=self.__edges, sites = self.__sites, mutations = self.__mutations)
             
             if self.__nodes.num_rows > 0: #add simulation time to input trees
-               total_generations = len(params.demography) 
+               
                tc = self.__nodes.time
                dt = float(total_generations)
                tc += dt
@@ -42,25 +49,42 @@ class ArgSimplifier(object):
             	meta_list = [InitMeta(self.__sites[mut[0]][0], self.__nodes[mut[1]][1], "initial tree") for mut in self.__mutations]
             	encoded, offset = msprime.pack_bytes(list(map(pickle.dumps, meta_list)))
             	self.mutations.set_columns(site=self.__mutations.site, node=self.__mutations.node, derived_state=self.__mutations.derived_state, derived_state_offset=self.__mutations.derived_state_offset, parent=self.__mutations.parent, metadata_offset=offset, metadata=encoded)
+        
+        
+        self._anc_tracker = AncestryTracker(pop.N, self.__nodes.num_rows,
+                                            total_generations)
             
         self.__time_sorting = 0.0
         self.__time_appending = 0.0
         self.__time_simplifying = 0.0
         self.__time_prepping = 0.0
+        self.__time_simulating = 0.0
+        
+        from .wfarg import evolve_singlepop_regions_track_ancestry
+        from fwdpy11.internal import makeMutationRegions, makeRecombinationRegions
+        mm = makeMutationRegions(self.__params.nregions, self.__params.sregions)
+        rm = makeRecombinationRegions(self.__params.recregions)
+        
+        self.__time_simulating = evolve_singlepop_regions_track_ancestry(self.__rng, self.__pop, self._anc_tracker, self,  
+                                                       self.__params.demography,
+                                                       self.__params.mutrate_s,
+                                                       self.__params.recrate, mm, rm,
+                                                       self.__params.gvalue, self.__params.pself)
 
-    def simplify(self, pop, ancestry):
+
+    def simplify(self):
         # print(type(ancestry))
-        generation = pop.generation
+        generation = self.__pop.generation
         
         before = time.process_time()
         # Acquire mutex
-        ancestry.acquire()
-        ana = np.array(ancestry.nodes, copy=False)
-        aea = np.array(ancestry.edges, copy=False)
-        ama = np.array(ancestry.mutations, copy=False)
-        pma = np.array(pop.mutations.array()) #must be copy
-        node_indexes = ancestry.node_indexes
-        anc_samples = ancestry.anc_samples
+        self._anc_tracker.acquire()
+        ana = np.array(self._anc_tracker.nodes, copy=False)
+        aea = np.array(self._anc_tracker.edges, copy=False)
+        ama = np.array(self._anc_tracker.mutations, copy=False)
+        pma = np.array(self.__pop.mutations.array()) #must be copy
+        node_indexes = self._anc_tracker.node_indexes
+        anc_samples = self._anc_tracker.anc_samples
         flags = np.ones(len(ana), dtype=np.uint32)       
         self.__time_prepping += time.process_time() - before
         
@@ -97,36 +121,30 @@ class ArgSimplifier(object):
         all_samples = samples + [i for i in anc_samples if i not in samples]
         sample_map = msprime.simplify_tables(samples= all_samples,
                                              nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
-        for idx, val in enumerate(ancestry.anc_samples):
-            print(anc_samples[idx],sample_map[val],sample_map[ancestry.anc_samples[0]],ancestry.anc_samples[idx])
-            ancestry.anc_samples[idx] = sample_map[val]
-            print(idx,anc_samples[idx],ancestry.anc_samples[idx])
+        for idx, val in enumerate(anc_samples):
+            print(anc_samples[idx],sample_map[val],sample_map[self._anc_tracker.anc_samples[0]],self._anc_tracker.anc_samples[idx])
+            anc_samples[idx] = sample_map[val]
+            print(idx,anc_samples[idx],self._anc_tracker.anc_samples[idx])
         
-        print(self.__temp)
-        self.__temp = anc_samples[0]
-        print(self.__temp)
         #print(all_samples,ancestry.anc_samples[0])
            
         # Release any locks on the ancestry object
-        ancestry.release()
+        self._anc_tracker.release()
         self.__time_simplifying += time.process_time() - before
         return (True, self.__nodes.num_rows)
         
-    def __call__(self, pop, ancestry, override):
+    def __call__(self, override):
         """
         This is called from C++ during a simulation.
-
-        :param pop: An instance of SlocusPop
-        :param ancestry: An instance of AncestryTracker
         :param override: override the gc interval and forces simplification if there are nodes/edges to simplify
 
         :rtype: tuple
 
         :returns: A bool and an int
         """
-        if ancestry is not None and len(ancestry.nodes) > 0 and len(ancestry.edges) > 0:
-            if pop.generation > 0 and (pop.generation % self.__gc_interval == 0.0 or override):
-                return self.simplify(pop, ancestry)
+        if len(self._anc_tracker.nodes) > 0 and len(self._anc_tracker.edges) > 0:
+            if self.__pop.generation > 0 and (self.__pop.generation % self.__gc_interval == 0.0 or override):
+                return self.simplify()
         return (False, self.__nodes.num_rows)
 
     @property
@@ -183,4 +201,5 @@ class ArgSimplifier(object):
         return {'prepping': self.__time_prepping,
                 'sorting': self.__time_sorting,
                 'appending': self.__time_appending,
-                'simplifying': self.__time_simplifying}
+                'simplifying': self.__time_simplifying,
+                'simulating': self.__time_simulating}
