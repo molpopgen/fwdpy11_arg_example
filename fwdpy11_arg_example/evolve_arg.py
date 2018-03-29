@@ -36,7 +36,7 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
     if any(i.b < 0.0 for i in params.sregions) is True:
         raise RuntimeError("Minimum possible position is 0.0")
 
-    from .argsimplifier import ArgSimplifier
+    from .argevolver import ArgEvolver
     initial_TreeSequence = None
 
     if init_with_TreeSequence is True:
@@ -47,7 +47,7 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
         initial_TreeSequence = msprime.simulate(
             2 * pop.N, recombination_rate=params.recrate / 2.0, Ne=pop.N, random_seed=msprime_seed)
     
-    return ArgSimplifier(rng, gc_interval, pop, params, initial_TreeSequence)
+    return ArgEvolver(rng, gc_interval, pop, params, initial_TreeSequence)
 
 
 def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,

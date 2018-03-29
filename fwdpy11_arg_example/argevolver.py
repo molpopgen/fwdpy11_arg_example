@@ -8,10 +8,10 @@ from .wfarg import AncestryTracker
 
 InitMeta = namedtuple('InitMeta', 'position origin_generation origin')
 
-class ArgSimplifier(object):
+class ArgEvolver(object):
     """
-    Python class to interface between an
-    AncestryTracker and msprime
+    Python class to interface between
+    forward simulation and msprime
     """
 
     def __init__(self, rng, gc_interval, pop, params, trees=None):
@@ -21,6 +21,8 @@ class ArgSimplifier(object):
         :param pop: An instance of :class:`fwdpy11:SLpop`
         :param params: An instance of :class:`fwdpy11:SLpop`
         :param trees: An instance of :class:`fwdpy11.model_params.SlocusParams`
+        
+        runs forward simulation defined by above params
         """
         self.__gc_interval = gc_interval
         self.__nodes = msprime.NodeTable()
