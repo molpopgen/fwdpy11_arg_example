@@ -68,11 +68,10 @@ struct ancestry_tracker
     integer_type generation, total_generations, next_index;
     ancestry_tracker(const integer_type N, 
                      const integer_type next_index_,
-                     const integer_type total_generations_,
-                     const index_vec samples = index_vec())
+                     const integer_type total_generations_)
         : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
           temp{ std::vector<edge>() }, mutations{ std::vector<mutation>() }, 
-          ancestral_samples{ index_vec({N/2}) },
+          ancestral_samples{ index_vec() },
           generation{ 1 }, total_generations{ total_generations_ },
           next_index{ next_index_ }
     {
@@ -163,7 +162,7 @@ struct ancestry_tracker
         next_index = t[1].cast<integer_type>();
         node_indexes.first = 0;
         node_indexes.second = next_index; 
-		pybind11::print(ancestral_samples[0],ancestral_samples.size());     
+           
         if (clear)
             {
                 nodes.clear();

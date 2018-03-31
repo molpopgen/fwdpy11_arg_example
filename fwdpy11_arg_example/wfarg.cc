@@ -12,7 +12,6 @@ namespace py = pybind11;
 PYBIND11_MAKE_OPAQUE(std::vector<node>);
 PYBIND11_MAKE_OPAQUE(std::vector<edge>);
 PYBIND11_MAKE_OPAQUE(std::vector<mutation>);
-PYBIND11_MAKE_OPAQUE(ancestry_tracker::index_vec);
 
 PYBIND11_MODULE(wfarg, m)
 {
@@ -43,11 +42,6 @@ PYBIND11_MODULE(wfarg, m)
                         "record array without making a copy",
         py::buffer_protocol());
 
-    py::bind_vector<ancestry_tracker::index_vec>(
-        m, "VecInt32", "Vector of 32-bit, signed integers.  Castable to Numpy "
-                       "array without copy.",
-        py::buffer_protocol());
-
     //Expose the C++ ancestry_tracker to Python.
     //We only expose the stuff that a user really needs
     //to see.
@@ -63,12 +57,10 @@ PYBIND11_MODULE(wfarg, m)
                        "Data for msprime.EdgeTable.")
         .def_readwrite("mutations", &ancestry_tracker::mutations,
                        "Data for msprime.MutationTable and msprime.SiteTable.")
-        .def_readwrite("anc_samples", &ancestry_tracker::ancestral_samples,
-                       "node IDs of ancestral samples.")
         .def_readonly("node_indexes", &ancestry_tracker::node_indexes,
-            "Read-only access to current generation's node start-end indexes.")
-        .def("release", [](ancestry_tracker& a) {})
-        .def("acquire", [](ancestry_tracker& a) {});
+            "Read-only access to current generation's node start-end indexes.");
+    //    .def("release", [](ancestry_tracker& a) {})
+    //    .def("acquire", [](ancestry_tracker& a) {});
     //.def("update_indexes", &ancestry_tracker::update_indexes)
     //.def("prep_for_gc", &ancestry_tracker::prep_for_gc,
     //     "Call this immediately before you are going to simplify.")

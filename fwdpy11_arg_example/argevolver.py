@@ -14,7 +14,7 @@ class ArgEvolver(object):
     forward simulation and msprime
     """
 
-    def __init__(self, rng, gc_interval, pop, params, trees=None):
+    def __init__(self, rng, gc_interval, pop, params, anc_sampler=None, trees=None):
         """
         :param rng: Random Number Generator
         :param gc_interval: Garbage collection interval
@@ -32,6 +32,7 @@ class ArgEvolver(object):
         self.__rng = rng
         self.__pop = pop
         self.__params = params
+        
         total_generations = len(params.demography) 
         
         if trees is not None:
@@ -55,6 +56,8 @@ class ArgEvolver(object):
         
         self._anc_tracker = AncestryTracker(pop.N, self.__nodes.num_rows,
                                             total_generations)
+        self._sampler = anc_sampler
+        self.__anc_samples = [int(pop.N/2)]
             
         self.__time_sorting = 0.0
         self.__time_appending = 0.0
@@ -67,26 +70,41 @@ class ArgEvolver(object):
         mm = makeMutationRegions(self.__params.nregions, self.__params.sregions)
         rm = makeRecombinationRegions(self.__params.recregions)
         
-        self.__time_simulating = evolve_singlepop_regions_track_ancestry(self.__rng, self.__pop, self._anc_tracker, self,  
+        self.__time_simulating = evolve_singlepop_regions_track_ancestry(self.__rng, self.__pop, self._anc_tracker, self, self._anc_sampler,  
                                                        self.__params.demography,
                                                        self.__params.mutrate_s,
                                                        self.__params.recrate, mm, rm,
                                                        self.__params.gvalue, self.__params.pself)
 
 
-    def simplify(self):
-        # print(type(ancestry))
+    def _anc_sampler(self):
+        sample_node_ids = np.empty(0,dtype='int32')
+        if(self._sampler):
+           new_indiv_samples = self._sampler(pop,self.__params)
+           sorted_new_indiv_samples = np.sort(new_samples)
+           max_num_indiv = self.__pop.N
+           if(self.__pop.generation >= 1): max_num_indiv = self.__params.demography[self.__pop.generation-1]
+           if(sorted_new_indiv_samples[0] < 0 or sorted_new_indiv_samples[-1] >= max_num_indiv):
+    	        raise RuntimeError("ancestral samples out of bounds")
+           
+           sample_node_ids = np.empty(2*new_indiv_samples.size,dtype='int32')
+           for idx, val in enumerate(sorted_new_indiv_samples):
+                sample_node_ids[2*idx] = 2*val + self._anc_tracker.node_indexes[1]
+                sample_node_ids[2*idx+1] = 2*val + 1 + self._anc_tracker.node_indexes[1]
+           __anc_samples += sample_node_ids.tolist() 
+        return sample_node_ids
+    
+    def _simplify(self):
         generation = self.__pop.generation
         
         before = time.process_time()
         # Acquire mutex
-        self._anc_tracker.acquire()
+        #self._anc_tracker.acquire()
         ana = np.array(self._anc_tracker.nodes, copy=False)
         aea = np.array(self._anc_tracker.edges, copy=False)
         ama = np.array(self._anc_tracker.mutations, copy=False)
         pma = np.array(self.__pop.mutations.array()) #must be copy
         node_indexes = self._anc_tracker.node_indexes
-        anc_samples = self._anc_tracker.anc_samples
         flags = np.ones(len(ana), dtype=np.uint32)       
         self.__time_prepping += time.process_time() - before
         
@@ -120,18 +138,14 @@ class ArgEvolver(object):
         self.__time_sorting += time.process_time() - before
         before = time.process_time()
         samples = list(range(node_indexes[0],node_indexes[1]))
-        all_samples = samples + [i for i in anc_samples if i not in samples]
+        all_samples = samples + [i for i in self.__anc_samples if i not in samples]
         sample_map = msprime.simplify_tables(samples= all_samples,
                                              nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
-        for idx, val in enumerate(anc_samples):
-            print(anc_samples[idx],sample_map[val],sample_map[self._anc_tracker.anc_samples[0]],self._anc_tracker.anc_samples[idx])
-            anc_samples[idx] = sample_map[val]
-            print(idx,anc_samples[idx],self._anc_tracker.anc_samples[idx])
         
-        #print(all_samples,ancestry.anc_samples[0])
+        self.__anc_samples = [sample_map[val] for val in self.__anc_samples]
            
         # Release any locks on the ancestry object
-        self._anc_tracker.release()
+        #self._anc_tracker.release()
         self.__time_simplifying += time.process_time() - before
         return (True, self.__nodes.num_rows)
         
@@ -146,36 +160,43 @@ class ArgEvolver(object):
         """
         if len(self._anc_tracker.nodes) > 0 and len(self._anc_tracker.edges) > 0:
             if self.__pop.generation > 0 and (self.__pop.generation % self.__gc_interval == 0.0 or override):
-                return self.simplify()
+                return self._simplify()
         return (False, self.__nodes.num_rows)
 
     @property
     def nodes(self):
         """
-        A NumPy record array representing the nodes.
+        An msprime Node Table.
         """
         return self.__nodes
 
     @property
     def edges(self):
         """
-        A NumPy record array representing the edge sets.
+        An msprime Edge Table.
         """
         return self.__edges
 
     @property
     def sites(self):
         """
-        A NumPy record array representing the sites.
+        An msprime Site Table.
         """
         return self.__sites
 
     @property
     def mutations(self):
         """
-        A NumPy record array representing the mutations.
+        An msprime Mutation Table.
         """
         return self.__mutations
+        
+    @property
+    def anc_samples(self):
+        """
+        A list of ancestral samples taken during the simulation.
+        """
+        return self.__anc_samples
 
     @property
     def gc_interval(self):

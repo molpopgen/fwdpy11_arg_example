@@ -9,7 +9,7 @@
 double
 evolve_singlepop_regions_track_ancestry(
     const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,
-    ancestry_tracker & ancestry, pybind11::function arg_simplifier,
+    ancestry_tracker & ancestry, pybind11::function arg_simplifier, pybind11::function anc_sampler,
     pybind11::array_t<std::uint32_t> popsizes, const double mu_selected,
     const double recrate, const KTfwd::extensions::discrete_mut_model& mmodel,
     const KTfwd::extensions::discrete_rec_model& rmodel,
