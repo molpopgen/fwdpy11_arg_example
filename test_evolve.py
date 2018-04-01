@@ -8,13 +8,15 @@ rho = float(sys.argv[2])
 theta = float(sys.argv[3])
 gc_interval = int(sys.argv[4])
 seed = int(sys.argv[5])
-evolver = ea.evolve_track_wrapper(popsize=N, rho=rho, seed=seed, gc_interval=gc_interval, mu=theta/float(4*N))
 
-print(evolver.times)
 np.random.seed(seed)
+evolver = ea.evolve_track_wrapper(popsize=N, rho=rho, seed=seed, gc_interval=gc_interval, mu=theta/float(4*N))
+print(evolver.times)
 
 # Get a sample of size n = 10 
-msprime.simplify_tables(np.random.choice(2*N, 10, replace = False).tolist()+evolver.anc_samples, nodes = evolver.nodes, edges = evolver.edges, sites = evolver.sites, mutations = evolver.mutations)
+curr_samples = np.random.choice(2*N, 10, replace = False).tolist()
+samples = curr_samples+evolver.anc_samples
+msprime.simplify_tables(samples, nodes = evolver.nodes, edges = evolver.edges, sites = evolver.sites, mutations = evolver.mutations)
 msp_rng = msprime.RandomGenerator(seed)
 sites = msprime.SiteTable()
 mutations = msprime.MutationTable()

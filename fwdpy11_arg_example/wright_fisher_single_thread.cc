@@ -61,7 +61,7 @@ evolve_singlepop_regions_track_ancestry(
     const auto mmodels = KTfwd::extensions::bind_dmm(
         mmodel, pop.mutations, pop.mut_lookup, rng.get(), 0.0, mu_selected,
         &pop.generation);
-    py::array_t<std::int32_t> sampled_gametes = anc_sampler();
+    anc_sampler();
     ++pop.generation;
     auto rules = fwdpy11::wf_rules();
 
@@ -75,7 +75,6 @@ evolve_singlepop_regions_track_ancestry(
         {
             const auto N_next = popsizes.at(generation);
             auto start = std::clock();
-            sampled_gametes = anc_sampler();
             evolve_generation(
                 rng, pop, N_next, mu_selected, mmodels, recmap,
                 std::bind(&fwdpy11::wf_rules::pick1, &rules,
@@ -98,10 +97,7 @@ evolve_singlepop_regions_track_ancestry(
             auto dur = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
             time_simulating += dur;
             //Ask if we need to garbage collect:
-            py::tuple processor_rv = arg_simplifier(false);
-            //If we did GC, then the ancestry_tracker has
-            //some cleaning up to do:
-            ancestry.post_process_gc(processor_rv);
+            arg_simplifier(anc_sampler());
         }
         
     arg_simplifier(true);

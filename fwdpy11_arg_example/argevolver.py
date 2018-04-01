@@ -57,7 +57,8 @@ class ArgEvolver(object):
         self._anc_tracker = AncestryTracker(pop.N, self.__nodes.num_rows,
                                             total_generations)
         self._sampler = anc_sampler
-        self.__anc_samples = [int(pop.N/2)]
+        self.__anc_samples = []
+        self._new_anc_samples = []
             
         self.__time_sorting = 0.0
         self.__time_appending = 0.0
@@ -78,21 +79,33 @@ class ArgEvolver(object):
 
 
     def _anc_sampler(self):
-        sample_node_ids = np.empty(0,dtype='int32')
+        temp = []
+        
         if(self._sampler):
-           new_indiv_samples = self._sampler(pop,self.__params)
-           sorted_new_indiv_samples = np.sort(new_samples)
-           max_num_indiv = self.__pop.N
-           if(self.__pop.generation >= 1): max_num_indiv = self.__params.demography[self.__pop.generation-1]
-           if(sorted_new_indiv_samples[0] < 0 or sorted_new_indiv_samples[-1] >= max_num_indiv):
-    	        raise RuntimeError("ancestral samples out of bounds")
+           new_indiv_samples = self._sampler(self.__pop,self.__params)
            
-           sample_node_ids = np.empty(2*new_indiv_samples.size,dtype='int32')
-           for idx, val in enumerate(sorted_new_indiv_samples):
-                sample_node_ids[2*idx] = 2*val + self._anc_tracker.node_indexes[1]
-                sample_node_ids[2*idx+1] = 2*val + 1 + self._anc_tracker.node_indexes[1]
-           __anc_samples += sample_node_ids.tolist() 
-        return sample_node_ids
+           if(new_indiv_samples.size > 0):
+           
+              if(not np.issubdtype(new_indiv_samples.dtype, np.integer)):
+                  raise RuntimeError("sample dtype must be an integral type")
+                  
+              sorted_new_indiv_samples = np.sort(new_indiv_samples)
+              if(sorted_new_indiv_samples[0] < 0 or sorted_new_indiv_samples[-1] >= self.__pop.N):
+    	          raise RuntimeError("ancestral samples out of bounds")
+           
+              g1 = lambda val: 2*val + self._anc_tracker.node_indexes[0]
+              g2 = lambda val: g1(val) + 1
+              temp = [g(val) for val in sorted_new_indiv_samples for g in (g1,g2)]
+           
+              self._new_anc_samples = temp  
+                    
+              if(self.__pop.generation == 0):
+                  self.__anc_samples = self._new_anc_samples
+                  self._new_anc_samples = []  
+                       
+              return True
+           return False
+        return False
     
     def _simplify(self):
         generation = self.__pop.generation
@@ -138,16 +151,18 @@ class ArgEvolver(object):
         self.__time_sorting += time.process_time() - before
         before = time.process_time()
         samples = list(range(node_indexes[0],node_indexes[1]))
-        all_samples = samples + [i for i in self.__anc_samples if i not in samples]
+        all_samples = samples + self.__anc_samples #since I force GC during an ancestral sample, I can wait to add them and anc_samples won't overlap with samples
         sample_map = msprime.simplify_tables(samples= all_samples,
                                              nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
         
-        self.__anc_samples = [sample_map[val] for val in self.__anc_samples]
+        self.__anc_samples = self._new_anc_samples + self.__anc_samples #doesn't need to be in there before because these ancestral samples will be in the current samples list
+        self._new_anc_samples = []
+        self.__anc_samples = [sample_map[val] for val in self.__anc_samples]    
            
         # Release any locks on the ancestry object
         #self._anc_tracker.release()
+        self._anc_tracker.post_process_gc(self.__nodes.num_rows)
         self.__time_simplifying += time.process_time() - before
-        return (True, self.__nodes.num_rows)
         
     def __call__(self, override):
         """
@@ -160,8 +175,7 @@ class ArgEvolver(object):
         """
         if len(self._anc_tracker.nodes) > 0 and len(self._anc_tracker.edges) > 0:
             if self.__pop.generation > 0 and (self.__pop.generation % self.__gc_interval == 0.0 or override):
-                return self._simplify()
-        return (False, self.__nodes.num_rows)
+                self._simplify()
 
     @property
     def nodes(self):

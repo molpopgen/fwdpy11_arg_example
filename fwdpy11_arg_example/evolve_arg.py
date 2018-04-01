@@ -4,6 +4,15 @@ import fwdpy11.model_params
 import numpy as np
 import msprime
 
+class sampler(object):
+    def __init__(self, sample_size, sample_rate):
+        self.__sample_size = int(sample_size)
+        self.__sample_rate = sample_rate
+
+    def __call__(self, pop, params):
+        if(self.__sample_rate > 0 and pop.generation % self.__sample_rate == 0 and pop.generation != params.demography.size):
+            return np.random.choice(int(pop.N), self.__sample_size, replace=False)
+        return np.array([])
 
 def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, msprime_seed=None):
     """
@@ -47,7 +56,7 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
         initial_TreeSequence = msprime.simulate(
             2 * pop.N, recombination_rate=params.recrate / 2.0, Ne=pop.N, random_seed=msprime_seed)
     
-    return ArgEvolver(rng, gc_interval, pop, params, initial_TreeSequence)
+    return ArgEvolver(rng, gc_interval, pop, params, sampler(4,125), initial_TreeSequence)
 
 
 def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
