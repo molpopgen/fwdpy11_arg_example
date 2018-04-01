@@ -5,7 +5,11 @@ import numpy as np
 import msprime
 
 class sampler(object):
-    def __init__(self, sample_size, sample_rate):
+    def __init__(self, sample_size, sample_rate, seed = None):
+        np.random.seed(seed)
+        if seed is None:
+           import warnings
+           warnings.warn("sampler seed is None. Results will not be reprodicible.")
         self.__sample_size = int(sample_size)
         self.__sample_rate = sample_rate
 
@@ -14,7 +18,7 @@ class sampler(object):
             return np.random.choice(int(pop.N), self.__sample_size, replace=False)
         return np.array([])
 
-def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, msprime_seed=None):
+def evolve_track(rng, pop, params, gc_interval, seed=None, init_with_TreeSequence=False, msprime_seed=None):
     """
     Evolve a population and track its ancestry using msprime.
 
@@ -56,7 +60,7 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
         initial_TreeSequence = msprime.simulate(
             2 * pop.N, recombination_rate=params.recrate / 2.0, Ne=pop.N, random_seed=msprime_seed)
     
-    return ArgEvolver(rng, gc_interval, pop, params, sampler(4,125), initial_TreeSequence)
+    return ArgEvolver(rng, gc_interval, pop, params, sampler(4,125,seed), initial_TreeSequence)
 
 
 def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
@@ -95,4 +99,4 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
 
     params = fwdpy11.model_params.SlocusParams(**pdict)
     rng = fwdpy11.GSLrng(seed)
-    return evolve_track(rng, pop, params, gc_interval)
+    return evolve_track(rng, pop, params, gc_interval, seed)
