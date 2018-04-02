@@ -123,12 +123,13 @@ struct ancestry_tracker
             }
     }
 
+    template <typename mcont_t>
     void
-    add_mutations(const std::vector<std::uint32_t>& mutation_ids, const integer_type node_id)
+    add_mutations(const std::vector<std::uint32_t>& mutation_ids, mcont_t &popmut, const integer_type node_id)
     {
         for (auto&& mut_id : mutation_ids)
             {
-                mutations.emplace_back(mutation{node_id, mut_id});
+                mutations.emplace_back(mutation{node_id, popmut[mut_id].pos, mut_id});
             }
     }
 

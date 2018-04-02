@@ -131,7 +131,7 @@ class ArgEvolver(object):
                                     parent=aea['parent'],
                                     child=aea['child'])
         if(len(ama) > 0):
-           self.__sites.append_columns(pma['pos'][ama['mutation_id']],
+           self.__sites.append_columns(ama['pos'],
                                   ancestral_state=np.zeros(len(ama), np.int8) + ord('0'),
                                   ancestral_state_offset=np.arange(len(ama) + 1, dtype=np.uint32))
            ###encodes full mutation info as metadata in mutation table in order of numpy pop.mutations.array dtype 

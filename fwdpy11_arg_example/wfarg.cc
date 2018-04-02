@@ -21,7 +21,7 @@ PYBIND11_MODULE(wfarg, m)
     //Register nodes and edges as NumPy dtypes:
     PYBIND11_NUMPY_DTYPE(node, id, population, generation);
     PYBIND11_NUMPY_DTYPE(edge, left, right, parent, child);
-    PYBIND11_NUMPY_DTYPE(mutation, node_id, mutation_id);
+    PYBIND11_NUMPY_DTYPE(mutation, node_id, pos, mutation_id);
 
     //Create Python classes of node/edge containers.
     //These types support Python's buffer protocol, creating

@@ -57,7 +57,7 @@ ancestry_rec_mut_details(
     ancestry.add_edges(breaks_pchrom.first, std::get<0>(pid), offspring_index);
     ancestry.add_edges(breaks_pchrom.second, std::get<1>(pid), offspring_index);
     //add mutations
-    ancestry.add_mutations(new_mutations, offspring_index);
+    ancestry.add_mutations(new_mutations, pop.mutations, offspring_index);
     return KTfwd::mutate_recombine(new_mutations, breakpoints, parental_gamete1, parental_gamete2,
                                      pop.gametes, pop.mutations, gamete_recycling_bin,
                                      pop.neutral, pop.selected);
