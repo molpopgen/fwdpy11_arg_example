@@ -24,6 +24,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
+#include <fwdpy11/types.hpp>
 
 #include "node.hpp"
 #include "edge.hpp"
@@ -141,6 +142,12 @@ struct ancestry_tracker
         node_indexes.first = node_indexes.second;
         node_indexes.second = next_index; 
         ++generation;
+    }
+    
+    void
+    pre_process_gc(fwdpy11::singlepop_t& pop)
+    {
+        mutations.erase(std::remove_if(mutations.begin(),mutations.end(),[&pop](const mutation & m) { return (pop.mutations[m.mutation_id].pos != m.pos); }), mutations.end());
     }
 
     void

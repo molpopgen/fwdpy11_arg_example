@@ -108,9 +108,9 @@ class ArgEvolver(object):
         return False
     
     def _simplify(self):
-        generation = self.__pop.generation
-        
         before = time.process_time()
+        generation = self.__pop.generation
+        self._anc_tracker.pre_process_gc(self.__pop)
         # Acquire mutex
         #self._anc_tracker.acquire()
         ana = np.array(self._anc_tracker.nodes, copy=False)
