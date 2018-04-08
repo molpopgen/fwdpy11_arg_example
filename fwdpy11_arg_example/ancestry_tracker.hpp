@@ -63,13 +63,12 @@ struct ancestry_tracker
     std::vector<mutation> mutations;
     /// start-end node IDs for a generation:
     index_pair node_indexes;
-    // current generation, total generation, next node ID to use, current index generation
+    /// current generation, total generation, next node ID to use, current index generation
     integer_type generation, total_generations, next_index;
     ancestry_tracker(const integer_type N, 
                      const integer_type next_index_,
                      const integer_type total_generations_)
-        : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
-          temp{ std::vector<edge>() }, mutations{ std::vector<mutation>() },
+        : nodes{ }, edges{ }, temp{ }, mutations{ },
           generation{ 1 }, total_generations{ total_generations_ },
           next_index{ next_index_ }
     {
