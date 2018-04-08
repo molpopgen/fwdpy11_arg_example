@@ -17,7 +17,7 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
-#include <map>
+#include <set>
 #include <limits>
 #include <cstdint>
 #include <atomic>
@@ -51,8 +51,8 @@
 struct ancestry_tracker
 {
     using integer_type = decltype(edge::parent);
-    using index_vec = std::vector<integer_type>;
     using index_pair = std::pair<integer_type,integer_type>;
+    using mut_index_set = std::unordered_set<std::uint32_t>;
     /// Nodes:
     std::vector<node> nodes;
     /// The ARG:
@@ -63,12 +63,14 @@ struct ancestry_tracker
     std::vector<mutation> mutations;
     /// start-end node IDs for a generation:
     index_pair node_indexes;
+    /// indices of mutations to preserve in the simulation
+    mut_index_set preserve_mutation_index;
     /// current generation, total generation, next node ID to use, current index generation
     integer_type generation, total_generations, next_index;
     ancestry_tracker(const integer_type N, 
                      const integer_type next_index_,
                      const integer_type total_generations_)
-        : nodes{ }, edges{ }, temp{ }, mutations{ },
+        : nodes{ }, edges{ }, temp{ }, mutations{ }, preserve_mutation_index{ }, 
           generation{ 1 }, total_generations{ total_generations_ },
           next_index{ next_index_ }
     {
@@ -131,6 +133,19 @@ struct ancestry_tracker
             {
                 mutations.emplace_back(mutation{node_id, popmut[mut_id].pos, mut_id});
             }
+    }
+    
+    void
+    preserve_mutations(const pybind11::array_t<integer_type> indiv_samples, fwdpy11::singlepop_t& pop)
+    {
+    	for(auto i : indiv_samples){
+    		int index = i.cast<integer_type>();
+    		auto g1 = pop.diploids[index].first;
+    		auto g2 = pop.diploids[index].second;
+    		
+    		preserve_mutation_index.insert(pop.gametes[g1].smutations.begin(),pop.gametes[g1].smutations.end());
+    		preserve_mutation_index.insert(pop.gametes[g2].smutations.begin(),pop.gametes[g2].smutations.end());
+    	}
     }
 
     void

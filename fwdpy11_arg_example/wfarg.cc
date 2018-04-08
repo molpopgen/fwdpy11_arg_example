@@ -59,6 +59,7 @@ PYBIND11_MODULE(wfarg, m)
                        "Data for msprime.MutationTable and msprime.SiteTable.")
         .def_readonly("node_indexes", &ancestry_tracker::node_indexes,
             "Read-only access to current generation's node start-end indexes.")
+        .def("preserve_mutations", &ancestry_tracker::preserve_mutations)
         .def("pre_process_gc", &ancestry_tracker::pre_process_gc)
         .def("post_process_gc", &ancestry_tracker::post_process_gc);
     //    .def("release", [](ancestry_tracker& a) {})
