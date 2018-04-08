@@ -90,7 +90,9 @@ class ArgEvolver(object):
                   raise RuntimeError("sample dtype must be an integral type")
                   
               sorted_new_indiv_samples = np.sort(new_indiv_samples)
-              if(sorted_new_indiv_samples[0] < 0 or sorted_new_indiv_samples[-1] >= self.__pop.N):
+              max = self.__pop.N
+              if(self.__pop.generation == 0): max = self.__nodes.num_rows
+              if(sorted_new_indiv_samples[0] < 0 or sorted_new_indiv_samples[-1] >= max):
     	          raise RuntimeError("ancestral samples out of bounds")
            
               g1 = lambda val: 2*val + self._anc_tracker.node_indexes[0]
