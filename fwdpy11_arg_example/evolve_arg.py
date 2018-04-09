@@ -13,8 +13,8 @@ class sampler(object):
         self.__sample_size = int(sample_size)
         self.__sample_rate = sample_rate
 
-    def __call__(self, pop, params):
-        if(self.__sample_rate > 0 and pop.generation % self.__sample_rate == 0 and pop.generation != params.demography.size):
+    def __call__(self, pop, params, total_generations):
+        if(self.__sample_rate > 0 and pop.generation % self.__sample_rate == 0 and pop.generation < total_generations):
             return np.random.choice(int(pop.N), self.__sample_size, replace=False)
         return np.array([])
 

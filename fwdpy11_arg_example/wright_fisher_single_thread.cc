@@ -48,7 +48,7 @@ evolve_singlepop_regions_track_ancestry(
                 "this population has already been evolved.");
         }
         
-    const auto generations = popsizes.size();
+    const auto generations = sample_simplify.attr("total_generations").cast<unsigned>();
     
     if (!generations)
         throw std::runtime_error("empty list of population sizes");

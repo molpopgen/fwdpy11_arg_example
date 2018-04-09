@@ -33,7 +33,7 @@ class ArgEvolver(object):
         self.__pop = pop
         self.__params = params
         
-        total_generations = len(params.demography) 
+        self.__total_generations = len(params.demography) 
         
         if trees is not None:
             self.__process = False
@@ -42,7 +42,7 @@ class ArgEvolver(object):
             if self.__nodes.num_rows > 0: #add simulation time to input trees
                
                tc = self.__nodes.time
-               dt = float(total_generations)
+               dt = float(self.__total_generations)
                tc += dt
                flags = np.ones(self.__nodes.num_rows, dtype=np.uint32)
                self.__nodes.set_columns(
@@ -54,8 +54,7 @@ class ArgEvolver(object):
             	self.mutations.set_columns(site=self.__mutations.site, node=self.__mutations.node, derived_state=self.__mutations.derived_state, derived_state_offset=self.__mutations.derived_state_offset, parent=self.__mutations.parent, metadata_offset=offset, metadata=encoded)
         
         
-        self._anc_tracker = AncestryTracker(pop.N, self.__nodes.num_rows,
-                                            total_generations)
+        self._anc_tracker = AncestryTracker(pop.N, self.__nodes.num_rows, self.__total_generations)
         self._sampler = anc_sampler
         self.__anc_samples = []
         self._new_anc_samples = []
@@ -82,8 +81,8 @@ class ArgEvolver(object):
         temp = []
         
         if(self._sampler):
-           new_indiv_samples = self._sampler(self.__pop,self.__params)
            
+           new_indiv_samples = self._sampler(self.__pop, self.__params, self.__total_generations)
            if(new_indiv_samples.size > 0):
            
               if(not np.issubdtype(new_indiv_samples.dtype, np.integer)):
@@ -222,6 +221,13 @@ class ArgEvolver(object):
         The GC interval
         """
         return self.__gc_interval
+        
+    @property
+    def total_generations(self):
+        """
+        Total Number of Generations in Simulation
+        """
+        return self.__total_generations
 
     @gc_interval.setter
     def gc_interval(self, value):
