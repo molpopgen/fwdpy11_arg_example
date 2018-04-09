@@ -97,11 +97,9 @@ struct ancestry_tracker
     std::tuple<integer_type, integer_type>
     get_parent_ids(const std::uint32_t p, const int did_swap)
     {
-        integer_type first_parental_index = node_indexes.first;
         return std::make_tuple(
-            first_parental_index + 2 * static_cast<integer_type>(p) + did_swap,
-            first_parental_index + 2 * static_cast<integer_type>(p)
-                + !did_swap);
+            node_indexes.first + 2 * static_cast<integer_type>(p) + did_swap, // node_indexes.first == first_parental_index
+            node_indexes.first + 2 * static_cast<integer_type>(p)+ !did_swap);
     }
 
     std::tuple<integer_type, integer_type>

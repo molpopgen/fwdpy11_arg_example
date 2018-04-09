@@ -2,6 +2,20 @@
 #include "handle_mut_rec.hpp"
 #include <fwdpp/mutate_recombine.hpp>
 
+template <typename mcount_vec>
+KTfwd::fwdpp_internal::recycling_bin_t<typename mcount_vec::size_type>
+make_mut_queue(const mcount_vec &mcounts, ancestry_tracker& ancestry)
+{
+	KTfwd::fwdpp_internal::recycling_bin_t<typename mcount_vec::size_type> rv;
+	const auto msize = mcounts.size();
+	for (typename mcount_vec::size_type i = 0; i < msize; ++i)
+		{
+			if (!mcounts[i] && ancestry.preserve_mutation_index.find(i) == ancestry.preserve_mutation_index.end())
+				rv.push(i);
+		}
+	return rv;
+}
+
 void
 evolve_generation(
     const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,
@@ -25,7 +39,7 @@ evolve_generation(
     auto gamete_recycling_bin
         = KTfwd::fwdpp_internal::make_gamete_queue(pop.gametes);
     auto mutation_recycling_bin
-        = KTfwd::fwdpp_internal::make_mut_queue(pop.mcounts);
+        = make_mut_queue(pop.mcounts, ancestry);
 
     // Efficiency hit.  Unavoidable
     // in use case of a sampler looking
