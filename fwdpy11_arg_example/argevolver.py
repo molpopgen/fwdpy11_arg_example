@@ -225,6 +225,13 @@ class ArgEvolver(object):
         Total Number of Generations in Simulation
         """
         return self.__total_generations
+        
+    @property
+    def pop(self):
+        """
+        ArgEvolver's pop structure
+        """
+        return self.__pop
 
     @gc_interval.setter
     def gc_interval(self, value):
