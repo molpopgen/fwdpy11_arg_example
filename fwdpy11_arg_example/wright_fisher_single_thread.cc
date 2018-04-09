@@ -9,6 +9,17 @@
 
 namespace py = pybind11;
 
+template <typename mcont_t, typename fixation_container_t,
+		  typename fixation_time_container_t,
+		  typename mutation_lookup_table>
+void
+update_mutations(mcont_t &mutations, fixation_container_t &fixations,
+				 fixation_time_container_t &fixation_times,
+				 mutation_lookup_table &lookup, ancestry_tracker & ancestry,
+				 std::vector<KTfwd::uint_t> &mcounts,
+				 const unsigned &generation, const unsigned &twoN,
+				 const bool remove_selected_fixations);
+
 // This function runs the simulation itself.
 // The details of a generation are in the file
 // evolve_generation.hpp. This function gets
@@ -88,9 +99,9 @@ evolve_singlepop_regions_track_ancestry(
                           std::placeholders::_5),
                 ancestry);
             pop.N = N_next;
-            fwdpy11::update_mutations(
+            update_mutations(
                 pop.mutations, pop.fixations, pop.fixation_times,
-                pop.mut_lookup, pop.mcounts, pop.generation, 2 * pop.N, true);
+                pop.mut_lookup, ancestry, pop.mcounts, pop.generation, 2 * pop.N, false);
             fitness.update(pop);
             wbar = rules.w(pop, fitness_callback);
             auto stop = std::clock();
@@ -103,4 +114,66 @@ evolve_singlepop_regions_track_ancestry(
     arg_simplifier(true);
     --pop.generation;
     return time_simulating;
+}
+
+template <typename mcont_t, typename fixation_container_t,
+		  typename fixation_time_container_t,
+		  typename mutation_lookup_table>
+void
+update_mutations(mcont_t &mutations, fixation_container_t &fixations,
+				 fixation_time_container_t &fixation_times,
+				 mutation_lookup_table &lookup, ancestry_tracker & ancestry,
+				 std::vector<KTfwd::uint_t> &mcounts,
+				 const unsigned &generation, const unsigned &twoN,
+				 const bool remove_selected_fixations)
+{
+	using namespace KTfwd;
+	static_assert(
+		typename traits::is_mutation_t<
+			typename mcont_t::value_type>::type(),
+		"mutation_type must be derived from KTfwd::mutation_base");
+	assert(mcounts.size() == mutations.size());
+	for (unsigned i = 0; i < mcounts.size(); ++i)
+		{
+			assert(mcounts[i] <= twoN);
+			if (mcounts[i] == twoN)
+				{
+					auto loc = std::lower_bound(
+						fixations.begin(), fixations.end(),
+						mutations[i].pos,
+						[](const typename fixation_container_t::value_type
+							   &__mut,
+						   const double &__value) noexcept {
+							return __mut.pos < __value;
+						});
+					auto d = std::distance(fixations.begin(), loc);
+					if (mutations[i].neutral
+						|| remove_selected_fixations == true)
+						{
+							fixations.insert(loc, mutations[i]);
+							fixation_times.insert(
+								fixation_times.begin() + d, generation);
+							mcounts[i] = 0; // set count to zero to mark
+											// mutation as "recyclable"
+							lookup.erase(mutations[i].pos); // remove
+															// mutation
+															// position
+															// from lookup
+						}
+					else
+						{
+							if (loc == fixations.end()
+								|| (loc->pos != mutations[i].pos
+									&& loc->g != mutations[i].g))
+								{
+									fixations.insert(loc, mutations[i]);
+									fixation_times.insert(
+										fixation_times.begin() + d,
+										generation);
+								}
+						}
+				}
+			if (!mcounts[i] && ancestry.preserve_mutation_index.find(i) == ancestry.preserve_mutation_index.end())
+				lookup.erase(mutations[i].pos);
+		}
 }
