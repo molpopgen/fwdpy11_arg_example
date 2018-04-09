@@ -129,11 +129,9 @@ class ArgEvolver(object):
             self.__sites.append_columns(ama['pos'],
                                   ancestral_state=np.zeros(len(ama), np.int8) + ord('0'),
                                   ancestral_state_offset=np.arange(len(ama) + 1, dtype=np.uint32))
-            ###encodes full mutation info as metadata in mutation table in order of numpy pop.mutations.array dtype 
-            ###unpickled and transformed into a tuple can be used to construct a fwdpy11.Mutation
-            ###e.g. fwdpy11.Mutation(tuple(pickle.loads(simplifier.mutations[i].metadata))[:-1])
-            ###uses everything but the last element
-            encoded, offset = msprime.pack_bytes(list(map(pickle.dumps,pma[ama['mutation_id']])))
+            ###encodes pop.mutations mutation_id into metadata 
+            ###(mutations relevant to final output of simulation are preserved in pop.mutations)
+            encoded, offset = msprime.pack_bytes(list(map(pickle.dumps,ama['mutation_id'])))
             self.__mutations.append_columns(site=np.arange(len(ama), dtype=np.int32) + self.__mutations.num_rows,
                                       node=ama['node_id'],
                                       derived_state=np.ones(len(ama), np.int8) + ord('0'),
@@ -147,9 +145,9 @@ class ArgEvolver(object):
         before = time.process_time()
         
         if(self.__pop.generation < self.__total_generations or len(self._gc_anc_samples) == 0): 
-           samples = list(range(node_indexes[0],node_indexes[1]))
+            samples = list(range(node_indexes[0],node_indexes[1]))
         else: 
-           samples = self._gc_anc_samples
+            samples = self._gc_anc_samples
         
         all_samples = samples + self.__anc_samples #due to sampler behavior, anc_samples won't overlap with samples
         sample_map = msprime.simplify_tables(samples= all_samples,
