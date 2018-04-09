@@ -57,7 +57,8 @@ class ArgEvolver(object):
         self._anc_tracker = AncestryTracker(pop.N, self.__nodes.num_rows, self.__total_generations)
         self._sampler = anc_sampler
         self.__anc_samples = []
-        self._new_anc_samples = []
+        self._gc_anc_samples = []
+        self._anc_sampler(False) #sample of generation 0
             
         self.__time_sorting = 0.0
         self.__time_appending = 0.0
@@ -70,21 +71,18 @@ class ArgEvolver(object):
         mm = makeMutationRegions(self.__params.nregions, self.__params.sregions)
         rm = makeRecombinationRegions(self.__params.recregions)
         
-        self.__time_simulating = evolve_singlepop_regions_track_ancestry(self.__rng, self.__pop, self._anc_tracker, self, self._anc_sampler,  
+        self.__time_simulating = evolve_singlepop_regions_track_ancestry(self.__rng, self.__pop, self._anc_tracker, self,  
                                                        self.__params.demography,
                                                        self.__params.mutrate_s,
                                                        self.__params.recrate, mm, rm,
                                                        self.__params.gvalue, self.__params.pself)
 
 
-    def _anc_sampler(self):
+    def _anc_sampler(self, simplify_generation):
         temp = []
-        
-        if(self._sampler):
-           
+        if(self._sampler and self.__pop.generation <= self.__total_generations):
            new_indiv_samples = self._sampler(self.__pop, self.__params, self.__total_generations)
            if(new_indiv_samples.size > 0):
-           
               if(not np.issubdtype(new_indiv_samples.dtype, np.integer)):
                   raise RuntimeError("sample dtype must be an integral type")
                   
@@ -99,16 +97,9 @@ class ArgEvolver(object):
               g1 = lambda val: 2*val + self._anc_tracker.node_indexes[0]
               g2 = lambda val: g1(val) + 1
               temp = [g(val) for val in sorted_new_indiv_samples for g in (g1,g2)]
-           
-              self._new_anc_samples = temp  
-                    
-              if(self.__pop.generation == 0):
-                  self.__anc_samples = self._new_anc_samples
-                  self._new_anc_samples = []  
-                       
-              return True
-           return False
-        return False
+                           
+              if(simplify_generation): self._gc_anc_samples = temp
+              else: self.__anc_samples = temp + self.__anc_samples
     
     def _simplify(self):
         before = time.process_time()
@@ -133,16 +124,17 @@ class ArgEvolver(object):
                                     right=aea['right'],
                                     parent=aea['parent'],
                                     child=aea['child'])
-        if(len(ama) > 0):
-           self.__sites.append_columns(ama['pos'],
+        
+        if(ama.size > 0):
+            self.__sites.append_columns(ama['pos'],
                                   ancestral_state=np.zeros(len(ama), np.int8) + ord('0'),
                                   ancestral_state_offset=np.arange(len(ama) + 1, dtype=np.uint32))
-           ###encodes full mutation info as metadata in mutation table in order of numpy pop.mutations.array dtype 
-           ###unpickled and transformed into a tuple can be used to construct a fwdpy11.Mutation
-           ###e.g. fwdpy11.Mutation(tuple(pickle.loads(simplifier.mutations[i].metadata))[:-1])
-           ###uses everything but the last element
-           encoded, offset = msprime.pack_bytes(list(map(pickle.dumps,pma[ama['mutation_id']])))
-           self.__mutations.append_columns(site=np.arange(len(ama), dtype=np.int32) + self.__mutations.num_rows,
+            ###encodes full mutation info as metadata in mutation table in order of numpy pop.mutations.array dtype 
+            ###unpickled and transformed into a tuple can be used to construct a fwdpy11.Mutation
+            ###e.g. fwdpy11.Mutation(tuple(pickle.loads(simplifier.mutations[i].metadata))[:-1])
+            ###uses everything but the last element
+            encoded, offset = msprime.pack_bytes(list(map(pickle.dumps,pma[ama['mutation_id']])))
+            self.__mutations.append_columns(site=np.arange(len(ama), dtype=np.int32) + self.__mutations.num_rows,
                                       node=ama['node_id'],
                                       derived_state=np.ones(len(ama), np.int8) + ord('0'),
                                       derived_state_offset=np.arange(len(ama) + 1, dtype=np.uint32),
@@ -153,13 +145,18 @@ class ArgEvolver(object):
         msprime.sort_tables(nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
         self.__time_sorting += time.process_time() - before
         before = time.process_time()
-        samples = list(range(node_indexes[0],node_indexes[1]))
-        all_samples = samples + self.__anc_samples #since I force GC during an ancestral sample, I can wait to add them and anc_samples won't overlap with samples
+        
+        if(self.__pop.generation < self.__total_generations or len(self._gc_anc_samples) == 0): 
+           samples = list(range(node_indexes[0],node_indexes[1]))
+        else: 
+           samples = self._gc_anc_samples
+        
+        all_samples = samples + self.__anc_samples #due to sampler behavior, anc_samples won't overlap with samples
         sample_map = msprime.simplify_tables(samples= all_samples,
                                              nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
         
-        self.__anc_samples = self._new_anc_samples + self.__anc_samples #doesn't need to be in there before because these ancestral samples will be in the current samples list
-        self._new_anc_samples = []
+        self.__anc_samples = self._gc_anc_samples + self.__anc_samples #doesn't need to be in there before because these ancestral samples will be in the current samples list
+        self._gc_anc_samples = []
         self.__anc_samples = [sample_map[val] for val in self.__anc_samples]    
            
         # Release any locks on the ancestry object
@@ -167,19 +164,19 @@ class ArgEvolver(object):
         self._anc_tracker.post_process_gc(self.__nodes.num_rows)
         self.__time_simplifying += time.process_time() - before
         
-    def __call__(self, override):
+    def __call__(self):
         """
         This is called from C++ during a simulation.
-        :param override: override the gc interval and forces simplification if there are nodes/edges to simplify
-
-        :rtype: tuple
-
-        :returns: A bool and an int
         """
-        if len(self._anc_tracker.nodes) > 0 and len(self._anc_tracker.edges) > 0:
-            if self.__pop.generation > 0 and (self.__pop.generation % self.__gc_interval == 0.0 or override):
-                self._simplify()
-
+        simplification = False
+        
+        if self.__pop.generation > 0 and (self.__pop.generation % self.__gc_interval == 0.0 or self.__pop.generation == self.__total_generations):
+           self._anc_sampler(True)
+           simplification = True
+           self._simplify()
+           
+        if(not(simplification)): self._anc_sampler(False) 
+        
     @property
     def nodes(self):
         """

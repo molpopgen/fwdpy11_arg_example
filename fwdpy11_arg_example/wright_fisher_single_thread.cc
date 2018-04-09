@@ -36,7 +36,7 @@ update_mutations(mcont_t &mutations, fixation_container_t &fixations,
 double
 evolve_singlepop_regions_track_ancestry(
     const fwdpy11::GSLrng_t& rng, fwdpy11::singlepop_t& pop,  ancestry_tracker & ancestry, 
-    py::function arg_simplifier, pybind11::function anc_sampler, py::array_t<std::uint32_t> popsizes, 
+    py::function sample_simplify, py::array_t<std::uint32_t> popsizes, 
     const double mu_selected, const double recrate, 
     const KTfwd::extensions::discrete_mut_model& mmodel,
     const KTfwd::extensions::discrete_rec_model& rmodel,
@@ -72,7 +72,6 @@ evolve_singlepop_regions_track_ancestry(
     const auto mmodels = KTfwd::extensions::bind_dmm(
         mmodel, pop.mutations, pop.mut_lookup, rng.get(), 0.0, mu_selected,
         &pop.generation);
-    anc_sampler();
     ++pop.generation;
     auto rules = fwdpy11::wf_rules();
 
@@ -107,11 +106,10 @@ evolve_singlepop_regions_track_ancestry(
             auto stop = std::clock();
             auto dur = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
             time_simulating += dur;
-            //Ask if we need to garbage collect:
-            arg_simplifier(anc_sampler());
+            //Ask if we need to sample and/or garbage collect:
+            sample_simplify();
         }
         
-    arg_simplifier(true);
     --pop.generation;
     return time_simulating;
 }
