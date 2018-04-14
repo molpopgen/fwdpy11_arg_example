@@ -112,7 +112,6 @@ class ArgEvolver(object):
         ana = np.array(self._anc_tracker.nodes, copy=False)
         aea = np.array(self._anc_tracker.edges, copy=False)
         ama = np.array(self._anc_tracker.mutations, copy=False)
-        pma = np.array(self.__pop.mutations.array()) #must be copy
         node_indexes = self._anc_tracker.node_indexes
         flags = np.ones(len(ana), dtype=np.uint32)       
         self.__time_prepping += time.process_time() - before
