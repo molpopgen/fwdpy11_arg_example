@@ -100,7 +100,7 @@ evolve_singlepop_regions_track_ancestry(
             pop.N = N_next;
             update_mutations(
                 pop.mutations, pop.fixations, pop.fixation_times,
-                pop.mut_lookup, ancestry, pop.mcounts, pop.generation, 2 * pop.N, false);
+                pop.mut_lookup, ancestry, pop.mcounts, pop.generation, 2 * pop.N, true);
             fitness.update(pop);
             wbar = rules.w(pop, fitness_callback);
             auto stop = std::clock();
@@ -146,17 +146,17 @@ update_mutations(mcont_t &mutations, fixation_container_t &fixations,
 						});
 					auto d = std::distance(fixations.begin(), loc);
 					if (mutations[i].neutral
-						|| remove_selected_fixations == true)
+						|| remove_selected_fixations == true) 
 						{
 							fixations.insert(loc, mutations[i]);
 							fixation_times.insert(
 								fixation_times.begin() + d, generation);
 							mcounts[i] = 0; // set count to zero to mark
 											// mutation as "recyclable"
-							lookup.erase(mutations[i].pos); // remove
-															// mutation
-															// position
-															// from lookup
+							// if neutral, remove mutation position from lookup
+							if (mutations[i].neutral) 
+								lookup.erase(mutations[i].pos); 
+								
 						}
 					else
 						{
@@ -167,9 +167,10 @@ update_mutations(mcont_t &mutations, fixation_container_t &fixations,
 									fixations.insert(loc, mutations[i]);
 									fixation_times.insert(
 										fixation_times.begin() + d,
-										generation);
+										generation);	
 								}
 						}
+					ancestry.preserve_fixation(i);
 				}
 			if (!mcounts[i] && ancestry.preserve_mutation_index.find(i) == ancestry.preserve_mutation_index.end())
 				lookup.erase(mutations[i].pos);

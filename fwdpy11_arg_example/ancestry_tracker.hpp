@@ -134,7 +134,7 @@ struct ancestry_tracker
     }
     
     void
-    preserve_mutations(const pybind11::array_t<integer_type> indiv_samples, fwdpy11::singlepop_t& pop)
+    preserve_mutations_sample(const pybind11::array_t<integer_type> indiv_samples, fwdpy11::singlepop_t& pop)
     {
     	for(auto i : indiv_samples){
     		int index = i.cast<integer_type>();
@@ -144,6 +144,12 @@ struct ancestry_tracker
     		preserve_mutation_index.insert(pop.gametes[g1].smutations.begin(),pop.gametes[g1].smutations.end());
     		preserve_mutation_index.insert(pop.gametes[g2].smutations.begin(),pop.gametes[g2].smutations.end());
     	}
+    }
+    
+    void
+    preserve_fixation(const std::uint32_t & mutation_id)
+    {
+    	preserve_mutation_index.insert(mutation_id);
     }
 
     void

@@ -92,7 +92,7 @@ class ArgEvolver(object):
               
               #note: cannot prevent the recycling of positions from previous simulations
               if(self.__pop.generation > 0):
-                  self._anc_tracker.preserve_mutations(sorted_new_indiv_samples,self.__pop)  
+                  self._anc_tracker.preserve_mutations_sample(sorted_new_indiv_samples,self.__pop)  
                   
               g1 = lambda val: 2*val + self._anc_tracker.node_indexes[0]
               g2 = lambda val: g1(val) + 1
