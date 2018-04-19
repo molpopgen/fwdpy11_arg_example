@@ -134,7 +134,7 @@ struct ancestry_tracker
     }
     
     void
-    preserve_mutations_sample(const pybind11::array_t<integer_type> indiv_samples, fwdpy11::singlepop_t& pop)
+    preserve_mutations_sample(const pybind11::array_t<integer_type> & indiv_samples, fwdpy11::singlepop_t& pop)
     {
     	for(auto i : indiv_samples){
     		int index = i.cast<integer_type>();
