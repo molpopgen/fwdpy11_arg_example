@@ -11,8 +11,6 @@ class ArgEvolver(object):
     forward simulation and msprime
     """
 
-    def pack_index(self, in_int):
-        return struct.pack('i',in_int) 
     def unpack_index(self, in_byte):
         return struct.unpack('i',in_byte)[0] 
         
@@ -51,8 +49,9 @@ class ArgEvolver(object):
                    flags=flags, population=self.__nodes.population, time=tc)
                    
             if(self.__mutations.num_rows > 0 and len(self.__mutations.metadata) == 0): #add default mutation metadata if none present
-            	meta_list = [-1 for mut in self.__mutations]
-            	encoded, offset = msprime.pack_bytes(list(map(pack_index, meta_list)))
+            	meta_list = np.full(len(self.__mutations),-1,dtype=np.int32)
+            	encoded = meta_list.view(np.int8)
+            	offset = np.arange(0,4*(len(meta_list)+1),4,dtype=np.uint32)
             	self.mutations.set_columns(site=self.__mutations.site, node=self.__mutations.node, derived_state=self.__mutations.derived_state, derived_state_offset=self.__mutations.derived_state_offset, parent=self.__mutations.parent, metadata_offset=offset, metadata=encoded)
         
         
@@ -132,7 +131,9 @@ class ArgEvolver(object):
                                   ancestral_state_offset=np.arange(len(ama) + 1, dtype=np.uint32))
             ###encodes pop.mutations mutation_id into metadata 
             ###(mutations relevant to final output of simulation are preserved in pop.mutations)
-            encoded, offset = msprime.pack_bytes(list(map(self.pack_index,ama['mutation_id'])))
+            temp = np.copy(ama['mutation_id'])
+            encoded = temp.view(np.int8)
+            offset = np.arange(0,4*(len(temp)+1),4,dtype=np.uint32)
             self.__mutations.append_columns(site=np.arange(len(ama), dtype=np.int32) + self.__mutations.num_rows,
                                       node=ama['node_id'],
                                       derived_state=np.ones(len(ama), np.int8) + ord('0'),
