@@ -66,17 +66,11 @@ class ArgEvolver(object):
         self.__time_simplifying = 0.0
         self.__time_prepping = 0.0
         self.__time_simulating = 0.0
-        
-        from .wfarg import evolve_singlepop_regions_track_ancestry
-        from fwdpy11.internal import makeMutationRegions, makeRecombinationRegions
-        mm = makeMutationRegions(self.__params.nregions, self.__params.sregions)
-        rm = makeRecombinationRegions(self.__params.recregions)
-        
-        self.__time_simulating = evolve_singlepop_regions_track_ancestry(self.__rng, self.__pop, self._anc_tracker, self,  
+               
+        self.__time_simulating = evolve_track_ancestry(self.__rng, self.__pop, self._anc_tracker, self,  
                                                        self.__params.demography,
                                                        self.__params.mutrate_s,
-                                                       self.__params.recrate, mm, rm,
-                                                       self.__params.gvalue, self.__params.pself)
+                                                       self.__params.recrate)
 
 
     def _anc_sampler(self, simplify_generation):

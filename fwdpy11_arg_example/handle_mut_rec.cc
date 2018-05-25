@@ -1,6 +1,5 @@
 #include "handle_mut_rec.hpp"
 #include <fwdpp/debug.hpp>
-#include <fwdpp/recombination.hpp>
 #include <fwdpp/mutate_recombine.hpp>
 
 namespace py = pybind11;
@@ -35,13 +34,13 @@ split_breakpoints(const std::vector<double>& breakpoints, const double start,
     return std::make_pair(std::move(r1), std::move(r2));
 }
 
-KTfwd::uint_t
+fwdpp::uint_t
 ancestry_rec_mut_details(
-    fwdpy11::singlepop_t& pop, ancestry_tracker& ancestry,
+    fwdpy11::SlocusPop& pop, ancestry_tracker& ancestry,
     std::queue<std::size_t>& gamete_recycling_bin,
-    const KTfwd::uint_t parental_gamete1, const KTfwd::uint_t parental_gamete2,
+    const fwdpp::uint_t parental_gamete1, const fwdpp::uint_t parental_gamete2,
     std::vector<double>& breakpoints,
-    const std::vector<KTfwd::uint_t>& new_mutations,
+    const std::vector<fwdpp::uint_t>& new_mutations,
     const std::tuple<ancestry_tracker::integer_type,
                      ancestry_tracker::integer_type>& pid,
     const ancestry_tracker::integer_type offspring_index)
@@ -58,7 +57,7 @@ ancestry_rec_mut_details(
     ancestry.add_edges(breaks_pchrom.second, std::get<1>(pid), offspring_index);
     //add mutations
     ancestry.add_mutations(new_mutations, pop.mutations, offspring_index);
-    return KTfwd::mutate_recombine(new_mutations, breakpoints, parental_gamete1, parental_gamete2,
+    return fwdpp::mutate_recombine(new_mutations, breakpoints, parental_gamete1, parental_gamete2,
                                      pop.gametes, pop.mutations, gamete_recycling_bin,
                                      pop.neutral, pop.selected);
 }

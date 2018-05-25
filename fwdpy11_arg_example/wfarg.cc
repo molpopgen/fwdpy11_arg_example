@@ -89,10 +89,6 @@ PYBIND11_MODULE(wfarg, m)
     //This is NOT part of a user-facing Python API.
     //Rather, we need a wrapper to integrate it with
     //the rest of the fwdpy11 world.
-    m.def("evolve_singlepop_regions_track_ancestry",
-          &evolve_singlepop_regions_track_ancestry);
-    /*m.def("evolve_singlepop_regions_track_ancestry_async",
-          &evolve_singlepop_regions_track_ancestry_async);
-    m.def("evolve_singlepop_regions_track_ancestry_python_queue",
-          &evolve_singlepop_regions_track_ancestry_python_queue);*/
+    m.def("evolve_track_ancestry",
+          &evolve_track_ancestry);
 }

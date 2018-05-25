@@ -24,7 +24,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
-#include <fwdpy11/types.hpp>
+#include <fwdpy11/types/SlocusPop.hpp>
 
 #include "node.hpp"
 #include "edge.hpp"
@@ -103,12 +103,12 @@ struct ancestry_tracker
     }
 
     std::tuple<integer_type, integer_type>
-    get_next_indexes()
+    get_next_indexes(const std::int32_t population)
     {
         auto rv = std::make_tuple(next_index, next_index + 1);
         double rev_gen = total_generations - generation;
-        nodes.emplace_back(node{std::get<0>(rv), 0, rev_gen});
-        nodes.emplace_back(node{std::get<1>(rv), 0, rev_gen});
+        nodes.emplace_back(node{std::get<0>(rv), population, rev_gen});
+        nodes.emplace_back(node{std::get<1>(rv), population, rev_gen});
         next_index += 2;
         return rv;
     }
@@ -134,7 +134,7 @@ struct ancestry_tracker
     }
     
     void
-    preserve_mutations_sample(const pybind11::array_t<integer_type> & indiv_samples, fwdpy11::singlepop_t& pop)
+    preserve_mutations_sample(const pybind11::array_t<integer_type> & indiv_samples, fwdpy11::SlocusPop& pop)
     {
     	for(auto i : indiv_samples){
     		int index = i.cast<integer_type>();
@@ -163,7 +163,7 @@ struct ancestry_tracker
     }
     
     void
-    pre_process_gc(fwdpy11::singlepop_t& pop)
+    pre_process_gc(fwdpy11::SlocusPop& pop)
     {
         mutations.erase(std::remove_if(mutations.begin(),mutations.end(),[&pop](const mutation & m) { return (pop.mutations[m.mutation_id].pos != m.pos); }), mutations.end());
     }
