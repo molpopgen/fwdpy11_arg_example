@@ -66,7 +66,8 @@ class ArgEvolver(object):
         self.__time_simplifying = 0.0
         self.__time_prepping = 0.0
         self.__time_simulating = 0.0
-               
+        from .wfarg import evolve_track_ancestry
+      
         self.__time_simulating = evolve_track_ancestry(self.__rng, self.__pop, self._anc_tracker, self,  
                                                        self.__params.demography,
                                                        self.__params.mutrate_s,
