@@ -3,7 +3,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/chrono.h>
 #include <fwdpy11/sim_functions.hpp>
-//#include <fwdpp/extensions/regions.hpp>
+#include <fwdpy11/policies/mutation.hpp>
 #include <fwdpp/poisson_xover.hpp>
 #include <fwdpp/sugar/popgenmut.hpp>
 #include <fwdpp/recbinder.hpp>
@@ -71,8 +71,8 @@ evolve_track_ancestry(
         = fwdpp::recbinder(fwdpp::poisson_xover(recrate, 0., 1.), rng.get());
     const auto mmodel = [&pop, &rng](
         std::queue<std::size_t>& recbin, fwdpy11::SlocusPop::mcont_t& mutations) {
-        return fwdpp::infsites_popgenmut(
-            recbin, mutations, rng.get(), pop.mut_lookup, pop.generation, 1.0,
+        return fwdpy11::infsites_Mutation(
+            recbin, mutations, pop.mut_lookup, pop.generation,
             [&rng]() { return gsl_rng_uniform(rng.get()); }, []() { return -0.025; },
             []() { return 1.0; });
     };    
