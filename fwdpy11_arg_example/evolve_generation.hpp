@@ -116,6 +116,9 @@ evolve_generation(
             assert(pop.gametes[dip.first].n);
             assert(pop.gametes[dip.second].n);
             dip.label = label++;
+            dip.deme = 0;
+            dip.sex = 0;
+            dip.parental_data = std::make_tuple(p1,p2);
         }
     ancestry.finish_generation();
     fwdpp::fwdpp_internal::process_gametes(pop.gametes, pop.mutations,
