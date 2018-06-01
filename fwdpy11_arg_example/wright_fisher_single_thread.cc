@@ -19,8 +19,7 @@ update_mutations(mcont_t &mutations, fixation_container_t &fixations,
 				 fixation_time_container_t &fixation_times,
 				 mutation_lookup_table &lookup, ancestry_tracker & ancestry,
 				 std::vector<fwdpp::uint_t> &mcounts,
-				 const unsigned &generation, const unsigned &twoN,
-				 const bool remove_selected_fixations);
+				 const unsigned &generation, const unsigned &twoN);
 
 // This function runs the simulation itself.
 // The details of a generation are in the file
@@ -88,8 +87,8 @@ evolve_track_ancestry(
                 rng, pop, N_next, mu_selected, mmodel, recmap, ancestry);
             pop.N = N_next;
             update_mutations(
-                pop.mutations, pop.fixations, pop.fixation_times,
-                pop.mut_lookup, ancestry, pop.mcounts, pop.generation, 2 * pop.N, true);
+                pop.mutations, pop.fixations, pop.fixation_times, pop.mut_lookup, 
+                ancestry, pop.mcounts, pop.generation, 2 * pop.N);
             auto stop = std::clock();
             auto dur = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
             time_simulating += dur;
@@ -109,8 +108,7 @@ update_mutations(mcont_t &mutations, fixation_container_t &fixations,
 				 fixation_time_container_t &fixation_times,
 				 mutation_lookup_table &lookup, ancestry_tracker & ancestry,
 				 std::vector<fwdpp::uint_t> &mcounts,
-				 const unsigned &generation, const unsigned &twoN,
-				 const bool remove_selected_fixations)
+				 const unsigned &generation, const unsigned &twoN)
 {
 	using namespace fwdpp;
 	static_assert(
@@ -123,43 +121,37 @@ update_mutations(mcont_t &mutations, fixation_container_t &fixations,
 			assert(mcounts[i] <= twoN);
 			if (mcounts[i] == twoN)
 				{
-					auto loc = std::lower_bound(
-						fixations.begin(), fixations.end(),
-						mutations[i].pos,
-						[](const typename fixation_container_t::value_type
-							   &__mut,
-						   const double &__value) noexcept {
-							return __mut.pos < __value;
-						});
-					auto d = std::distance(fixations.begin(), loc);
-					if (mutations[i].neutral
-						|| remove_selected_fixations == true) 
+					fixations.push_back(mutations[i]);
+					fixation_times.push_back(generation);
+					mcounts[i] = 0; // set count to zero to mark mutation
+									// as "recyclable"
+					auto itr = lookup.equal_range(mutations[i].pos);
+					while (itr.first != itr.second)
 						{
-							fixations.insert(loc, mutations[i]);
-							fixation_times.insert(
-								fixation_times.begin() + d, generation);
-							mcounts[i] = 0; // set count to zero to mark
-											// mutation as "recyclable"
-							// if neutral, remove mutation position from lookup
-							if (mutations[i].neutral) 
-								lookup.erase(mutations[i].pos); 
-								
-						}
-					else
-						{
-							if (loc == fixations.end()
-								|| (loc->pos != mutations[i].pos
-									&& loc->g != mutations[i].g))
+							if (itr.first->second == i)
 								{
-									fixations.insert(loc, mutations[i]);
-									fixation_times.insert(
-										fixation_times.begin() + d,
-										generation);	
+									lookup.erase(itr.first);
+									break;
 								}
+							++itr.first;
 						}
 					ancestry.preserve_fixation(i);
 				}
-			if (!mcounts[i] && ancestry.preserve_mutation_index.find(i) == ancestry.preserve_mutation_index.end())
-				lookup.erase(mutations[i].pos);
+			else if (!mcounts[i] && ancestry.preserve_mutation_index.find(i) == ancestry.preserve_mutation_index.end())
+				{
+					auto itr = lookup.equal_range(mutations[i].pos);
+					if (itr.first != lookup.end())
+						{
+							while (itr.first != itr.second)
+								{
+									if (itr.first->second == i)
+										{
+											lookup.erase(itr.first);
+											break;
+										}
+									++itr.first;
+								}
+						}
+				}
 		}
 }
