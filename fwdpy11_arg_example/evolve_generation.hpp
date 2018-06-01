@@ -31,15 +31,14 @@ make_mut_queue(const mcount_vec &mcounts, ancestry_tracker& ancestry)
 	return rv;
 }
 
-template <typename fitness_function>
 inline fwdpp::fwdpp_internal::gsl_ran_discrete_t_ptr
-w(fwdpy11::SlocusPop& pop, const fitness_function& ff)
+w(fwdpy11::SlocusPop& pop)
 {
     auto N_curr = pop.diploids.size();
     std::vector<double> fitnesses(N_curr);
     for (size_t i = 0; i < N_curr; ++i)
         {
-            fitnesses[i] = ff(pop.diploids[i], pop.gametes, pop.mutations);
+            fitnesses[i] = pop.diploids[i].w; 
             pop.gametes[pop.diploids[i].first].n = 0;
             pop.gametes[pop.diploids[i].second].n = 0;
         }
@@ -70,7 +69,8 @@ evolve_generation(
     for (auto&& g : pop.gametes)
         g.n = 0;
 
-	auto lookup = w(pop, fwdpp::additive_diploid());
+	auto lookup = w(pop);
+	auto ff = fwdpp::multiplicative_diploid();
     decltype(pop.diploids) offspring(N_next);
 
     // Generate the offspring
@@ -119,6 +119,7 @@ evolve_generation(
             dip.deme = 0;
             dip.sex = 0;
             dip.parental_data = std::make_tuple(p1,p2);
+            dip.w = ff(dip, pop.gametes, pop.mutations);
         }
     ancestry.finish_generation();
     fwdpp::fwdpp_internal::process_gametes(pop.gametes, pop.mutations,
