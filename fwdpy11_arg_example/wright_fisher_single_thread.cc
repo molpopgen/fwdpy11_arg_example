@@ -125,16 +125,6 @@ update_mutations(mcont_t &mutations, fixation_container_t &fixations,
 					fixation_times.push_back(generation);
 					mcounts[i] = 0; // set count to zero to mark mutation
 									// as "recyclable"
-					auto itr = lookup.equal_range(mutations[i].pos);
-					while (itr.first != itr.second)
-						{
-							if (itr.first->second == i)
-								{
-									lookup.erase(itr.first);
-									break;
-								}
-							++itr.first;
-						}
 					ancestry.preserve_fixation(i);
 				}
 			else if (!mcounts[i] && ancestry.preserve_mutation_index.find(i) == ancestry.preserve_mutation_index.end())

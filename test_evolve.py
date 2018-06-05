@@ -36,6 +36,17 @@ for mut in evolver.mutations:
        count += 1
 print(count)
 
+count = 0
+for mut in evolver.mutations:
+    id = evolver.unpack_index(mut.metadata)
+    pos = evolver.pop.mutations[id].pos
+    #print(id,pos,mut,evolver.sites.position[mut.site])
+    #print(evolver.pop.mut_lookup[evolver.sites.position[mut.site]])
+    if(evolver.pop.mut_lookup[pos] != id):
+        #print(evolver.sites.position[mut.site], mut.site, mut.node, evolver.pop.mutations[evolver.unpack_index(mut.metadata)])
+        count += 1
+print(count)	
+
 msp_rng = msprime.RandomGenerator(seed+2)
 neutral_sites = msprime.SiteTable()
 neutral_mutations = msprime.MutationTable()
