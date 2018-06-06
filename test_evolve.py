@@ -23,29 +23,16 @@ print(evolver.sites.num_rows)
 count = 0
 for idx, pos in enumerate(evolver.sites.position):
     if(idx > 0 and pos == evolver.sites.position[idx-1]):
-      #print(idx-1,pos,evolver.mutations[idx-1].node,evolver.unpack_index(evolver.mutations[idx-1].metadata), evolver.pop.mutations[evolver.unpack_index(evolver.mutations[idx-1].metadata)])
-      #print(idx,pos,evolver.mutations[idx].node,evolver.unpack_index(evolver.mutations[idx].metadata), evolver.pop.mutations[evolver.unpack_index(evolver.mutations[idx].metadata)])
-      count += 1
-
-print(count)
-
-count = 0
-for mut in evolver.mutations:
-    if(evolver.sites.position[mut.site] != evolver.pop.mutations[evolver.unpack_index(mut.metadata)].pos):
-       #print(evolver.sites.position[mut.site], mut.site, mut.node, evolver.pop.mutations[evolver.unpack_index(mut.metadata)])
-       count += 1
-print(count)
-
-count = 0
-for mut in evolver.mutations:
-    id = evolver.unpack_index(mut.metadata)
-    pos = evolver.pop.mutations[id].pos
-    #print(id,pos,mut,evolver.sites.position[mut.site])
-    #print(evolver.pop.mut_lookup[evolver.sites.position[mut.site]])
-    if(evolver.pop.mut_lookup[pos] != id):
-        #print(evolver.sites.position[mut.site], mut.site, mut.node, evolver.pop.mutations[evolver.unpack_index(mut.metadata)])
         count += 1
-print(count)	
+
+print(count)
+
+count = 0
+for mut in evolver.mutations:
+    pos = evolver.sites.position[mut.site]
+    if(pos != evolver.pop.mutations[evolver.pop.mut_lookup[pos]].pos):
+        count += 1
+print(count)
 
 msp_rng = msprime.RandomGenerator(seed+2)
 neutral_sites = msprime.SiteTable()

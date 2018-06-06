@@ -10,9 +10,6 @@ class ArgEvolver(object):
     Python class to interface between
     forward simulation and msprime
     """
-
-    def unpack_index(self, in_byte):
-        return struct.unpack('i',in_byte)[0] 
         
     def __init__(self, rng, gc_interval, pop, params, anc_sampler=None, trees=None):
         """
@@ -48,7 +45,7 @@ class ArgEvolver(object):
                self.__nodes.set_columns(
                    flags=flags, population=self.__nodes.population, time=tc)
                    
-            if(self.__mutations.num_rows > 0 and len(self.__mutations.metadata) == 0): #add default mutation metadata if none present
+            if(self.__mutations.num_rows > 0 and len(self.__mutations.metadata) == 0): #add default mutation metadata if none present (differentiates these mutations from those generated in simulation)
             	meta_list = np.full(len(self.__mutations),-1,dtype=np.int32)
             	encoded = meta_list.view(np.int8)
             	offset = np.arange(0,4*(len(meta_list)+1),4,dtype=np.uint32)
@@ -124,16 +121,10 @@ class ArgEvolver(object):
             self.__sites.append_columns(ama['pos'],
                                   ancestral_state=np.zeros(len(ama), np.int8) + ord('0'),
                                   ancestral_state_offset=np.arange(len(ama) + 1, dtype=np.uint32))
-            ###encodes pop.mutations mutation_id into metadata 
-            ###(mutations relevant to final output of simulation are preserved in pop.mutations)
-            temp = np.copy(ama['mutation_id'])
-            encoded = temp.view(np.int8)
-            offset = np.arange(0,4*(len(temp)+1),4,dtype=np.uint32)
             self.__mutations.append_columns(site=np.arange(len(ama), dtype=np.int32) + self.__mutations.num_rows,
                                       node=ama['node_id'],
                                       derived_state=np.ones(len(ama), np.int8) + ord('0'),
-                                      derived_state_offset=np.arange(len(ama) + 1, dtype=np.uint32),
-                                      metadata_offset=offset, metadata=encoded)        
+                                      derived_state_offset=np.arange(len(ama) + 1, dtype=np.uint32))        
         self.__time_appending += time.process_time() - before
         
         before = time.process_time()                              
