@@ -123,8 +123,6 @@ update_mutations(mcont_t &mutations, fixation_container_t &fixations,
 				{
 					fixations.push_back(mutations[i]);
 					fixation_times.push_back(generation);
-					mcounts[i] = 0; // set count to zero to mark mutation
-									// as "recyclable"
 					ancestry.preserve_fixation(i);
 				}
 			else if (!mcounts[i] && ancestry.preserve_mutation_index.find(i) == ancestry.preserve_mutation_index.end())
