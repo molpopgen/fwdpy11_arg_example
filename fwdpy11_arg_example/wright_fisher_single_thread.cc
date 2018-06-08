@@ -74,7 +74,10 @@ evolve_track_ancestry(
             recbin, mutations, pop.mut_lookup, pop.generation,
             [&rng]() { return gsl_rng_uniform(rng.get()); }, []() { return -0.025; },
             []() { return 1.0; });
-    };    
+    }; 
+    
+    const auto ff = fwdpp::multiplicative_diploid(1.0);   
+    
     ++pop.generation;
 
     double time_simulating = 0.0;
@@ -84,7 +87,7 @@ evolve_track_ancestry(
             const auto N_next = popsizes.at(generation);
             auto start = std::clock();
             evolve_generation(
-                rng, pop, N_next, mu_selected, mmodel, recmap, ancestry);
+                rng, pop, N_next, 0, 0, 0, mu_selected, ff, mmodel, recmap, ancestry);
             pop.N = N_next;
             update_mutations(
                 pop.mutations, pop.fixations, pop.fixation_times, pop.mut_lookup, 
