@@ -74,7 +74,7 @@ ext_modules = [
         Extension(
             'fwdpy11_arg_example.wfarg',
             ['fwdpy11_arg_example/wfarg.cc',
-                'fwdpy11_arg_example/wright_fisher_single_thread.cc',
+                'fwdpy11_arg_example/evolve.cc',
                 'fwdpy11_arg_example/handle_mut_rec.cc'
                 ],
             depends = glob.glob('fwdpy11_arg_example/*.hpp'),

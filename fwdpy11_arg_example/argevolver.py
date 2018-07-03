@@ -11,7 +11,7 @@ class ArgEvolver(object):
     forward simulation and msprime
     """
         
-    def __init__(self, rng, gc_interval, pop, params, anc_sampler=None, trees=None):
+    def __init__(self, rng, parsed_args, pop, params, anc_sampler=None, trees=None):
         """
         :param rng: Random Number Generator
         :param gc_interval: Garbage collection interval
@@ -21,7 +21,7 @@ class ArgEvolver(object):
         
         runs forward simulation defined by above params
         """
-        self.__gc_interval = gc_interval
+        self.__gc_interval = parsed_args.gc
         self.__nodes = msprime.NodeTable()
         self.__edges = msprime.EdgeTable()
         self.__sites = msprime.SiteTable()
@@ -29,7 +29,8 @@ class ArgEvolver(object):
         self.__rng = rng
         self.__pop = pop
         self.__params = params
-        
+        self.__pop2array = np.array(parsed_args.pop2,dtype=np.uint32)
+        self.__migarray = np.array(parsed_args.migration,dtype=np.float32)
         self.__total_generations = len(params.demography) 
         
         if trees is not None:
@@ -65,8 +66,11 @@ class ArgEvolver(object):
         self.__time_simulating = 0.0
         from .wfarg import evolve_track_ancestry
       
-        self.__time_simulating = evolve_track_ancestry(self.__rng, self.__pop, self._anc_tracker, self,  
+        self.__time_simulating = evolve_track_ancestry(self.__rng, self.__pop, 
+                                                       self._anc_tracker, self,  
                                                        self.__params.demography,
+                                                       self.__pop2array,
+                                                       self.__migarray,
                                                        self.__params.mutrate_s,
                                                        self.__params.recrate)
 
@@ -74,7 +78,11 @@ class ArgEvolver(object):
     def _anc_sampler(self, simplify_generation):
         temp = []
         if(self._sampler and self.__pop.generation <= self.__total_generations):
-           new_indiv_samples = self._sampler(self.__pop, self.__params, self.__total_generations)
+           pop_size1 = self.__pop.N
+           pop_size2 = 0
+           if(self.__pop.generation >= self.__pop2array[1] and self.__pop.generation < self.__pop2array[2]):
+              pop_size2 = self.__pop2array[0]
+           new_indiv_samples = self._sampler(self.__pop.generation, pop_size1, pop_size2, self.__params, self.__total_generations)
            if(new_indiv_samples.size > 0):
               if(not np.issubdtype(new_indiv_samples.dtype, np.integer)):
                   raise RuntimeError("sample dtype must be an integral type")

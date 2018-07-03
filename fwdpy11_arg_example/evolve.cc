@@ -38,6 +38,7 @@ double
 evolve_track_ancestry(
     const fwdpy11::GSLrng_t& rng, fwdpy11::SlocusPop & pop,  ancestry_tracker & ancestry, 
     py::function sample_simplify, py::array_t<std::uint32_t> popsizes, 
+    py::array_t<std::uint32_t> pop2array, py::array_t<float> migarray,
     const double mu_selected, const double recrate)
 {
     if (pop.generation > 0)
@@ -50,6 +51,10 @@ evolve_track_ancestry(
     
     if (!generations)
         throw std::runtime_error("empty list of population sizes");
+    if(!pop2array)
+    	throw std::runtime_error("empty population 2 array");
+    if(!migarray)
+    	throw std::runtime_error("empty migration array");
     if (mu_selected < 0.)
         {
             throw std::runtime_error("negative selected mutation rate: "
@@ -79,15 +84,28 @@ evolve_track_ancestry(
     const auto ff = fwdpp::multiplicative_diploid(1.0);   
     
     ++pop.generation;
-
+	const auto pop2_start = pop2array.at(1);
+	const auto pop2_end = pop2array.at(2);
+	const auto mig_start = migarray.at(2);
+	const auto mig_end = migarray.at(3);
     double time_simulating = 0.0;
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
+        	auto pop2size = 0U;
+        	auto mig12 = 0.f;
+        	auto mig21 = 0.f;
+        	if(pop.generation >= pop2_start && pop.generation < pop2_end){
+        		pop2size = pop2array.at(0);
+        	}
+        	if(pop.generation >= mig_start && pop.generation < mig_end){
+        		mig12 = migarray.at(0);
+        		mig21 = migarray.at(1);
+        	}
             const auto N_next = popsizes.at(generation);
             auto start = std::clock();
             evolve_generation(
-                rng, pop, N_next, 0, 0, 0, mu_selected, ff, mmodel, recmap, ancestry);
+                rng, pop, N_next, pop2size, mig12, mig21, mu_selected, ff, mmodel, recmap, ancestry);
             pop.N = N_next;
             update_mutations(
                 pop.mutations, pop.fixations, pop.fixation_times, pop.mut_lookup, 

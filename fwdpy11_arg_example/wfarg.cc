@@ -4,7 +4,7 @@
 #include <pybind11/numpy.h>
 #include "ancestry_tracker.hpp"
 #include "evolve_generation.hpp"
-#include "evolve_functions.hpp"
+#include "evolve.hpp"
 
 namespace py = pybind11;
 
