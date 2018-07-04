@@ -84,6 +84,7 @@ evolve_track_ancestry(
     const auto ff = fwdpp::multiplicative_diploid(1.0);   
     
     ++pop.generation;
+    auto prev_pop2size = 0U;
 	const auto pop2_start = pop2array.at(1);
 	const auto pop2_end = pop2array.at(2);
 	const auto mig_start = migarray.at(2);
@@ -102,11 +103,17 @@ evolve_track_ancestry(
         		mig12 = migarray.at(0);
         		mig21 = migarray.at(1);
         	}
+        	if(pop.generation == pop2_start){
+        		mig12 = pop2size/static_cast<float>(pop.N);
+        		mig21 = 0;
+        	}
             const auto N_next = popsizes.at(generation);
+            //if(N_next == 14474){ py::print(pop.generation,N_next,prev_pop2size,pop2size,mig12,mig21); }
             auto start = std::clock();
             evolve_generation(
-                rng, pop, N_next, pop2size, mig12, mig21, mu_selected, ff, mmodel, recmap, ancestry);
+                rng, pop, N_next, prev_pop2size, pop2size, mig12, mig21, mu_selected, ff, mmodel, recmap, ancestry);
             pop.N = N_next;
+            prev_pop2size = pop2size;
             update_mutations(
                 pop.mutations, pop.fixations, pop.fixation_times, pop.mut_lookup, 
                 ancestry, pop.mcounts, pop.generation, 2 * pop.N);

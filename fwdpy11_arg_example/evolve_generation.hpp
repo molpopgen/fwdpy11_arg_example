@@ -142,8 +142,8 @@ template <typename fitness_fxn, typename mutation_fxn, typename breakpoint_fxn>
 void
 evolve_generation(
     const fwdpy11::GSLrng_t& rng, fwdpy11::SlocusPop& pop,
-    const fwdpp::uint_t N1, const fwdpp::uint_t N2, const double m12, 
-    const double m21, const double mu, const fitness_fxn& wmodel, 
+    const fwdpp::uint_t N1, const fwdpp::uint_t prev_N2, const fwdpp::uint_t N2, 
+    const double m12, const double m21, const double mu, const fitness_fxn& wmodel, 
     const mutation_fxn& mmodel, const breakpoint_fxn& rmodel, 
     ancestry_tracker& ancestry)
 {
@@ -154,9 +154,9 @@ evolve_generation(
         = make_mut_queue(pop.mcounts, ancestry);
 
 	auto lookups 
-		= migrate_and_calc_fitness(rng.get(), pop, N1, N2, m12, m21);
+		= migrate_and_calc_fitness(rng.get(), pop, pop.N, prev_N2, m12, m21);
     decltype(pop.diploids) offspring(N1+N2);
-
+    
     // Generate the offspring
     std::size_t label = 0;
     for (auto& dip : offspring)

@@ -80,10 +80,14 @@ if __name__ == "__main__":
 	print(evolver.times)
 
 	# Get a sample of size n_sam1_curr, n_sam2_curr
+	seed = args.seed
 	np.random.seed(seed+1)
 	final_pop1_size = 2*demography[len(demography)-1]
+	final_pop2_size = 0
+	if(args.pop2[2] > evolver.pop.generation):
+	   final_pop2_size =  args.pop2[0]
 	curr_samples = np.random.choice(final_pop1_size, args.n_sam1_curr, replace = False).tolist()
-	curr_samples += (np.random.choice(args.pop2[0], args.n_sam2_curr, replace = False)+final_pop1_size).tolist()
+	curr_samples += (np.random.choice(final_pop2_size, args.n_sam2_curr, replace = False)+final_pop1_size).tolist()
 	samples = curr_samples+evolver.anc_samples
 	msprime.simplify_tables(samples, nodes = evolver.nodes, edges = evolver.edges, sites = evolver.sites, mutations = evolver.mutations)
 	print(evolver.sites.num_rows)
