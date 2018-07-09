@@ -25,7 +25,7 @@ def get_nlist():
     n.extend([14474]*(5920-2040)) #E2
     n.extend([1861]*(2040-920)) #E3
     n.extend(dem.exponential_size_change(1032,9300,920-205)) #E4
-    n.extend(dem.exponential_size_change(9300,51200,205)) #E5
+    n.extend(dem.exponential_size_change(9300,512000,205)) #E5
     return np.array(n,dtype=np.uint32)
 
 def parse_args():
