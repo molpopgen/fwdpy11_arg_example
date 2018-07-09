@@ -68,6 +68,10 @@ migrate_and_calc_fitness(const gsl_rng *r, fwdpy11::SlocusPop& pop,
     unsigned nmig12 = gsl_ran_poisson(r, static_cast<double>(N1) * m12);
     unsigned nmig21 = gsl_ran_poisson(r, static_cast<double>(N2) * m21);
 
+	if(N2 == 0 && m12 > 0){ nmig12 = std::max(nmig12,2U); } //population 2 is being established, must have at least 2 individuals migrating to it
+	nmig12 = std::min(nmig12,N1); //can't have more individuals migrating than present in each population
+	nmig21 = std::min(nmig21,N2);
+	
     // Fill a vector of N1 zeros and N2 ones:
     std::vector<fwdpp::uint_t> deme_labels(N1, 0);
     deme_labels.resize(N1 + N2, 1);
