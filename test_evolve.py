@@ -5,8 +5,9 @@ import sys
 from pathlib import Path
 import argparse
 import fwdpy11.demography as dem
+import pylibseq
 
-def get_nlist():
+def get_nlist_tenn():
     """
     Generates a numpy array of the canges in N over time
     There are 5 epochs, with t=0 being the present.
@@ -36,7 +37,7 @@ def parse_args():
                         default=[100,74020/10,75030/10], help="size of population 2 in individual diploids, generation population 2 arises, generation population 2 goes extinct") #factor of 10 removed
     parser.add_argument('--migration', '-m,', nargs=4,
                         default=[0.1,0.1,74030/10,75020/10], help="migration rate 1 to 2, migration rate 2 to 1, migration start, migration end") #factor of 10 removed
-    parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate scaled to population size 1 at generation 0")
+    parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate scaled to population size 1 at generation 0") #for testing against neutral models, set to 0 and let msprime set mutations on the resulting tree
     parser.add_argument('--rho', '-R', type=float, default=10.0, help="4Nr: effective recombination rate scaled to population size 1 at generation 0")
     parser.add_argument('--n_sam1_curr', '-ns1', type=int, default=10,
                         help="Sample size (in diploids) of population 1 in current day.")
@@ -75,7 +76,7 @@ if __name__ == "__main__":
 	if((args.migration[0] > 0 or args.migration[1] > 0) and args.pop2[0] == 0):
 		raise RuntimeError("pop2 does not exist, cannot have migration")
 		
-	demography = get_nlist()
+	demography = get_nlist_tenn()
 	evolver = ea.evolve_track_wrapper(args, demography)
 	print(evolver.times)
 
@@ -90,7 +91,8 @@ if __name__ == "__main__":
 	curr_samples += (np.random.choice(final_pop2_size, args.n_sam2_curr, replace = False)+final_pop1_size).tolist()
 	samples = curr_samples+evolver.anc_samples
 	msprime.simplify_tables(samples, nodes = evolver.nodes, edges = evolver.edges, sites = evolver.sites, mutations = evolver.mutations)
-	print(evolver.sites.num_rows)
+	num_sites = evolver.sites.num_rows
+	print(num_sites)
 
 	count = 0
 	for idx, pos in enumerate(evolver.sites.position):
@@ -111,7 +113,8 @@ if __name__ == "__main__":
 	neutral_mutations = msprime.MutationTable()
 	mutgen = msprime.MutationGenerator(msp_rng, args.theta/float(4*demography[0])) # rho = theta
 	mutgen.generate(evolver.nodes, evolver.edges, neutral_sites, neutral_mutations)
-
+	num_sites2 = neutral_sites.num_rows
+	print(num_sites2)
 
 	trees_selected = msprime.load_tables(nodes=evolver.nodes, edges=evolver.edges, sites=evolver.sites, mutations=evolver.mutations)
 	trees_neutral = msprime.load_tables(nodes=evolver.nodes, edges=evolver.edges, sites=neutral_sites, mutations=neutral_mutations)

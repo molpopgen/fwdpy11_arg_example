@@ -108,7 +108,6 @@ evolve_track_ancestry(
         		mig21 = 0;
         	}
             const auto N_next = popsizes.at(generation);
-            //if(N_next == 14474){ py::print(pop.generation,N_next,prev_pop2size,pop2size,mig12,mig21); }
             auto start = std::clock();
             evolve_generation(
                 rng, pop, N_next, prev_pop2size, pop2size, mig12, mig21, mu_selected, ff, mmodel, recmap, ancestry);
