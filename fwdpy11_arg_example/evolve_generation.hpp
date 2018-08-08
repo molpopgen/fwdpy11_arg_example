@@ -206,8 +206,8 @@ evolve_generation(
             offspring_metadata[label].label = label;
             offspring_metadata[label].deme = deme;
             offspring_metadata[label].sex = 0;
-            offspring_metadata.parents[0] = p1;
-            offspring_metadata.parents[1] = p2;
+            offspring_metadata[label].parents[0] = p1;
+            offspring_metadata[label].parents[1] = p2;
             offspring_metadata[label].w = wmodel(dip, pop.gametes, pop.mutations);
             label++;
         }
