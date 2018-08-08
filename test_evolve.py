@@ -79,6 +79,8 @@ if __name__ == "__main__":
 	demography = get_nlist_tenn()
 	evolver = ea.evolve_track_wrapper(args, demography)
 	print(evolver.times)
+	num_sites = evolver.sites.num_rows
+	print(num_sites)
 
 	# Get a sample of size n_sam1_curr, n_sam2_curr
 	seed = args.seed
@@ -103,7 +105,7 @@ if __name__ == "__main__":
 	print(count)
 
 	count = 0
-	mut_lookup = evolver.pop.mut_lookup()
+	mut_lookup = evolver.pop.mut_lookup
 	for mut in evolver.mutations:
 		pos = evolver.sites.position[mut.site]
 		if(pos != evolver.pop.mutations[mut_lookup[pos]].pos):
