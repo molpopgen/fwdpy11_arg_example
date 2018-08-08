@@ -88,7 +88,8 @@ if __name__ == "__main__":
 	if(args.pop2[2] > evolver.pop.generation):
 	   final_pop2_size =  args.pop2[0]
 	curr_samples = np.random.choice(final_pop1_size, args.n_sam1_curr, replace = False).tolist()
-	curr_samples += (np.random.choice(final_pop2_size, args.n_sam2_curr, replace = False)+final_pop1_size).tolist()
+	if(final_pop2_size > 0 and args.n_sam2_curr > 0):
+		curr_samples += (np.random.choice(final_pop2_size, args.n_sam2_curr, replace = False)+final_pop1_size).tolist()
 	samples = curr_samples+evolver.anc_samples
 	msprime.simplify_tables(samples, nodes = evolver.nodes, edges = evolver.edges, sites = evolver.sites, mutations = evolver.mutations)
 	num_sites = evolver.sites.num_rows
