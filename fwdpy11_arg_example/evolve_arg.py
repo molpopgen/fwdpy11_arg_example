@@ -1,6 +1,6 @@
 import fwdpy11
-import fwdpy11.fitness
 import fwdpy11.model_params
+import fwdpy11.genetic_values
 import numpy as np
 import msprime
 
@@ -105,15 +105,24 @@ def evolve_track_wrapper(parsed_args, demography):
     recrate = float(parsed_args.rho) / (4.0 * float(initial_popsize))
     mu = float(parsed_args.theta) / (4.0 * float(initial_popsize))
     seed = parsed_args.seed
+    
+    pdict = {'nregions': [],
+                'sregions': [dfe],
+                'recregions': [fwdpy11.Region(0,1,1)],
+                'rates': (0.0, mu, recrate),
+                'demography': demography,
+                'gvalue': fwdpy11.genetic_values.SlocusMult(2.0)
+            }
+    params = fwdpy11.model_params.ModelParams(**pdict)
 	
-    pdict = {'rates': (0.0, mu, recrate),
-             'nregions': [],
-             'sregions': [dfe],
-             'recregions': [fwdpy11.Region(0, 1, 1)],
-             'gvalue': fwdpy11.fitness.SlocusMult(2.0),
-             'demography': demography
-             }
-
-    params = fwdpy11.model_params.SlocusParams(**pdict)
+#     pdict = {'rates': (0.0, mu, recrate),
+#              'nregions': [],
+#              'sregions': [dfe],
+#              'recregions': [fwdpy11.Region(0, 1, 1)],
+#              'gvalue': fwdpy11.fitness.SlocusMult(2.0),
+#              'demography': demography
+#              }
+# 
+#     params = fwdpy11.model_params.SlocusParams(**pdict)
     rng = fwdpy11.GSLrng(seed)
     return evolve_track(rng, parsed_args, pop, params, seed, True, seed+3)

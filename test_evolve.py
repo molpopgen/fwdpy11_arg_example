@@ -102,9 +102,10 @@ if __name__ == "__main__":
 	print(count)
 
 	count = 0
+	mut_lookup = evolver.pop.mut_lookup()
 	for mut in evolver.mutations:
 		pos = evolver.sites.position[mut.site]
-		if(pos != evolver.pop.mutations[evolver.pop.mut_lookup[pos]].pos):
+		if(pos != evolver.pop.mutations[mut_lookup[pos]].pos):
 			count += 1
 	print(count)
 
