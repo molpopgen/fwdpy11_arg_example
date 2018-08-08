@@ -114,12 +114,12 @@ migrate_and_calc_fitness(const gsl_rng *r, fwdpy11::SlocusPop& pop,
             if (deme_labels[i] == 0)
                 {
                     rv.parents1.push_back(i);
-                    w1.push_back(pop.diploids[i].w);
+                    w1.push_back(pop.diploid_metadata[i].w);
                 }
             else
                 {
                     rv.parents2.push_back(i);
-                    w2.push_back(pop.diploids[i].w);
+                    w2.push_back(pop.diploid_metadata[i].w);
                 }
         }
 
@@ -160,6 +160,7 @@ evolve_generation(
 	auto lookups 
 		= migrate_and_calc_fitness(rng.get(), pop, pop.N, prev_N2, m12, m21);
     decltype(pop.diploids) offspring(N1+N2);
+    decltype(pop.diploid_metadata) offspring_metadata(N1+N2);
     
     // Generate the offspring
     std::size_t label = 0;
@@ -202,11 +203,12 @@ evolve_generation(
             pop.gametes[dip.first].n++;
             pop.gametes[dip.second].n++;
 
-            dip.label = label++;
-            dip.deme = deme;
-            dip.sex = 0;
-            dip.parental_data = std::make_tuple(p1,p2);
-            dip.w = wmodel(dip, pop.gametes, pop.mutations);
+            offspring_metadata[label].label = label;
+            offspring_metadata[label].deme = deme;
+            offspring_metadata[label].sex = 0;
+            offspring_metadata[label].parental_data = std::make_tuple(p1,p2);
+            offspring_metadata[label].w = wmodel(dip, pop.gametes, pop.mutations);
+            label++;
         }
     ancestry.finish_generation();
     fwdpp::fwdpp_internal::process_gametes(pop.gametes, pop.mutations,
@@ -215,6 +217,7 @@ evolve_generation(
                                           pop.mcounts, 2 * (N1+N2), std::true_type());
     // This is constant-time
     pop.diploids.swap(offspring);
+    pop.diploid_metadata.swap(offspring_metadata);
 }
 
 
