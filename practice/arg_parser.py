@@ -29,8 +29,8 @@ def parse_args():
     dstring = "Prototype implementation of ARG tracking and regular garbage collection."
     parser = argparse.ArgumentParser(description=dstring,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--pop1', '-1', nargs=2,
-                        default=["tenn",7310, 1], help="demography type (flat/tenn), initial pop, burn-in scale") 
+    parser.add_argument('--pop1', '-1', nargs=3,
+                        default=["tenn","7310", "1"], help="demography type (flat/tenn), initial pop, burn-in scale") 
     parser.add_argument('--pop2', '-2', nargs=3,
                         default=[100,110,500], help="size of population 2 in individual diploids, generation after burn-in population 2 arises, generation after burn-in population 2 goes extinct") 
     parser.add_argument('--migration', '-m,', nargs=4,
@@ -56,10 +56,11 @@ def parse_args():
 if __name__ == "__main__":
 	parser = parse_args()
 	args = parser.parse_args(sys.argv[1:])
+	print(args)
 	
-	if(args.pop1[1] <= 0):
+	if(int(args.pop1[1]) <= 0):
 		raise RuntimeError("--pop1 initial population size must be > 0")
-	if(args.pop1[2] <= 0):
+	if(float(args.pop1[2]) <= 0):
 		raise RuntimeError("--pop1 burn-in scale must be > 0")
 	if(args.pop2[0] < 0):
 		raise RuntimeError("--pop2 pop_size must be >= 0")
@@ -81,8 +82,8 @@ if __name__ == "__main__":
 		raise RuntimeError("pop2 does not exist, cannot have migration")
 	
 	print(args)
-	init_pop_size = args.pop1[1]
-	burn_in = int(args.pop1[2]*init_pop_size)
+	init_pop_size = int(args.pop1[1])
+	burn_in = int(float(args.pop1[2])*init_pop_size)
 	args.pop2 = [args.pop2[0],(args.pop2[1]+burn_in),(args.pop2[2]+burn_in)]
 	demography = [init_pop_size]*(burn_in)
 	if(args.pop1[0] == "tenn"):	
