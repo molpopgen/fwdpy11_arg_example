@@ -39,7 +39,8 @@ def parse_args():
                         default=[100,110,500], help="size of population 2 in individual diploids, generation after burn-in population 2 arises, generation after burn-in population 2 goes extinct") 
     parser.add_argument('--migration', '-m,', nargs=4,
                         default=[0.1,0.1,111,400], help="migration rate 1 to 2, migration rate 2 to 1, migration start, migration end") 
-    parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate scaled to population size 1 at generation 0") #for testing against neutral models, set to 0 and let msprime set mutations on the resulting tree
+    parser.add_argument('--ntheta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate of neutral mutations scaled to population size 1 at generation 0") 
+    parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate of selected mutations scaled to population size 1 at generation 0") #for testing against neutral models, set to 0 and let msprime set mutations on the resulting tree
     parser.add_argument('--rho', '-R', type=float, default=10.0, help="4Nr: effective recombination rate scaled to population size 1 at generation 0")
     parser.add_argument('--n_sam1_curr', '-ns1', type=int, default=10,
                         help="Sample size (in diploids) of population 1 in current day.")
@@ -127,7 +128,7 @@ if __name__ == "__main__":
 	msp_rng = msprime.RandomGenerator(seed+2)
 	neutral_sites = msprime.SiteTable()
 	neutral_mutations = msprime.MutationTable()
-	mutgen = msprime.MutationGenerator(msp_rng, args.theta/float(4*demography[0])) # rho = theta
+	mutgen = msprime.MutationGenerator(msp_rng, args.ntheta/float(4*demography[0])) 
 	mutgen.generate(evolver.nodes, evolver.edges, neutral_sites, neutral_mutations)
 	num_sites2 = neutral_sites.num_rows
 	print(num_sites2)
