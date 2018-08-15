@@ -60,6 +60,11 @@ if __name__ == "__main__":
 	parser = parse_args()
 	args = parser.parse_args(sys.argv[1:])
 	
+	init_pop_size = int(args.pop1[1])
+	burn_in = int(float(args.pop1[2])*init_pop_size)
+	args.pop2 = [int(args.pop2[0]),(int(args.pop2[1])+burn_in),(int(args.pop2[2])+burn_in)]
+	args.migration = [float(args.migration[0]),float(args.migration[1]),(int(args.pop2[1])+burn_in),(int(args.pop2[2])+burn_in)]
+	
 	if(int(args.pop1[1]) <= 0):
 		raise RuntimeError("--pop1 initial population size must be > 0")
 	if(float(args.pop1[2]) <= 0):
@@ -78,15 +83,11 @@ if __name__ == "__main__":
 		raise RuntimeError("--migration rates must be between [0,1]")
 	if(args.migration[2] > args.migration[3]):
 		raise RuntimeError("--migration start must be <= end")
-	if(args.migration[2] <= args.pop2[1] or args.migration[3] > args.pop2[2] or args.migration[2] > args.pop2[2] or args.migration[3] <= args.pop2[1]):
+	if(args.pop2[0] > 0 and (args.migration[2] <= args.pop2[1] or args.migration[3] > args.pop2[2] or args.migration[2] > args.pop2[2] or args.migration[3] <= args.pop2[1])):
 		raise RuntimeError("--migration start/end must be between pop2 (start,end]")
 	if((args.migration[0] > 0 or args.migration[1] > 0) and args.pop2[0] == 0):
 		raise RuntimeError("pop2 does not exist, cannot have migration")
-	
-	init_pop_size = int(args.pop1[1])
-	burn_in = int(float(args.pop1[2])*init_pop_size)
-	args.pop2 = [args.pop2[0],(args.pop2[1]+burn_in),(args.pop2[2]+burn_in)]
-	demography = [init_pop_size]*(burn_in)
+		
 	if(args.pop1[0] == "tenn"):	
 	 	demography = get_nlist_tenn(init_pop_size,burn_in)
 	 	
