@@ -33,7 +33,7 @@ def parse_args():
     dstring = "Prototype implementation of ARG tracking and regular garbage collection."
     parser = argparse.ArgumentParser(description=dstring,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--pop1', '-1', nargs=3
+    parser.add_argument('--pop1', '-1', nargs=3,
                         default=["tenn","7310", "1"], help="demography type (flat/tenn), initial pop, burn-in scale") 
     parser.add_argument('--pop2', '-2', nargs=3,
                         default=[100,110,500], help="size of population 2 in individual diploids, generation after burn-in population 2 arises, generation after burn-in population 2 goes extinct") 
