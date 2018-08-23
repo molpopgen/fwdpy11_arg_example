@@ -98,7 +98,7 @@ def run_sim(tuple):
 
 	sdata = make_SimData(trees_neutral)
 	
-	f = Fst(sd,[5,5])
+	f = Fst(sdata,[5,5])
 	print(f.hsm())
 	return f.hsm()
 	
