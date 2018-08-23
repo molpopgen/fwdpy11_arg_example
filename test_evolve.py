@@ -86,7 +86,7 @@ def run_sim(tuple):
 	samples = curr_samples+evolver.anc_samples
 	msprime.simplify_tables(samples, nodes = evolver.nodes, edges = evolver.edges, sites = evolver.sites, mutations = evolver.mutations)
 
-	msp_rng = msprime.RandomGenerator(seeds[3])
+	msp_rng = msprime.RandomGenerator(int(seeds[3]))
 	neutral_sites = msprime.SiteTable()
 	neutral_mutations = msprime.MutationTable()
 	mutgen = msprime.MutationGenerator(msp_rng, args.ntheta/float(4*demography[0])) 
@@ -137,7 +137,7 @@ if __name__ == "__main__":
 	
 	# Get 4 seeds for each sim w/0 replacement from [0,1e6)
 	np.random.seed(args.seed)
-	seeds = np.random.choice(np.arange(1000000,dtype=np.int32), 4, replace=False)
+	seeds = np.random.choice(1000000, 4, replace=False)
 	
 	tuple = (args,seeds)	
 	run_sim(tuple)
