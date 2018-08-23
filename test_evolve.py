@@ -35,10 +35,9 @@ def parse_args():
     dstring = "Prototype implementation of ARG tracking and regular garbage collection."
     parser = argparse.ArgumentParser(description=dstring,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--pop1', '-1', nargs=3,
-                        default=["tenn","7310", "1"], help="demography type (flat/tenn), initial pop, burn-in scale") 
-    parser.add_argument('--pop2', '-2', nargs=3,
-                        default=[100,110,500], help="size of population 2 in individual diploids, generation after burn-in population 2 arises, generation after burn-in population 2 goes extinct") 
+    parser.add_argument('--pop1', '-1', nargs=3, default=["tenn","7310", "1"], help="demography type (flat/tenn), initial pop, burn-in scale") 
+    parser.add_argument('--pop2', '-2', nargs=3, default=[100,110,500], help="size of population 2 in individual diploids, generation after burn-in population 2 arises, generation after burn-in population 2 goes extinct")
+    parser.add_argument('--burn_in', '-B', type=int, default=73100.0, help="number of burn-in generations") 
     parser.add_argument('--migration', '-m,', nargs=4,
                         default=[0.1,0.1,111,400], help="migration rate 1 to 2, migration rate 2 to 1, migration start, migration end") 
     parser.add_argument('--ntheta', '-nT', type=float, default=10.0, help="4Nu: effective mutation rate of neutral mutations scaled to population size 1 at generation 0") 
@@ -65,6 +64,8 @@ def parse_args():
 def run_sim(tuple):
 	args = tuple[0]
 	seeds = tuple[1]
+	init_pop_size = int(args.pop1[1])
+	burn_in = args.burn_in
 	demography = [init_pop]*(burn_in+5920)
 	if(args.pop1[0] == "tenn"):	
 	 	demography = get_nlist_tenn(init_pop_size,burn_in)
@@ -107,7 +108,7 @@ if __name__ == "__main__":
 	args = parser.parse_args(sys.argv[1:])
 	
 	init_pop_size = int(args.pop1[1])
-	burn_in = int(float(args.pop1[2])*init_pop_size)
+	burn_in = args.burn_in
 	args.pop2 = [int(args.pop2[0]),(int(args.pop2[1])+burn_in),(int(args.pop2[2])+burn_in)]
 	args.migration = [float(args.migration[0]),float(args.migration[1]),(int(args.migration[2])+burn_in),(int(args.migration[3])+burn_in)]
 	
