@@ -5,7 +5,9 @@ import sys
 from pathlib import Path
 import argparse
 import fwdpy11.demography as dem
-import pylibseq
+from libsequence.msprime import make_SimData
+from libsequence.fst import Fst
+import concurrent.futures
 
 def get_nlist_tenn(init_pop, burn_in):
     """
@@ -51,10 +53,54 @@ def parse_args():
     parser.add_argument('--anc_sam2', '-as2', nargs='*', default = argparse.SUPPRESS,
                         help="List of ancient samples (generation, number of samples - in diploids) of population 2.")
     parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
-    parser.add_argument('--gc', '-G', type=int,
-                        default=100, help="GC interval")
-
+    parser.add_argument('--replicates', '-r', type=int, default=100, help="number of simulation replicates")
+    parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")
+	group = parser.add_mutually_exclusive_group(required=False)
+    group.add_argument('--init_tree', '-iT', dest='init_tree', action='store_true')
+    group.add_argument('--no_init_tree', '-niT', dest='init_tree', action='store_false')
+    parser.set_defaults(init_tree=True)
+    
     return parser
+    
+def run_sim(tuple):
+	args = tuple[0]
+	seeds = tuple[1]
+	demography = [init_pop]*(burn_in+5920)
+	if(args.pop1[0] == "tenn"):	
+	 	demography = get_nlist_tenn(init_pop_size,burn_in)
+	 	
+	evolver = ea.evolve_track_wrapper(args, demography, seeds)
+	print(evolver.times)
+	num_sites = evolver.sites.num_rows
+	print(num_sites)
+
+	# Get a sample of size n_sam1_curr, n_sam2_curr
+	final_pop1_size = 2*demography[len(demography)-1]
+	final_pop2_size = 0
+	if(args.pop2[2] > evolver.pop.generation):
+	   final_pop2_size =  args.pop2[0]
+	curr_samples = np.random.choice(final_pop1_size, args.n_sam1_curr, replace = False).tolist() #np seed reset in evolve_arg.py 
+	if(final_pop2_size > 0 and args.n_sam2_curr > 0):
+		curr_samples += (np.random.choice(final_pop2_size, args.n_sam2_curr, replace = False)+final_pop1_size).tolist()
+	samples = curr_samples+evolver.anc_samples
+	msprime.simplify_tables(samples, nodes = evolver.nodes, edges = evolver.edges, sites = evolver.sites, mutations = evolver.mutations)
+
+	msp_rng = msprime.RandomGenerator(seed[3])
+	neutral_sites = msprime.SiteTable()
+	neutral_mutations = msprime.MutationTable()
+	mutgen = msprime.MutationGenerator(msp_rng, args.ntheta/float(4*demography[0])) 
+	mutgen.generate(evolver.nodes, evolver.edges, neutral_sites, neutral_mutations)
+	num_sites2 = neutral_sites.num_rows
+	print(num_sites2)
+
+	trees_neutral = msprime.load_tables(nodes=evolver.nodes, edges=evolver.edges, sites=neutral_sites, mutations=neutral_mutations)
+
+	sdata = make_SimData(trees_neutral)
+	
+	f = Fst(sd,[5,5])
+	
+	return f.hsm()
+	
 
 if __name__ == "__main__":
 	parser = parse_args()
@@ -63,7 +109,7 @@ if __name__ == "__main__":
 	init_pop_size = int(args.pop1[1])
 	burn_in = int(float(args.pop1[2])*init_pop_size)
 	args.pop2 = [int(args.pop2[0]),(int(args.pop2[1])+burn_in),(int(args.pop2[2])+burn_in)]
-	args.migration = [float(args.migration[0]),float(args.migration[1]),(int(args.pop2[1])+burn_in),(int(args.pop2[2])+burn_in)]
+	args.migration = [float(args.migration[0]),float(args.migration[1]),(int(args.migration[2])+burn_in),(int(args.migration[3])+burn_in)]
 	
 	if(int(args.pop1[1]) <= 0):
 		raise RuntimeError("--pop1 initial population size must be > 0")
@@ -87,64 +133,11 @@ if __name__ == "__main__":
 		raise RuntimeError("--migration start/end must be between pop2 (start,end]")
 	if((args.migration[0] > 0 or args.migration[1] > 0) and args.pop2[0] == 0):
 		raise RuntimeError("pop2 does not exist, cannot have migration")
-		
-	if(args.pop1[0] == "tenn"):	
-	 	demography = get_nlist_tenn(init_pop_size,burn_in)
-	 	
-	evolver = ea.evolve_track_wrapper(args, demography)
-	print(evolver.times)
-	num_sites = evolver.sites.num_rows
-	print(num_sites)
-
-	# Get a sample of size n_sam1_curr, n_sam2_curr
-	seed = args.seed
-	np.random.seed(seed+1)
-	final_pop1_size = 2*demography[len(demography)-1]
-	final_pop2_size = 0
-	if(args.pop2[2] > evolver.pop.generation):
-	   final_pop2_size =  args.pop2[0]
-	curr_samples = np.random.choice(final_pop1_size, args.n_sam1_curr, replace = False).tolist()
-	if(final_pop2_size > 0 and args.n_sam2_curr > 0):
-		curr_samples += (np.random.choice(final_pop2_size, args.n_sam2_curr, replace = False)+final_pop1_size).tolist()
-	samples = curr_samples+evolver.anc_samples
-	msprime.simplify_tables(samples, nodes = evolver.nodes, edges = evolver.edges, sites = evolver.sites, mutations = evolver.mutations)
-	num_sites = evolver.sites.num_rows
-	print(num_sites)
-
-	count = 0
-	for idx, pos in enumerate(evolver.sites.position):
-		if(idx > 0 and pos == evolver.sites.position[idx-1]):
-			count += 1
-
-	print(count)
-
-	count = 0
-	mut_lookup = evolver.pop.mut_lookup
-	for mut in evolver.mutations:
-		pos = evolver.sites.position[mut.site]
-		if(pos != evolver.pop.mutations[mut_lookup[pos]].pos):
-			count += 1
-	print(count)
-
-	msp_rng = msprime.RandomGenerator(seed+2)
-	neutral_sites = msprime.SiteTable()
-	neutral_mutations = msprime.MutationTable()
-	mutgen = msprime.MutationGenerator(msp_rng, args.ntheta/float(4*demography[0])) 
-	mutgen.generate(evolver.nodes, evolver.edges, neutral_sites, neutral_mutations)
-	num_sites2 = neutral_sites.num_rows
-	print(num_sites2)
-
-	trees_selected = msprime.load_tables(nodes=evolver.nodes, edges=evolver.edges, sites=evolver.sites, mutations=evolver.mutations)
-	trees_neutral = msprime.load_tables(nodes=evolver.nodes, edges=evolver.edges, sites=neutral_sites, mutations=neutral_mutations)
-
-	home = str(Path.home())
-	for counter, tree in enumerate(trees_selected.trees()):
-	   if(tree.num_mutations > 0):
-	      tree.draw(path=home+"/tree_selected.svg", width=1500, height=1000, format="svg")
-	      break
-
-	for counter2, tree in enumerate(trees_neutral.trees()):
-		if(counter2 == counter):
-		   tree.draw(path=home+"/tree_neutral.svg", width=1500, height=1000, format="svg")
-		   break
+	
+	# Get 4 seeds for each sim w/0 replacement from [0,1e6)
+    	np.random.seed(args.seed)
+    	seeds = np.random.choice(range(1000000), 4, replace=False)
+	
+	tuple = (args,seeds)	
+	run_sim(tuple)
 

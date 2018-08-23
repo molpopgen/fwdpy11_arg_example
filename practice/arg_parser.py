@@ -47,9 +47,12 @@ def parse_args():
     parser.add_argument('--anc_sam2', '-as2', nargs='*', default = argparse.SUPPRESS,
                         help="List of ancient samples (generation, number of samples - in diploids) of population 2.")
     parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
-    parser.add_argument('--gc', '-G', type=int,
-                        default=100, help="GC interval")
-
+    parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")
+    group = parser.add_mutually_exclusive_group(required=False)
+    group.add_argument('--init_tree', '-iT', dest='init_tree', action='store_true')
+    group.add_argument('--no_init_tree', '-niT', dest='init_tree', action='store_false')
+    parser.set_defaults(init_tree=True)
+    
     return parser
 
     
@@ -62,7 +65,8 @@ if __name__ == "__main__":
 	init_pop_size = int(args.pop1[1])
 	burn_in = int(float(args.pop1[2])*init_pop_size)
 	args.pop2 = [int(args.pop2[0]),(int(args.pop2[1])+burn_in),(int(args.pop2[2])+burn_in)]
-	args.migration = [float(args.migration[0]),float(args.migration[1]),(int(args.pop2[1])+burn_in),(int(args.pop2[2])+burn_in)]
+	args.migration = [float(args.migration[0]),float(args.migration[1]),(int(args.migration[2])+burn_in),(int(args.migration[3])+burn_in)]
+	print(args)
 	
 	if(int(args.pop1[1]) <= 0):
 		raise RuntimeError("--pop1 initial population size must be > 0")
@@ -87,12 +91,8 @@ if __name__ == "__main__":
 	if((args.migration[0] > 0 or args.migration[1] > 0) and args.pop2[0] == 0):
 		raise RuntimeError("pop2 does not exist, cannot have migration")
 	
-	print(args)
-	
-	
-	demography = [init_pop_size]*(burn_in)
+	demography = [init_pop_size]*(burn_in+5920)
 	if(args.pop1[0] == "tenn"):	
 	 	demography = get_nlist_tenn(init_pop_size,burn_in)
 	print(demography)
-	print(args)
     
