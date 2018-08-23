@@ -60,6 +60,9 @@ def evolve_track(rng, parsed_args, pop, params, seeds, init_with_TreeSequence):
         initial_TreeSequence = msprime.simulate(
             2 * pop.N, recombination_rate=params.recrate / 2.0, Ne=pop.N, random_seed=seeds[1])
     
+    
+    samples_pop1 =[] 
+    samples_pop2 =[] 
     if(hasattr(parsed_args, 'anc_sam1')): 
         samples_pop1 = parsed_args.anc_sam1
     if(hasattr(parsed_args, 'anc_sam2')):
