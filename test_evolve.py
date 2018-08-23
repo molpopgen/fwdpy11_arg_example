@@ -86,7 +86,7 @@ def run_sim(tuple):
 	samples = curr_samples+evolver.anc_samples
 	msprime.simplify_tables(samples, nodes = evolver.nodes, edges = evolver.edges, sites = evolver.sites, mutations = evolver.mutations)
 
-	msp_rng = msprime.RandomGenerator(seed[3])
+	msp_rng = msprime.RandomGenerator(seeds[3])
 	neutral_sites = msprime.SiteTable()
 	neutral_mutations = msprime.MutationTable()
 	mutgen = msprime.MutationGenerator(msp_rng, args.ntheta/float(4*demography[0])) 
@@ -99,7 +99,7 @@ def run_sim(tuple):
 	sdata = make_SimData(trees_neutral)
 	
 	f = Fst(sd,[5,5])
-	
+	print(f.hsm())
 	return f.hsm()
 	
 
