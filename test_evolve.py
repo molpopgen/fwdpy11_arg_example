@@ -66,7 +66,7 @@ def run_sim(tuple):
 	seeds = tuple[1]
 	init_pop_size = int(args.pop1[1])
 	burn_in = args.burn_in
-	demography = [init_pop]*(burn_in+5920)
+	demography = [init_pop_size]*(burn_in+5920)
 	if(args.pop1[0] == "tenn"):	
 	 	demography = get_nlist_tenn(init_pop_size,burn_in)
 	 	
