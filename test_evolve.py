@@ -32,34 +32,34 @@ def get_nlist_tenn(init_pop, burn_in):
     return np.array(n,dtype=np.uint32)
 
 def parse_args():
-    dstring = "Prototype implementation of ARG tracking and regular garbage collection."
-    parser = argparse.ArgumentParser(description=dstring,
+	dstring = "Prototype implementation of ARG tracking and regular garbage collection."
+	parser = argparse.ArgumentParser(description=dstring,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--pop1', '-1', nargs=3, default=["tenn","7310", "1"], help="demography type (flat/tenn), initial pop, burn-in scale") 
-    parser.add_argument('--pop2', '-2', nargs=3, default=[100,110,500], help="size of population 2 in individual diploids, generation after burn-in population 2 arises, generation after burn-in population 2 goes extinct")
-    parser.add_argument('--burn_in', '-B', type=int, default=73100.0, help="number of burn-in generations") 
-    parser.add_argument('--migration', '-m,', nargs=4,
+	parser.add_argument('--pop1', '-1', nargs=3, default=["tenn","7310", "1"], help="demography type (flat/tenn), initial pop, burn-in scale") 
+	parser.add_argument('--pop2', '-2', nargs=3, default=[100,110,500], help="size of population 2 in individual diploids, generation after burn-in population 2 arises, generation after burn-in population 2 goes extinct")
+	parser.add_argument('--burn_in', '-B', type=int, default=73100.0, help="number of burn-in generations") 
+	parser.add_argument('--migration', '-m,', nargs=4,
                         default=[0.1,0.1,111,400], help="migration rate 1 to 2, migration rate 2 to 1, migration start, migration end") 
-    parser.add_argument('--ntheta', '-nT', type=float, default=10.0, help="4Nu: effective mutation rate of neutral mutations scaled to population size 1 at generation 0") 
-    parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate of selected mutations scaled to population size 1 at generation 0") #for testing against neutral models, set to 0 and let msprime set mutations on the resulting tree
-    parser.add_argument('--rho', '-R', type=float, default=10.0, help="4Nr: effective recombination rate scaled to population size 1 at generation 0")
-    parser.add_argument('--n_sam1_curr', '-ns1', type=int, default=10,
+	parser.add_argument('--ntheta', '-nT', type=float, default=10.0, help="4Nu: effective mutation rate of neutral mutations scaled to population size 1 at generation 0") 
+	parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate of selected mutations scaled to population size 1 at generation 0") #for testing against neutral models, set to 0 and let msprime set mutations on the resulting tree
+	parser.add_argument('--rho', '-R', type=float, default=10.0, help="4Nr: effective recombination rate scaled to population size 1 at generation 0")
+	parser.add_argument('--n_sam1_curr', '-ns1', type=int, default=10,
                         help="Sample size (in diploids) of population 1 in current day.")
-    parser.add_argument('--n_sam2_curr', '-ns2', type=int, default=0,
+	parser.add_argument('--n_sam2_curr', '-ns2', type=int, default=0,
                         help="Sample size (in diploids) of population 2 in current day.")
-    parser.add_argument('--anc_sam1', '-as1', nargs='*', default = argparse.SUPPRESS,
+	parser.add_argument('--anc_sam1', '-as1', nargs='*', default = argparse.SUPPRESS,
                         help="List of ancient samples (generation, number of samples - in diploids) of population 1.")
-    parser.add_argument('--anc_sam2', '-as2', nargs='*', default = argparse.SUPPRESS,
+	parser.add_argument('--anc_sam2', '-as2', nargs='*', default = argparse.SUPPRESS,
                         help="List of ancient samples (generation, number of samples - in diploids) of population 2.")
-    parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
-    parser.add_argument('--replicates', '-r', type=int, default=100, help="number of simulation replicates")
-    parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")
+	parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
+	parser.add_argument('--replicates', '-r', type=int, default=100, help="number of simulation replicates")
+	parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")
 	group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument('--init_tree', '-iT', dest='init_tree', action='store_true')
-    group.add_argument('--no_init_tree', '-niT', dest='init_tree', action='store_false')
-    parser.set_defaults(init_tree=True)
+	group.add_argument('--init_tree', '-iT', dest='init_tree', action='store_true')
+	group.add_argument('--no_init_tree', '-niT', dest='init_tree', action='store_false')
+	parser.set_defaults(init_tree=True)
     
-    return parser
+	return parser
     
 def run_sim(tuple):
 	args = tuple[0]
