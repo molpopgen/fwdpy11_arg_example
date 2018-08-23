@@ -136,8 +136,8 @@ if __name__ == "__main__":
 		raise RuntimeError("pop2 does not exist, cannot have migration")
 	
 	# Get 4 seeds for each sim w/0 replacement from [0,1e6)
-    	np.random.seed(args.seed)
-    	seeds = np.random.choice(range(1000000), 4, replace=False)
+	np.random.seed(args.seed)
+	seeds = np.random.choice(range(1000000), 4, replace=False)
 	
 	tuple = (args,seeds)	
 	run_sim(tuple)
