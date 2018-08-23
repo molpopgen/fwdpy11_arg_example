@@ -137,7 +137,7 @@ if __name__ == "__main__":
 	
 	# Get 4 seeds for each sim w/0 replacement from [0,1e6)
 	np.random.seed(args.seed)
-	seeds = np.random.choice(range(1000000), 4, replace=False)
+	seeds = np.random.choice(1000000, 4, replace=False)
 	
 	tuple = (args,seeds)	
 	run_sim(tuple)
