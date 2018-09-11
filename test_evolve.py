@@ -97,10 +97,34 @@ def run_sim(tuple):
 	trees_neutral = msprime.load_tables(nodes=evolver.nodes, edges=evolver.edges, sites=neutral_sites, mutations=neutral_mutations)
 
 	sdata = make_SimData(trees_neutral)
+# 	has_sample2 = (final_pop2_size > 0 and args.n_sam2_curr > 0)
+# 	num_sample_groups += has_sample2
+# 	
+# 	num_anc_sample_1 = 0
+# 	if(hasattr(args, 'anc_sam1') and len(args.anc_sam1) % 2):
+# 		num_anc_sample_1 = len(args.anc_sam1)/2
+# 		num_sample_groups += num_anc_sample_1
+# 	num_anc_sample_2 = 0
+# 	if(hasattr(args, 'anc_sam2') and len(args.anc_sam2) % 2):
+# 		num_anc_sample_2 = len(args.anc_sam2)/2
+# 		num_sample_groups += num_anc_sample_2
+# 	
+# 	print(num_sample_groups)
+# 	fst_list = np.zeros((1+num_sample_groups,1+num_sample_groups))
+# 	
+# 	if(num_sample_groups > 0):
+# 		sample_list = [args.n_sam1_curr]
+# 		if(has_sample2):
+# 			sample_list.append(args.n_sam2_curr)
+# 		for i in range(num_anc_sample_1+num_anc_sample_2):
+# 			
+# 			
+# 		fst = Fst(sdata,[5,5])
+# 		fst_list.append(fst.hsm())
+# 		print(fst.hsm())
 	
-	f = Fst(sdata,[5,5])
-	print(f.hsm())
-	return f.hsm()
+	fst_list = Fst(sdata,[5,5])
+	return (fst_list, evolver)
 	
 
 if __name__ == "__main__":
@@ -140,5 +164,5 @@ if __name__ == "__main__":
 	seeds = np.random.choice(1000000, 4, replace=False)
 	
 	tuple = (args,seeds)	
-	run_sim(tuple)
+	results = run_sim(tuple)
 
