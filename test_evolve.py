@@ -160,7 +160,7 @@ if __name__ == "__main__":
 		raise RuntimeError("pop2 does not exist, cannot have migration")
 	if(hasattr(args, 'anc_sam1')): 
 		args.anc_sam1 = [int(i) for i in args.anc_sam1]
-	if(hasattr(parsed_args, 'anc_sam2')):
+	if(hasattr(args, 'anc_sam2')):
 		args.anc_sam2 = [int(i) for i in args.anc_sam2]
 	
 	# Get 4 seeds for each sim w/0 replacement from [0,1e6)
