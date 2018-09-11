@@ -15,11 +15,11 @@ class sampler(object):
     def __call__(self, generation, pop_size1, pop_size2, params, total_generations):
         samples = np.array([])
         if(self.__samples_index_pop1+1 < len(self.__samples_pop1) and generation == self.__samples_pop1[self.__samples_index_pop1]):
-        	self.__samples_index_pop1 += 1
         	np.append(samples,np.random.choice(int(pop_size1), self.__samples_pop1[self.__samples_index_pop1+1], replace=False))
+        	self.__samples_index_pop1 += 2
         if(self.__samples_index_pop2+1 < len(self.__samples_pop2) and generation == self.__samples_pop2[self.__samples_index_pop2]):
-        	self.__samples_index_pop2 += 1
         	np.append(samples,(np.random.choice(int(pop_size2), self.__samples_pop2[self.__samples_index_pop2+1], replace=False)+int(pop_size1)))
+        	self.__samples_index_pop2 += 2
         return samples
 
 def evolve_track(rng, parsed_args, pop, params, seeds, init_with_TreeSequence):
@@ -64,9 +64,9 @@ def evolve_track(rng, parsed_args, pop, params, seeds, init_with_TreeSequence):
     samples_pop1 =[] 
     samples_pop2 =[] 
     if(hasattr(parsed_args, 'anc_sam1')): 
-        samples_pop1 = parsed_args.anc_sam1
+        samples_pop1 = [int(i) for i in parsed_args.anc_sam1]
     if(hasattr(parsed_args, 'anc_sam2')):
-        samples_pop2 = parsed_args.anc_sam2
+        samples_pop2 = [int(i) for i in parsed_args.anc_sam2]
     return ArgEvolver(rng, parsed_args, pop, params, sampler(samples_pop1,samples_pop2,seeds[2]), initial_TreeSequence)
 
 

@@ -158,10 +158,6 @@ if __name__ == "__main__":
 		raise RuntimeError("--migration start/end must be between pop2 (start,end]")
 	if((args.migration[0] > 0 or args.migration[1] > 0) and args.pop2[0] == 0):
 		raise RuntimeError("pop2 does not exist, cannot have migration")
-	if(hasattr(args, 'anc_sam1')): 
-		args.anc_sam1 = [int(i) for i in args.anc_sam1]
-	if(hasattr(args, 'anc_sam2')):
-		args.anc_sam2 = [int(i) for i in args.anc_sam2]
 	
 	# Get 4 seeds for each sim w/0 replacement from [0,1e6)
 	np.random.seed(args.seed)
