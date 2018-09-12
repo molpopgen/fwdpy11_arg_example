@@ -93,6 +93,24 @@ def run_sim(tuple):
 	mutgen.generate(evolver.nodes, evolver.edges, neutral_sites, neutral_mutations)
 	num_sites2 = neutral_sites.num_rows
 	print(num_sites2)
+	
+	pop = 0
+	t = 0
+	samples = []
+	count = 0
+	for node in results[1].nodes:
+		if(node.flags == 1):
+			if(node.population == pop and node.time == t):
+				count += 1
+			else:
+				samples.append(count)
+				count = 1
+				pop = node.population
+				t = node.time
+		else:
+			samples.append(count)
+			break
+
 
 	trees_neutral = msprime.load_tables(nodes=evolver.nodes, edges=evolver.edges, sites=neutral_sites, mutations=neutral_mutations)
 
@@ -123,7 +141,7 @@ def run_sim(tuple):
 # 		fst_list.append(fst.hsm())
 # 		print(fst.hsm())
 	
-	fst_list = Fst(sdata,[5,5])
+	fst_list = Fst(sdata,samples)
 	return (fst_list, evolver)
 	
 
