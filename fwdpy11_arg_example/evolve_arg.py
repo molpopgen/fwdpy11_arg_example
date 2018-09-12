@@ -13,7 +13,7 @@ class sampler(object):
         self.__samples_index_pop2 = 0
 
     def __call__(self, generation, pop_size1, pop_size2, params, total_generations):
-        samples = np.array([])
+        samples = np.array([],dtype=np.int64)
         if(self.__samples_index_pop1+1 < len(self.__samples_pop1) and generation == self.__samples_pop1[self.__samples_index_pop1]):
         	samples = np.append(samples,np.random.choice(int(pop_size1), self.__samples_pop1[self.__samples_index_pop1+1], replace=False))
         	self.__samples_index_pop1 += 2
