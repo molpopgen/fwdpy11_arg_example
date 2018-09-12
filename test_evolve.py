@@ -98,7 +98,7 @@ def run_sim(tuple):
 	t = 0
 	samples = []
 	count = 0
-	for node in results[1].nodes:
+	for node in evolver.nodes:
 		if(node.flags == 1):
 			if(node.population == pop and node.time == t):
 				count += 1
