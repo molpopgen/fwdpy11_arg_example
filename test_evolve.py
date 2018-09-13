@@ -111,37 +111,41 @@ def run_sim(tuple):
 			samples.append(count)
 			break
 
-
+	cumsum_samples = np.zeros(1, dtype = np.int64)
+	cumsum_samples = np.append(cumsum_samples, np.cumsum(samples,dtype=np.int64))
 	trees_neutral = msprime.load_tables(nodes=evolver.nodes, edges=evolver.edges, sites=neutral_sites, mutations=neutral_mutations)
-
-	sdata = make_SimData(trees_neutral)
-# 	has_sample2 = (final_pop2_size > 0 and args.n_sam2_curr > 0)
-# 	num_sample_groups += has_sample2
-# 	
-# 	num_anc_sample_1 = 0
-# 	if(hasattr(args, 'anc_sam1') and len(args.anc_sam1) % 2):
-# 		num_anc_sample_1 = len(args.anc_sam1)/2
-# 		num_sample_groups += num_anc_sample_1
-# 	num_anc_sample_2 = 0
-# 	if(hasattr(args, 'anc_sam2') and len(args.anc_sam2) % 2):
-# 		num_anc_sample_2 = len(args.anc_sam2)/2
-# 		num_sample_groups += num_anc_sample_2
-# 	
-# 	print(num_sample_groups)
-# 	fst_list = np.zeros((1+num_sample_groups,1+num_sample_groups))
-# 	
-# 	if(num_sample_groups > 0):
-# 		sample_list = [args.n_sam1_curr]
-# 		if(has_sample2):
-# 			sample_list.append(args.n_sam2_curr)
-# 		for i in range(num_anc_sample_1+num_anc_sample_2):
-# 			
-# 			
-# 		fst = Fst(sdata,[5,5])
-# 		fst_list.append(fst.hsm())
-# 		print(fst.hsm())
 	
-	fst_list = Fst(sdata,samples)
+	fst_list = np.zeros((len(samples),len(samples))
+	for i in range(len(samples)):
+		fst_list[i][i] = 0
+		
+	if(len(samples) > 2):
+		for i in range(len(samples)):
+			for j in range((i+1),len(samples)):
+				mynodes = msprime.NodeTable()
+				myedges = msprime.EdgeTable()
+				mymutations = msprime.MutationTable()
+				mysites = msprime.SiteTable()
+				
+				trees_neutral.dump_tables(nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
+				sample_nodes = list(range(cumsum_samples[i+1],cumsum_samples[i+1]))
+				sample_nodes.extend(list(range(cumsum_samples[j],cumsum_samples[j+1])))
+				msprime.simplify_tables(samples=sample_nodes, nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
+				subtree_neutral = msprime.load_tables(nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
+				
+				sdata = make_SimData(subtree_neutral)
+				subtree_sample = [samples[i],samples[j]]
+				fst = Fst(sdata,subtree_sample)
+				fst_list[i][j] = fst.hsm()
+				fst_list[j][j] = fst_list[i][j]
+				
+	else if(len(samples == 2)):
+	
+		sdata = make_SimData(trees_neutral)
+		fst = Fst(sdata,samples)
+		fst_list[0][1] = fst.hsm()
+		fst_list[1][0] = fst_list[0][1]
+		
 	return (fst_list, evolver)
 	
 
