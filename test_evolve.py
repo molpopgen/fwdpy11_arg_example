@@ -71,9 +71,9 @@ def run_sim(tuple):
 	 	demography = get_nlist_tenn(init_pop_size,burn_in)
 	
 	evolver = ea.evolve_track_wrapper(args, demography, seeds)
-	print(evolver.times)
+	#print(evolver.times)
 	num_sites = evolver.sites.num_rows
-	print(num_sites)
+	#print(num_sites)
 
 	# Get a sample of size n_sam1_curr, n_sam2_curr
 	final_pop1_size = 2*demography[len(demography)-1]
@@ -92,7 +92,7 @@ def run_sim(tuple):
 	mutgen = msprime.MutationGenerator(msp_rng, args.ntheta/float(4*demography[0])) 
 	mutgen.generate(evolver.nodes, evolver.edges, neutral_sites, neutral_mutations)
 	num_sites2 = neutral_sites.num_rows
-	print(num_sites2)
+	#print(num_sites2)
 	
 	pop = 0
 	t = 0
@@ -144,7 +144,7 @@ def run_sim(tuple):
 		fst_list[0][1] = fst.hsm()
 		fst_list[1][0] = fst_list[0][1]
 		
-	return (fst_list, evolver)
+	return fst_list
 	
 
 if __name__ == "__main__":
@@ -187,5 +187,5 @@ if __name__ == "__main__":
 	seeds = np.random.choice(1000000, 4, replace=False)
 	
 	tuple = (args,seeds)	
-	results = run_sim(tuple)
+	fst_list = run_sim(tuple)
 
