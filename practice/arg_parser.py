@@ -35,7 +35,8 @@ def parse_args():
                         default=[100,110,500], help="size of population 2 in individual diploids, generation after burn-in population 2 arises, generation after burn-in population 2 goes extinct") 
     parser.add_argument('--migration', '-m,', nargs=4,
                         default=[0.1,0.1,111,400], help="migration rate 1 to 2, migration rate 2 to 1, migration start, migration end") 
-    parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate scaled to population size 1 at generation 0") #for testing against neutral models, set to 0 and let msprime set mutations on the resulting tree
+    parser.add_argument('--ntheta', '-nT', type=float, default=10.0, help="4Nu: effective mutation rate of neutral mutations scaled to population size 1 at generation 0") 
+    parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate of selected mutations scaled to population size 1 at generation 0") #for testing against neutral models, set to 0 and let msprime set mutations on the resulting tree
     parser.add_argument('--rho', '-R', type=float, default=10.0, help="4Nr: effective recombination rate scaled to population size 1 at generation 0")
     parser.add_argument('--n_sam1_curr', '-ns1', type=int, default=10,
                         help="Sample size (in diploids) of population 1 in current day.")
@@ -46,9 +47,12 @@ def parse_args():
     parser.add_argument('--anc_sam2', '-as2', nargs='*', default = argparse.SUPPRESS,
                         help="List of ancient samples (generation, number of samples - in diploids) of population 2.")
     parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
-    parser.add_argument('--gc', '-G', type=int,
-                        default=100, help="GC interval")
-
+    parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")
+    group = parser.add_mutually_exclusive_group(required=False)
+    group.add_argument('--init_tree', '-iT', dest='init_tree', action='store_true')
+    group.add_argument('--no_init_tree', '-niT', dest='init_tree', action='store_false')
+    parser.set_defaults(init_tree=True)
+    
     return parser
 
     
@@ -56,6 +60,12 @@ def parse_args():
 if __name__ == "__main__":
 	parser = parse_args()
 	args = parser.parse_args(sys.argv[1:])
+	print(args)
+	
+	init_pop_size = int(args.pop1[1])
+	burn_in = int(float(args.pop1[2])*init_pop_size)
+	args.pop2 = [int(args.pop2[0]),(int(args.pop2[1])+burn_in),(int(args.pop2[2])+burn_in)]
+	args.migration = [float(args.migration[0]),float(args.migration[1]),(int(args.migration[2])+burn_in),(int(args.migration[3])+burn_in)]
 	print(args)
 	
 	if(int(args.pop1[1]) <= 0):
@@ -76,18 +86,13 @@ if __name__ == "__main__":
 		raise RuntimeError("--migration rates must be between [0,1]")
 	if(args.migration[2] > args.migration[3]):
 		raise RuntimeError("--migration start must be <= end")
-	if(args.migration[2] <= args.pop2[1] or args.migration[3] > args.pop2[2] or args.migration[2] > args.pop2[2] or args.migration[3] <= args.pop2[1]):
+	if(args.pop2[0] > 0 and (args.migration[2] <= args.pop2[1] or args.migration[3] > args.pop2[2] or args.migration[2] > args.pop2[2] or args.migration[3] <= args.pop2[1])):
 		raise RuntimeError("--migration start/end must be between pop2 (start,end]")
 	if((args.migration[0] > 0 or args.migration[1] > 0) and args.pop2[0] == 0):
 		raise RuntimeError("pop2 does not exist, cannot have migration")
 	
-	print(args)
-	init_pop_size = int(args.pop1[1])
-	burn_in = int(float(args.pop1[2])*init_pop_size)
-	args.pop2 = [args.pop2[0],(args.pop2[1]+burn_in),(args.pop2[2]+burn_in)]
-	demography = [init_pop_size]*(burn_in)
+	demography = [init_pop_size]*(burn_in+5920)
 	if(args.pop1[0] == "tenn"):	
 	 	demography = get_nlist_tenn(init_pop_size,burn_in)
 	print(demography)
-	print(args)
     

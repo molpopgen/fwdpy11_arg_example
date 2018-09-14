@@ -88,7 +88,8 @@ class ArgEvolver(object):
                   raise RuntimeError("sample dtype must be an integral type")
                   
               sorted_new_indiv_samples = np.sort(new_indiv_samples)
-              if(sorted_new_indiv_samples[0] < 0 or sorted_new_indiv_samples[-1] >= self.__pop.N):
+              max = pop_size1 + pop_size2
+              if(sorted_new_indiv_samples[0] < 0 or sorted_new_indiv_samples[-1] >= max):
     	          raise RuntimeError("ancestral samples out of bounds")
               
               #note: cannot prevent the recycling of positions from previous simulations

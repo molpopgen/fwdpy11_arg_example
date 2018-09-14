@@ -1,4 +1,3 @@
-
 import fwdpy11_arg_example.evolve_arg as ea
 import msprime
 import numpy as np
@@ -6,7 +5,9 @@ import sys
 from pathlib import Path
 import argparse
 import fwdpy11.demography as dem
-import pylibseq
+from libsequence.msprime import make_SimData
+from libsequence.fst import Fst
+import concurrent.futures
 
 def get_nlist_tenn(init_pop, burn_in):
     """
@@ -31,40 +32,137 @@ def get_nlist_tenn(init_pop, burn_in):
     return np.array(n,dtype=np.uint32)
 
 def parse_args():
-    dstring = "Prototype implementation of ARG tracking and regular garbage collection."
-    parser = argparse.ArgumentParser(description=dstring,
+	dstring = "Prototype implementation of ARG tracking and regular garbage collection."
+	parser = argparse.ArgumentParser(description=dstring,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--pop1', '-1', nargs=3
-                        default=["tenn","7310", "1"], help="demography type (flat/tenn), initial pop, burn-in scale") 
-    parser.add_argument('--pop2', '-2', nargs=3,
-                        default=[100,110,500], help="size of population 2 in individual diploids, generation after burn-in population 2 arises, generation after burn-in population 2 goes extinct") 
-    parser.add_argument('--migration', '-m,', nargs=4,
-                        default=[0.1,0.1,111,400], help="migration rate 1 to 2, migration rate 2 to 1, migration start, migration end") 
-    parser.add_argument('--ntheta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate of neutral mutations scaled to population size 1 at generation 0") 
-    parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate of selected mutations scaled to population size 1 at generation 0") #for testing against neutral models, set to 0 and let msprime set mutations on the resulting tree
-    parser.add_argument('--rho', '-R', type=float, default=10.0, help="4Nr: effective recombination rate scaled to population size 1 at generation 0")
-    parser.add_argument('--n_sam1_curr', '-ns1', type=int, default=10,
+	parser.add_argument('--pop1', '-1', nargs=2, default=["tenn","7310"], help="demography type (flat/tenn), initial pop") 
+	parser.add_argument('--pop2', '-2', nargs=3, default=[100,110,500], help="size of population 2 in individual diploids, generation after burn-in population 2 arises, generation after burn-in population 2 goes extinct")
+	parser.add_argument('--burn_in', '-B', type=int, default=73100.0, help="number of burn-in generations") 
+	parser.add_argument('--migration', '-m,', nargs=4,
+                        default=[0.1,0.1,111,400], help="migration rate 1 to 2, migration rate 2 to 1, migration start (after burn-in), migration end (after burn-in)") 
+	parser.add_argument('--ntheta', '-nT', type=float, default=10.0, help="4Nu: effective mutation rate of neutral mutations scaled to population size 1 at generation 0") 
+	parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate of selected mutations scaled to population size 1 at generation 0") #for testing against neutral models, set to 0 and let msprime set mutations on the resulting tree
+	parser.add_argument('--rho', '-R', type=float, default=10.0, help="4Nr: effective recombination rate scaled to population size 1 at generation 0")
+	parser.add_argument('--n_sam1_curr', '-ns1', type=int, default=10,
                         help="Sample size (in diploids) of population 1 in current day.")
-    parser.add_argument('--n_sam2_curr', '-ns2', type=int, default=0,
+	parser.add_argument('--n_sam2_curr', '-ns2', type=int, default=0,
                         help="Sample size (in diploids) of population 2 in current day.")
-    parser.add_argument('--anc_sam1', '-as1', nargs='*', default = argparse.SUPPRESS,
-                        help="List of ancient samples (generation, number of samples - in diploids) of population 1.")
-    parser.add_argument('--anc_sam2', '-as2', nargs='*', default = argparse.SUPPRESS,
-                        help="List of ancient samples (generation, number of samples - in diploids) of population 2.")
-    parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
-    parser.add_argument('--gc', '-G', type=int,
-                        default=100, help="GC interval")
+	parser.add_argument('--anc_sam1', '-as1', nargs='*', default = argparse.SUPPRESS,
+                        help="List of ancient samples (generation after burn-in, number of samples - in diploids) of population 1.")
+	parser.add_argument('--anc_sam2', '-as2', nargs='*', default = argparse.SUPPRESS,
+                        help="List of ancient samples (generation after burn-in, number of samples - in diploids) of population 2.")
+	parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
+	parser.add_argument('--replicates', '-r', type=int, default=100, help="number of simulation replicates")
+	parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")
+	group = parser.add_mutually_exclusive_group(required=False)
+	group.add_argument('--init_tree', '-iT', dest='init_tree', action='store_true')
+	group.add_argument('--no_init_tree', '-niT', dest='init_tree', action='store_false')
+	parser.set_defaults(init_tree=True)
+    
+	return parser
+    
+def run_sim(tuple):
+	args = tuple[0]
+	seeds = tuple[1]
+	init_pop_size = int(args.pop1[1])
+	burn_in = args.burn_in
+	demography = [init_pop_size]*(burn_in+5920)
+	if(args.pop1[0] == "tenn"):	
+	 	demography = get_nlist_tenn(init_pop_size,burn_in)
+	
+	evolver = ea.evolve_track_wrapper(args, demography, seeds)
+	#print(evolver.times)
+	num_sites = evolver.sites.num_rows
+	#print(num_sites)
 
-    return parser
+	# Get a sample of size n_sam1_curr, n_sam2_curr
+	final_pop1_size = 2*demography[len(demography)-1]
+	final_pop2_size = 0
+	if(args.pop2[2] > evolver.pop.generation):
+	   final_pop2_size =  args.pop2[0]
+	curr_samples = np.random.choice(final_pop1_size, args.n_sam1_curr, replace = False).tolist() #np seed reset in evolve_arg.py 
+	if(final_pop2_size > 0 and args.n_sam2_curr > 0):
+		curr_samples += (np.random.choice(final_pop2_size, args.n_sam2_curr, replace = False)+final_pop1_size).tolist()
+	samples = curr_samples+evolver.anc_samples
+	msprime.simplify_tables(samples, nodes = evolver.nodes, edges = evolver.edges, sites = evolver.sites, mutations = evolver.mutations)
+
+	msp_rng = msprime.RandomGenerator(int(seeds[3]))
+	neutral_sites = msprime.SiteTable()
+	neutral_mutations = msprime.MutationTable()
+	mutgen = msprime.MutationGenerator(msp_rng, args.ntheta/float(4*demography[0])) 
+	mutgen.generate(evolver.nodes, evolver.edges, neutral_sites, neutral_mutations)
+	num_sites2 = neutral_sites.num_rows
+	#print(num_sites2)
+	
+	pop = 0
+	t = 0
+	samples = []
+	count = 0
+	for node in evolver.nodes:
+		if(node.flags == 1):
+			if(node.population == pop and node.time == t):
+				count += 1
+			else:
+				samples.append(count)
+				count = 1
+				pop = node.population
+				t = node.time
+		else:
+			samples.append(count)
+			break
+
+	cumsum_samples = np.zeros(1, dtype = np.int64)
+	cumsum_samples = np.append(cumsum_samples, np.cumsum(samples,dtype=np.int64))
+	trees_neutral = msprime.load_tables(nodes=evolver.nodes, edges=evolver.edges, sites=neutral_sites, mutations=neutral_mutations)
+	
+	fst_list = np.zeros((len(samples),len(samples)))
+		
+	if(len(samples) > 2):
+		for i in range(len(samples)):
+			for j in range((i+1),len(samples)):
+				mynodes = msprime.NodeTable()
+				myedges = msprime.EdgeTable()
+				mymutations = msprime.MutationTable()
+				mysites = msprime.SiteTable()
+				
+				trees_neutral.dump_tables(nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
+				sample_nodes = list(range(cumsum_samples[i],cumsum_samples[i+1]))
+				sample_nodes.extend(list(range(cumsum_samples[j],cumsum_samples[j+1])))
+				msprime.simplify_tables(samples=sample_nodes, nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
+				subtree_neutral = msprime.load_tables(nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
+				
+				sdata = make_SimData(subtree_neutral)
+				subtree_sample = [samples[i],samples[j]]
+				fst = Fst(sdata,subtree_sample)
+				fst_list[i][j] = fst.hsm()
+				fst_list[j][i] = fst_list[i][j]
+				
+	elif(len(samples) == 2):
+	
+		sdata = make_SimData(trees_neutral)
+		fst = Fst(sdata,samples)
+		fst_list[0][1] = fst.hsm()
+		fst_list[1][0] = fst_list[0][1]
+		
+	return fst_list
+	
 
 if __name__ == "__main__":
 	parser = parse_args()
 	args = parser.parse_args(sys.argv[1:])
 	
+	init_pop_size = int(args.pop1[1])
+	burn_in = args.burn_in
+	args.pop2 = [int(args.pop2[0]),(int(args.pop2[1])+burn_in),(int(args.pop2[2])+burn_in)]
+	args.migration = [float(args.migration[0]),float(args.migration[1]),(int(args.migration[2])+burn_in),(int(args.migration[3])+burn_in)]
+	
+	if(hasattr(args, 'anc_sam1')): 
+		args.anc_sam1 = [int(i)+burn_in*(j%2==1) for j,i in enumerate(args.anc_sam1)] #add burn-in generation to sample generations
+	if(hasattr(args, 'anc_sam2')):
+		args.anc_sam2 = [int(i)+burn_in*(j%2==1) for j,i in enumerate(args.anc_sam2)]
+	
 	if(int(args.pop1[1]) <= 0):
 		raise RuntimeError("--pop1 initial population size must be > 0")
-	if(float(args.pop1[2]) <= 0):
-		raise RuntimeError("--pop1 burn-in scale must be > 0")
 	if(args.pop2[0] < 0):
 		raise RuntimeError("--pop2 pop_size must be >= 0")
 	if(args.pop2[0] > 0 and args.pop2[1] < 0):
@@ -79,72 +177,15 @@ if __name__ == "__main__":
 		raise RuntimeError("--migration rates must be between [0,1]")
 	if(args.migration[2] > args.migration[3]):
 		raise RuntimeError("--migration start must be <= end")
-	if(args.migration[2] <= args.pop2[1] or args.migration[3] > args.pop2[2] or args.migration[2] > args.pop2[2] or args.migration[3] <= args.pop2[1]):
+	if(args.pop2[0] > 0 and (args.migration[2] <= args.pop2[1] or args.migration[3] > args.pop2[2] or args.migration[2] > args.pop2[2] or args.migration[3] <= args.pop2[1])):
 		raise RuntimeError("--migration start/end must be between pop2 (start,end]")
 	if((args.migration[0] > 0 or args.migration[1] > 0) and args.pop2[0] == 0):
 		raise RuntimeError("pop2 does not exist, cannot have migration")
 	
-	init_pop_size = int(args.pop1[1])
-	burn_in = int(float(args.pop1[2])*init_pop_size)
-	args.pop2 = [args.pop2[0],(args.pop2[1]+burn_in),(args.pop2[2]+burn_in)]
-	demography = [init_pop_size]*(burn_in)
-	if(args.pop1[0] == "tenn"):	
-	 	demography = get_nlist_tenn(init_pop_size,burn_in)
-	 	
-	evolver = ea.evolve_track_wrapper(args, demography)
-	print(evolver.times)
-	num_sites = evolver.sites.num_rows
-	print(num_sites)
-
-	# Get a sample of size n_sam1_curr, n_sam2_curr
-	seed = args.seed
-	np.random.seed(seed+1)
-	final_pop1_size = 2*demography[len(demography)-1]
-	final_pop2_size = 0
-	if(args.pop2[2] > evolver.pop.generation):
-	   final_pop2_size =  args.pop2[0]
-	curr_samples = np.random.choice(final_pop1_size, args.n_sam1_curr, replace = False).tolist()
-	if(final_pop2_size > 0 and args.n_sam2_curr > 0):
-		curr_samples += (np.random.choice(final_pop2_size, args.n_sam2_curr, replace = False)+final_pop1_size).tolist()
-	samples = curr_samples+evolver.anc_samples
-	msprime.simplify_tables(samples, nodes = evolver.nodes, edges = evolver.edges, sites = evolver.sites, mutations = evolver.mutations)
-	num_sites = evolver.sites.num_rows
-	print(num_sites)
-
-	count = 0
-	for idx, pos in enumerate(evolver.sites.position):
-		if(idx > 0 and pos == evolver.sites.position[idx-1]):
-			count += 1
-
-	print(count)
-
-	count = 0
-	mut_lookup = evolver.pop.mut_lookup
-	for mut in evolver.mutations:
-		pos = evolver.sites.position[mut.site]
-		if(pos != evolver.pop.mutations[mut_lookup[pos]].pos):
-			count += 1
-	print(count)
-
-	msp_rng = msprime.RandomGenerator(seed+2)
-	neutral_sites = msprime.SiteTable()
-	neutral_mutations = msprime.MutationTable()
-	mutgen = msprime.MutationGenerator(msp_rng, args.ntheta/float(4*demography[0])) 
-	mutgen.generate(evolver.nodes, evolver.edges, neutral_sites, neutral_mutations)
-	num_sites2 = neutral_sites.num_rows
-	print(num_sites2)
-
-	trees_selected = msprime.load_tables(nodes=evolver.nodes, edges=evolver.edges, sites=evolver.sites, mutations=evolver.mutations)
-	trees_neutral = msprime.load_tables(nodes=evolver.nodes, edges=evolver.edges, sites=neutral_sites, mutations=neutral_mutations)
-
-	home = str(Path.home())
-	for counter, tree in enumerate(trees_selected.trees()):
-	   if(tree.num_mutations > 0):
-	      tree.draw(path=home+"/tree_selected.svg", width=1500, height=1000, format="svg")
-	      break
-
-	for counter2, tree in enumerate(trees_neutral.trees()):
-		if(counter2 == counter):
-		   tree.draw(path=home+"/tree_neutral.svg", width=1500, height=1000, format="svg")
-		   break
+	# Get 4 seeds for each sim w/0 replacement from [0,1e6)
+	np.random.seed(args.seed)
+	seeds = np.random.choice(1000000, 4, replace=False)
+	
+	tuple = (args,seeds)	
+	fst_list = run_sim(tuple)
 

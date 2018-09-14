@@ -5,27 +5,24 @@ import numpy as np
 import msprime
 
 class sampler(object):
-    def __init__(self, samples_pop1, samples_pop2, seed = None):
+    def __init__(self, samples_pop1, samples_pop2, seed):
         np.random.seed(seed)
-        if seed is None:
-           import warnings
-           warnings.warn("sampler seed is None. Results will not be reprodicible.")
         self.__samples_pop1 = samples_pop1
         self.__samples_pop2 = samples_pop2
         self.__samples_index_pop1 = 0
         self.__samples_index_pop2 = 0
 
     def __call__(self, generation, pop_size1, pop_size2, params, total_generations):
-        samples = np.array([])
+        samples = np.array([],dtype=np.int64)
         if(self.__samples_index_pop1+1 < len(self.__samples_pop1) and generation == self.__samples_pop1[self.__samples_index_pop1]):
-        	self.__samples_index_pop1 += 1
-        	np.append(samples,np.random.choice(int(pop_size1), self.__samples_pop1[self.__samples_index_pop1+1], replace=False))
+        	samples = np.append(samples,np.random.choice(int(pop_size1), self.__samples_pop1[self.__samples_index_pop1+1], replace=False))
+        	self.__samples_index_pop1 += 2
         if(self.__samples_index_pop2+1 < len(self.__samples_pop2) and generation == self.__samples_pop2[self.__samples_index_pop2]):
-        	self.__samples_index_pop2 += 1
-        	np.append(samples,(np.random.choice(int(pop_size2), self.__samples_pop2[self.__samples_index_pop2+1], replace=False)+int(pop_size1)))
+        	samples = np.append(samples,(np.random.choice(int(pop_size2), self.__samples_pop2[self.__samples_index_pop2+1], replace=False)+int(pop_size1)))
+        	self.__samples_index_pop2 += 2
         return samples
 
-def evolve_track(rng, parsed_args, pop, params, seed=None, init_with_TreeSequence=False, msprime_seed=None):
+def evolve_track(rng, parsed_args, pop, params, seeds, init_with_TreeSequence):
     """
     Evolve a population and track its ancestry using msprime.
 
@@ -58,25 +55,21 @@ def evolve_track(rng, parsed_args, pop, params, seed=None, init_with_TreeSequenc
 
     from .argevolver import ArgEvolver
     initial_TreeSequence = None
-
+       
     if init_with_TreeSequence is True:
-        if msprime_seed is None:
-            import warnings
-            warnings.warn(
-                "msprime_seed is None. Results will not be reprodicible.")
         initial_TreeSequence = msprime.simulate(
-            2 * pop.N, recombination_rate=params.recrate / 2.0, Ne=pop.N, random_seed=msprime_seed)
+            2 * pop.N, recombination_rate=params.recrate / 2.0, Ne=pop.N, random_seed=seeds[1])
     
-    samples_pop1 =[]
-    samples_pop2 =[]
+    samples_pop1 =[] 
+    samples_pop2 =[] 
     if(hasattr(parsed_args, 'anc_sam1')): 
         samples_pop1 = parsed_args.anc_sam1
     if(hasattr(parsed_args, 'anc_sam2')):
         samples_pop2 = parsed_args.anc_sam2
-    return ArgEvolver(rng, parsed_args, pop, params, sampler(samples_pop1,samples_pop2,seed), initial_TreeSequence)
+    return ArgEvolver(rng, parsed_args, pop, params, sampler(samples_pop1,samples_pop2,seeds[2]), initial_TreeSequence)
 
 
-def evolve_track_wrapper(parsed_args, demography):
+def evolve_track_wrapper(parsed_args, demography, seeds):
     """
     Wrapper around evolve_track to facilitate testing.
 
@@ -104,7 +97,6 @@ def evolve_track_wrapper(parsed_args, demography):
     pop = fwdpy11.SlocusPop(initial_popsize)
     recrate = float(parsed_args.rho) / (4.0 * float(initial_popsize))
     mu = float(parsed_args.theta) / (4.0 * float(initial_popsize))
-    seed = parsed_args.seed
     
     pdict = {'nregions': [],
                 'sregions': [dfe],
@@ -124,5 +116,5 @@ def evolve_track_wrapper(parsed_args, demography):
 #              }
 # 
 #     params = fwdpy11.model_params.SlocusParams(**pdict)
-    rng = fwdpy11.GSLrng(seed)
-    return evolve_track(rng, parsed_args, pop, params, seed, True, seed+3)
+    rng = fwdpy11.GSLrng(seeds[0])
+    return evolve_track(rng, parsed_args, pop, params, seeds, parsed_args.init_tree)
