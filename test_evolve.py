@@ -115,9 +115,7 @@ def run_sim(tuple):
 	cumsum_samples = np.append(cumsum_samples, np.cumsum(samples,dtype=np.int64))
 	trees_neutral = msprime.load_tables(nodes=evolver.nodes, edges=evolver.edges, sites=neutral_sites, mutations=neutral_mutations)
 	
-	fst_list = np.zeros((len(samples),len(samples))
-	for i in range(len(samples)):
-		fst_list[i][i] = 0
+	fst_list = np.zeros((len(samples),len(samples)))
 		
 	if(len(samples) > 2):
 		for i in range(len(samples)):
@@ -128,7 +126,7 @@ def run_sim(tuple):
 				mysites = msprime.SiteTable()
 				
 				trees_neutral.dump_tables(nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
-				sample_nodes = list(range(cumsum_samples[i+1],cumsum_samples[i+1]))
+				sample_nodes = list(range(cumsum_samples[i],cumsum_samples[i+1]))
 				sample_nodes.extend(list(range(cumsum_samples[j],cumsum_samples[j+1])))
 				msprime.simplify_tables(samples=sample_nodes, nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
 				subtree_neutral = msprime.load_tables(nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
@@ -137,9 +135,9 @@ def run_sim(tuple):
 				subtree_sample = [samples[i],samples[j]]
 				fst = Fst(sdata,subtree_sample)
 				fst_list[i][j] = fst.hsm()
-				fst_list[j][j] = fst_list[i][j]
+				fst_list[j][i] = fst_list[i][j]
 				
-	else if(len(samples == 2)):
+	elif(len(samples) == 2):
 	
 		sdata = make_SimData(trees_neutral)
 		fst = Fst(sdata,samples)
