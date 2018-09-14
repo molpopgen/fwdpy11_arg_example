@@ -157,14 +157,12 @@ if __name__ == "__main__":
 	args.migration = [float(args.migration[0]),float(args.migration[1]),(int(args.migration[2])+burn_in),(int(args.migration[3])+burn_in)]
 	
 	if(hasattr(args, 'anc_sam1')): 
-        args.anc_sam1 = [int(i)+burn_in*(j%2==1) for j,i in enumerate(args.anc_sam1)] #add burn-in generation to sample generations
-    if(hasattr(args, 'anc_sam2')):
-        args.anc_sam2 = [int(i)+burn_in*(j%2==1) for j,i in enumerate(args.anc_sam2)]
+		args.anc_sam1 = [int(i)+burn_in*(j%2==1) for j,i in enumerate(args.anc_sam1)] #add burn-in generation to sample generations
+	if(hasattr(args, 'anc_sam2')):
+		args.anc_sam2 = [int(i)+burn_in*(j%2==1) for j,i in enumerate(args.anc_sam2)]
 	
 	if(int(args.pop1[1]) <= 0):
 		raise RuntimeError("--pop1 initial population size must be > 0")
-	if(float(args.pop1[2]) <= 0):
-		raise RuntimeError("--pop1 burn-in scale must be > 0")
 	if(args.pop2[0] < 0):
 		raise RuntimeError("--pop2 pop_size must be >= 0")
 	if(args.pop2[0] > 0 and args.pop2[1] < 0):
