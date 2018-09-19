@@ -188,10 +188,10 @@ if __name__ == "__main__":
 	np.random.seed(args.seed)
 	seeds = np.random.choice(range(1000000), 4*args.iterations, replace=False)
 
-    seed_list = [(seeds[i],seeds[i+1],seeds[i+2],seeds[i+3]) for i in range(0,len(seeds),4)]
+	seed_list = [(seeds[i],seeds[i+1],seeds[i+2],seeds[i+3]) for i in range(0,len(seeds),4)]
 
 	with concurrent.futures.ProcessPoolExecutor() as pool:
-        futures = {pool.submit(runsim, (args,i)) for i in seed_list}
-        for fut in concurrent.futures.as_completed(futures):
-            fst_list = fut.result()
+		futures = {pool.submit(run_sim, (args,i)) for i in seed_list}
+		for fut in concurrent.futures.as_completed(futures):
+			fst_list.append(fut.result())
 
