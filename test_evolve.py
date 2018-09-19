@@ -190,6 +190,7 @@ if __name__ == "__main__":
 
 	seed_list = [(seeds[i],seeds[i+1],seeds[i+2],seeds[i+3]) for i in range(0,len(seeds),4)]
 
+	fst_list = []
 	with concurrent.futures.ProcessPoolExecutor() as pool:
 		futures = {pool.submit(run_sim, (args,i)) for i in seed_list}
 		for fut in concurrent.futures.as_completed(futures):
