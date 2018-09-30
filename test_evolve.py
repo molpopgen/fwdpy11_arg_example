@@ -145,8 +145,7 @@ def run_sim(tuple):
 		fst_list[0][1] = fst.hsm()
 		fst_list[1][0] = fst_list[0][1]
 		
-	return fst_list
-	
+	return fst_list		
 
 if __name__ == "__main__":
 	parser = parse_args()
@@ -196,3 +195,16 @@ if __name__ == "__main__":
 		for fut in concurrent.futures.as_completed(futures):
 			fst_list.append(fut.result())
 
+	fst_array = np.array(fst_list)
+	mean_fst_array = np.mean(fst_array,axis=0)
+	median_fst_array = np.median(fst_array,axis=0)
+	std_fst_array = np.std(fst_array,axis=0)
+	
+	f = open("simulation.txt", "w")
+	f.write("mean_fst_array\n")
+	mean_fst_array.tofile(f,sep="\t")
+	f.write("\n\nmedian_fst_array\n")
+	median_fst_array.tofile(f,sep="\t")
+	f.write("\n\nstd_fst_array\n")
+	std_fst_array.tofile(f,sep="\t")
+	f.close()
