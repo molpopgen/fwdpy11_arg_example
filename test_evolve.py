@@ -168,8 +168,8 @@ if __name__ == "__main__":
 		raise RuntimeError("--anc_sam1 must have the generation and the number of samples taken")
 	if(hasattr(args, 'anc_sam2') and len(args.anc_sam2) % 2):
 		raise RuntimeError("--anc_sam2 must have the generation and the number of samples taken")
-	if(args.migration[0] < 0 or args.migration[0] > 1 or args.migration[1] < 0 or args.migration[1] > 1 or args.migration[2] <= 0 or args.migration[2] >= 1):
-		raise RuntimeError("--steady migration rates must be between [0,1] and initial migration rate to population 2 must be (0,1)")
+	if(args.migration[0] < 0 or args.migration[0] > 1 or args.migration[1] < 0 or args.migration[1] > 1 or args.migration[2] < 0 or args.migration[2] >= 1 or (args.migration[2] == 0 and args.pop2[0] > 0)):
+		raise RuntimeError("--steady migration rates must be between [0,1] and initial migration rate to population 2 must be (0,1) if population 2 exists")
 	if(args.migration[3] > args.migration[4]):
 		raise RuntimeError("--migration start must be <= end")
 	if(args.pop2[0] > 0 and (args.migration[3] <= args.pop2[1] or args.migration[4] > args.pop2[2] or args.migration[3] > args.pop2[2] or args.migration[4] <= args.pop2[1])):
