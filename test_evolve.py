@@ -38,19 +38,14 @@ def parse_args():
 	parser.add_argument('--pop1', '-1', nargs=2, default=["tenn","7310"], help="demography type (flat/tenn), initial pop") 
 	parser.add_argument('--pop2', '-2', nargs=3, default=[100,110,500], help="size of population 2 in individual diploids, generation after burn-in population 2 arises, generation after burn-in population 2 goes extinct")
 	parser.add_argument('--burn_in', '-B', type=int, default=73100.0, help="number of burn-in generations") 
-	parser.add_argument('--migration', '-m,', nargs=4,
-                        default=[0.1,0.1,111,400], help="migration rate 1 to 2, migration rate 2 to 1, migration start (after burn-in), migration end (after burn-in)") 
+	parser.add_argument('--migration', '-m,', nargs=5, default=[0.1,0.1,(100/14474),111,400], help="steady migration rate 1 to 2, steady migration rate 2 to 1, initial migration rate, migration start (after burn-in), migration end (after burn-in)") 
 	parser.add_argument('--ntheta', '-nT', type=float, default=10.0, help="4Nu: effective mutation rate of neutral mutations scaled to population size 1 at generation 0") 
 	parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate of selected mutations scaled to population size 1 at generation 0") #for testing against neutral models, set to 0 and let msprime set mutations on the resulting tree
 	parser.add_argument('--rho', '-R', type=float, default=10.0, help="4Nr: effective recombination rate scaled to population size 1 at generation 0")
-	parser.add_argument('--n_sam1_curr', '-ns1', type=int, default=10,
-                        help="Sample size (in diploids) of population 1 in current day.")
-	parser.add_argument('--n_sam2_curr', '-ns2', type=int, default=0,
-                        help="Sample size (in diploids) of population 2 in current day.")
-	parser.add_argument('--anc_sam1', '-as1', nargs='*', default = argparse.SUPPRESS,
-                        help="List of ancient samples (generation after burn-in, number of samples - in diploids) of population 1.")
-	parser.add_argument('--anc_sam2', '-as2', nargs='*', default = argparse.SUPPRESS,
-                        help="List of ancient samples (generation after burn-in, number of samples - in diploids) of population 2.")
+	parser.add_argument('--n_sam1_curr', '-ns1', type=int, default=10, help="Sample size (in diploids) of population 1 in current day.")
+	parser.add_argument('--n_sam2_curr', '-ns2', type=int, default=0, help="Sample size (in diploids) of population 2 in current day.")
+	parser.add_argument('--anc_sam1', '-as1', nargs='*', default = argparse.SUPPRESS, help="List of ancient samples (generation after burn-in, number of samples - in diploids) of population 1.")
+	parser.add_argument('--anc_sam2', '-as2', nargs='*', default = argparse.SUPPRESS, help="List of ancient samples (generation after burn-in, number of samples - in diploids) of population 2.")
 	parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
 	parser.add_argument('--replicates', '-r', type=int, default=100, help="number of simulation replicates")
 	parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")
@@ -154,7 +149,7 @@ if __name__ == "__main__":
 	init_pop_size = int(args.pop1[1])
 	burn_in = args.burn_in
 	args.pop2 = [int(args.pop2[0]),(int(args.pop2[1])+burn_in),(int(args.pop2[2])+burn_in)]
-	args.migration = [float(args.migration[0]),float(args.migration[1]),(int(args.migration[2])+burn_in),(int(args.migration[3])+burn_in)]
+	args.migration = [float(args.migration[0]),float(args.migration[1]),float(args.migration[2]),(int(args.migration[3])+burn_in),(int(args.migration[4])+burn_in)]
 	
 	if(hasattr(args, 'anc_sam1')): 
 		args.anc_sam1 = [int(i)+burn_in*(j%2==1) for j,i in enumerate(args.anc_sam1)] #add burn-in generation to sample generations
@@ -173,13 +168,13 @@ if __name__ == "__main__":
 		raise RuntimeError("--anc_sam1 must have the generation and the number of samples taken")
 	if(hasattr(args, 'anc_sam2') and len(args.anc_sam2) % 2):
 		raise RuntimeError("--anc_sam2 must have the generation and the number of samples taken")
-	if(args.migration[0] < 0 or args.migration[0] > 1 or args.migration[1] < 0 or args.migration[1] > 1):
-		raise RuntimeError("--migration rates must be between [0,1]")
-	if(args.migration[2] > args.migration[3]):
+	if(args.migration[0] < 0 or args.migration[0] > 1 or args.migration[1] < 0 or args.migration[1] > 1 or args.migration[2] <= 0 or args.migration[2] >= 1):
+		raise RuntimeError("--steady migration rates must be between [0,1] and initial migration rate to population 2 must be (0,1)")
+	if(args.migration[3] > args.migration[4]):
 		raise RuntimeError("--migration start must be <= end")
-	if(args.pop2[0] > 0 and (args.migration[2] <= args.pop2[1] or args.migration[3] > args.pop2[2] or args.migration[2] > args.pop2[2] or args.migration[3] <= args.pop2[1])):
+	if(args.pop2[0] > 0 and (args.migration[3] <= args.pop2[1] or args.migration[4] > args.pop2[2] or args.migration[3] > args.pop2[2] or args.migration[4] <= args.pop2[1])):
 		raise RuntimeError("--migration start/end must be between pop2 (start,end]")
-	if((args.migration[0] > 0 or args.migration[1] > 0) and args.pop2[0] == 0):
+	if((args.migration[0] > 0 or args.migration[1] > 0 or args.migration[2] > 0) and args.pop2[0] == 0):
 		raise RuntimeError("pop2 does not exist, cannot have migration")
 	if(args.iterations <= 0):
 		raise RuntimeError("number of iterations must be >= 1")

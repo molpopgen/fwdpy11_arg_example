@@ -87,8 +87,8 @@ evolve_track_ancestry(
     auto prev_pop2size = 0U;
 	const auto pop2_start = pop2array.at(1);
 	const auto pop2_end = pop2array.at(2);
-	const auto mig_start = migarray.at(2);
-	const auto mig_end = migarray.at(3);
+	const auto mig_start = migarray.at(3);
+	const auto mig_end = migarray.at(4);
     double time_simulating = 0.0;
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
@@ -104,7 +104,7 @@ evolve_track_ancestry(
         		mig21 = migarray.at(1);
         	}
         	if(pop.generation == pop2_start){
-        		mig12 = pop2size/static_cast<float>(pop.N);
+        		mig12 = migarray.at(2);
         		mig21 = 0;
         	}
             const auto N_next = popsizes.at(generation);
