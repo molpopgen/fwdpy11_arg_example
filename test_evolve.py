@@ -90,19 +90,19 @@ def run_sim(tuple):
 	num_sites2 = neutral_sites.num_rows
 	#print(num_sites2)
 	
-	pop = 0
-	t = 0
 	samples = []
+	population = [0]
+	generation = [0]
 	count = 0
 	for node in evolver.nodes:
 		if(node.flags == 1):
-			if(node.population == pop and node.time == t):
+			if(node.population == population[len(population)-1] and node.time == generation[len(generation)-1]):
 				count += 1
 			else:
 				samples.append(count)
 				count = 1
-				pop = node.population
-				t = node.time
+				population.append(node.population)
+				generation.append(node.time)
 		else:
 			samples.append(count)
 			break
@@ -111,7 +111,7 @@ def run_sim(tuple):
 	cumsum_samples = np.append(cumsum_samples, np.cumsum(samples,dtype=np.int64))
 	trees_neutral = msprime.load_tables(nodes=evolver.nodes, edges=evolver.edges, sites=neutral_sites, mutations=neutral_mutations)
 	
-	fst_list = np.zeros((len(samples),len(samples)))
+	fst_array = np.zeros((len(samples),len(samples)))
 		
 	if(len(samples) > 2):
 		for i in range(len(samples)):
@@ -130,17 +130,17 @@ def run_sim(tuple):
 				sdata = make_SimData(subtree_neutral)
 				subtree_sample = [samples[i],samples[j]]
 				fst = Fst(sdata,subtree_sample)
-				fst_list[i][j] = fst.hsm()
-				fst_list[j][i] = fst_list[i][j]
+				fst_array[i][j] = fst.hsm()/(1-fst.hsm())
+				fst_array[j][i] = fst_array[i][j]
 				
 	elif(len(samples) == 2):
 	
 		sdata = make_SimData(trees_neutral)
 		fst = Fst(sdata,samples)
-		fst_list[0][1] = fst.hsm()
-		fst_list[1][0] = fst_list[0][1]
+		fst_array[0][1] = fst.hsm()/(1-fst.hsm())
+		fst_array[1][0] = fst_array[0][1]
 		
-	return fst_list		
+	return (fst_array,population,generation)		
 
 if __name__ == "__main__":
 	parser = parse_args()
@@ -184,22 +184,45 @@ if __name__ == "__main__":
 
 	seed_list = [(seeds[i],seeds[i+1],seeds[i+2],seeds[i+3]) for i in range(0,len(seeds),4)]
 
-	fst_list = []
+	result_list = []
 	with concurrent.futures.ProcessPoolExecutor() as pool:
 		futures = {pool.submit(run_sim, (args,i)) for i in seed_list}
 		for fut in concurrent.futures.as_completed(futures):
-			fst_list.append(fut.result())
+			result_list.append(fut.result())
 
+	fst_list = []
+	for result in result_list:
+		fst_list.append(result[0])
+		
 	fst_array = np.array(fst_list)
 	mean_fst_array = np.mean(fst_array,axis=0)
 	median_fst_array = np.median(fst_array,axis=0)
 	std_fst_array = np.std(fst_array,axis=0)
+	population = result_list[0][1]
+	generation = result_list[0][2]
 	
 	f = open("simulation.txt", "w")
-	f.write("mean_fst_array\n")
+	f.write("population in sample\n")
+	np.array(population).tofile(f,sep="\t")
+	f.write("\n\ngeneration in sample\n")
+	np.array(generation).tofile(f,sep="\t")
+	f.write("\n\nexpected_linearlized_fst_array\n")
+	for ipop,igen in zip(population,generation):
+		for jpop, jgen in zip(population,generation):
+			if(ipop == jpop):
+				exp_lfst = abs(igen - jgen)/(4*int(args.pop1[1]))
+				f.write(str(exp_lfst)+"\t")
+			else:
+				exp_lfst = (2*5920-igen - jgen)/(4*int(args.pop1[1]))
+				f.write(str(exp_lfst)+"\t")
+	f.write("\n\nmean_linearlized_fst_array\n")
 	mean_fst_array.tofile(f,sep="\t")
-	f.write("\n\nmedian_fst_array\n")
+	f.write("\n\nmedian_linearlized_fst_array\n")
 	median_fst_array.tofile(f,sep="\t")
-	f.write("\n\nstd_fst_array\n")
+	f.write("\n\nstd_linearlized_fst_array\n")
 	std_fst_array.tofile(f,sep="\t")
+	f.write("\n\nlinearlized_fst_array\n")
+	for fst_array in fst_list:
+		fst_array.tofile(f,sep="\t")
+		f.write("\n")
 	f.close()
