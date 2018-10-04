@@ -129,6 +129,56 @@ migrate_and_calc_fitness(const gsl_rng *r, fwdpy11::SlocusPop& pop,
     return rv;
 };
 
+inline parent_lookup_tables
+duplicate_and_calc_fitness(const gsl_rng *r, fwdpy11::SlocusPop& pop, 
+	                     const fwdpp::uint_t N1)
+{
+    parent_lookup_tables rv;
+    // Temp containers for fitnesses in each deme,
+    // post-migration
+    std::vector<double> w1, w2;
+
+    // Go over all parents, set gametes counts to zero,
+    // and put individual IDs and fitnesses into
+    // the right vectors:
+    for (std::size_t i = 0; i < N1; ++i)
+        {
+            // fwdpp requires that we zero out gamete
+            // counts each generation.  Since we're looping
+            // over diploids here, now is a good time to
+            // handle this task, which saves us from having to
+            // do another O(N1+N2) loop:
+            pop.gametes[pop.diploids[i].first].n
+                = pop.gametes[pop.diploids[i].second].n = 0;
+            rv.parents1.push_back(i);
+            w1.push_back(pop.diploid_metadata[i].w);
+            rv.parents2.push_back(i);
+            w2.push_back(pop.diploid_metadata[i].w);
+        }
+
+    // Set up our lookup tables:
+    rv.lookup1.reset(gsl_ran_discrete_preproc(rv.parents1.size(), w1.data()));
+    rv.lookup2.reset(gsl_ran_discrete_preproc(rv.parents2.size(), w2.data()));
+    return rv;
+};
+
+inline parent_lookup_tables
+migration_fitness_parents(const gsl_rng *r, fwdpy11::SlocusPop& pop, 
+	                     const fwdpp::uint_t N1, const fwdpp::uint_t N2, 
+	                     const double m12, const double m21)
+{
+	if(m12 == 1.f && m21 == 0.f && N2 == 0)
+		{ 
+			return duplicate_and_calc_fitness(r, pop, N1); 
+	   	}
+	else
+	   	{
+	    		return migrate_and_calc_fitness(r, pop, N1, N2, m12, m21);
+	   	}
+
+}
+
+
 inline auto 
 get_parent(const gsl_rng *r, const parent_lookup_tables& lookups, int deme) -> decltype(lookups.parents1[0])
 {
@@ -156,9 +206,9 @@ evolve_generation(
         = fwdpp::fwdpp_internal::make_gamete_queue(pop.gametes);
     auto mutation_recycling_bin
         = make_mut_queue(pop.mcounts, ancestry);
-
-	auto lookups 
-		= migrate_and_calc_fitness(rng.get(), pop, pop.N, prev_N2, m12, m21);
+    auto lookups 
+	= migration_fitness_parents(rng.get(), pop, pop.N, prev_N2, m12, m21);
+	
     decltype(pop.diploids) offspring(N1+N2);
     decltype(pop.diploid_metadata) offspring_metadata(N1+N2);
     
@@ -166,10 +216,10 @@ evolve_generation(
     std::size_t label = 0;
     for (auto& dip : offspring)
         {
-        	int deme = (label >= N1);
-        	auto offspring_indexes = ancestry.get_next_indexes(deme);
+            int deme = (label >= N1);
+            auto offspring_indexes = ancestry.get_next_indexes(deme);
         	
-			auto p1 = get_parent(rng.get(), lookups, deme);
+	    auto p1 = get_parent(rng.get(), lookups, deme);
             auto p2 = get_parent(rng.get(), lookups, deme);
             auto p1g1 = pop.diploids[p1].first;
             auto p1g2 = pop.diploids[p1].second;
@@ -184,7 +234,7 @@ evolve_generation(
             if (swap2)
                 std::swap(p2g1, p2g2);
 			
-			auto breakpoints = rmodel();
+	    auto breakpoints = rmodel();
             auto new_mutations = fwdpp::generate_new_mutations(
                 mutation_recycling_bin, rng.get(), mu, pop.diploids[p1], pop.gametes, pop.mutations, p1g1, mmodel);
             auto pid = ancestry.get_parent_ids(p1, swap1);
