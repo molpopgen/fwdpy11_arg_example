@@ -22,12 +22,13 @@ Caution
 
 This is a proof of principle implementation only.  It has been tested that it gives the correct sample properties in distribution and that internal data structures are sane during simulation.  The API is not guaranteed to be neither ideal nor idiomatic.  Further, various safety checks are missing on the C++ side.  We simply do not check for integer overflow or other possible things that may happen if garbage collection occurs too infrequently.  These limitations, and others, will be dealt with (and tested for) when we port these ideas into fwdpy11_.
 
-Crude usage instructions
+Usage instructions
 ----------------------------------
 
-Currently, one can run simple simulations under very restrictive parameter combinations. There is currently **no** integration into msprime_ for generating the trees.  To be safe, I only recommend running the unit test for now.  While the underlying machinery is hooked up to fwdpy11_'s general scheme to model variation in mutation and recombination rates, the node/edge tracking currently assumes all positions are on the [0,1) interval.  
+This section will get you to a point where you can run the C++ simulations described in the paper.  These instructions have been confirmed to work in a clean conda environment using Python3.  **We strongly recommend that this package is compiled within a clean conda env.**
 
-This has been confirmed to work in a clean conda environment using Python3.  **We strongly recommend that this package is installed into a clean conda env.**
+First, install a Python3 environment for your user.  It doesn't matter if you use a "full" installer or a "miniconda"
+installer.  At this point, you may need to follow the conda installation instructions_.
 
 Instructions for conda on Linux:
 
@@ -38,7 +39,7 @@ Instructions for conda on Linux:
     conda config --add channels defaults
     conda config --add channels bioconda
     conda config --add channels conda-forge
-    conda install gcc fwdpy12==0.1.4 msprime==0.5.0 pybind11==2.2.1 pandas
+    conda install gcc fwdpy11==0.1.4 msprime==0.5.0 pybind11==2.2.1 pandas
     https://github.com/molpopgen/fwdpy11_arg_example
     cd fwdpy11_arg_example
     python setup.py build_ext -i
@@ -53,11 +54,6 @@ To run a proof-of-principle example where we do an entire simulation and then ha
     python test_evolve.py N 4Nr seed
 
 The output will be the times spent in various steps.
-
-Running the simulations found in the paper
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-The script `benchmarking.py` was used for running the simulations in the Kelleher et al. manuscript.
 
 Source code overview
 -----------------------------------------
@@ -124,3 +120,4 @@ Python code
 .. _fwdpp: http://molpopgen.github.io/fwdpp
 .. _pybind11: http://github.com/pybind/pybind11
 .. _msprime: http://github.com/jeromekelleher/msprime
+.. _instructions: https://conda.io/docs/user-guide/install/index.html
