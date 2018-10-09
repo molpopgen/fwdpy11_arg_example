@@ -53,19 +53,6 @@ Instructions for conda on Linux:
 Test simulation
 +++++++++++++++++++++++++++++++++
 
-To run a proof-of-principle example where we do an entire simulation and then have msprime clean up the mess:
-
-.. code-block:: bash
-
-    python test_evolve.py N 4Nr seed
-
-The output will be the times spent in various steps.
-
-Source code overview
------------------------------------------
-
-The package consists of a mix of C++ and Python code. All source code is in the fwdpy11_arg_example subdirectory of thie main repository.
-
 For example, let's run a simulation with the following parameters:
 
 * `N=5e4` diploids 
@@ -103,6 +90,11 @@ The fields are:
 * `fwd_sim_runtime`: The total time spent simulating
 
 The remaining four columns are the command-line parameters.
+
+Source code overview
+-----------------------------------------
+
+The package consists of a mix of C++ and Python code. All source code is in the fwdpy11_arg_example subdirectory of thie main repository.
 
 C++ code
 +++++++++++++++++++++
