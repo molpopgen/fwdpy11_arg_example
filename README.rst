@@ -29,27 +29,19 @@ Currently, one can run simple simulations under very restrictive parameter combi
 
 This has been confirmed to work in a clean conda environment using Python3.  **We strongly recommend that this package is installed into a clean conda env.**
 
-Install the following dependencies using conda:
+Instructions for conda on Linux:
 
 .. code-block:: bash
 
-    #hdf5 needed for msprime, which we 
-    #are installing from github
-    conda install -c conda-forge pybind11==2.2.1 gcc hdf5
-    conda install -c bioconda fwdpy11
-
-
-Install msprime_ from the current master branch on github. 
-
-Make a local build and run the unit tests:
-
-.. code-block:: bash
-
-    #--gcc only needed on OS X.  Does no harm 
-    #on Linux.
-    python setup.py build_ext -i --gcc
-    python -m unittest discover tests
-
+    conda create --name ftprime_ms python
+    source activate ftprime_ms
+    conda config --add channels defaults
+    conda config --add channels bioconda
+    conda config --add channels conda-forge
+    conda install gcc fwdpy12==0.1.4 msprime==0.5.0 pybind11==2.2.1 pandas
+    https://github.com/molpopgen/fwdpy11_arg_example
+    cd fwdpy11_arg_example
+    python setup.py build_ext -i
 
 Test simulation
 +++++++++++++++++++++++++++++++++
@@ -62,10 +54,53 @@ To run a proof-of-principle example where we do an entire simulation and then ha
 
 The output will be the times spent in various steps.
 
+Running the simulations found in the paper
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The script `benchmarking.py` was used for running the simulations in the Kelleher et al. manuscript.
+
 Source code overview
 -----------------------------------------
 
 The package consists of a mix of C++ and Python code. All source code is in the fwdpy11_arg_example subdirectory of thie main repository.
+
+For example, let's run a simulation with the following parameters:
+
+* `N=5e4` diploids 
+* a region size of `theta = rho = 1e4` 
+* deleterious mutation rate equal to one percent of the neutral mutation rate
+* simplify ("GC", or garbage-collect) every 1,000 generations
+* apply mutations to a sample of 100 individuals at the end of the simulation
+* write the timings to a file called `timings.txt`
+
+The command line for the above is:
+
+.. code-block:: bash
+
+    python benchmarking.py --popsize 50000 --theta 10000 --rho 10000 --pdel 0.01 --gc 1000 --nsam 100 --outfile1 timings.txt.gz \
+    --seed $RANDOM
+
+.. note:: The output file is gzip compressed!
+
+Please be mindful of running these simulations on machines with little RAM!  In general, forward simulations are
+intended to be run on HPC-strength hardware.  While tree sequence simplification results in very efficient run times, we
+are sometimes still using a substantial amount of RAM.
+
+An example of the output is:
+
+.. code-block:: bash
+
+    prepping	sorting	appending	simplifying	fwd_sim_runtime	N	theta	rho	simplify_interval
+    0.05370585599999733	4.384206619999995	0.2173980950000004	2.9446647440000016	5.174604999999977	1000	1000.0	1000.0	100
+
+The fields are:
+
+* `prepping`: cumulative time spent preparing data for a copy from the C++ side to msprime
+* `sorting`: cumulative time spent sorting tables, which is a requirement for simplification
+* `simplifying`: cumulative time spent simplifying tables
+* `fwd_sim_runtime`: The total time spent simulating
+
+The remaining four columns are the command-line parameters.
 
 C++ code
 +++++++++++++++++++++
