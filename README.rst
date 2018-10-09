@@ -30,6 +30,12 @@ This section will get you to a point where you can run the C++ simulations descr
 First, install a Python3 environment for your user.  It doesn't matter if you use a "full" installer or a "miniconda"
 installer.  At this point, you may need to follow the conda installation instructions_.
 
+.. note::
+
+    Linux is the preferred environment here.  If you insist on using Apple's OS X, then you
+    must add a --gcc flag to the last command in the following code block.  I (KRT) make 
+    no guarantees about success on OS X.
+
 Instructions for conda on Linux:
 
 .. code-block:: bash
