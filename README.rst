@@ -46,7 +46,7 @@ Instructions for conda on Linux:
     conda config --add channels bioconda
     conda config --add channels conda-forge
     conda install gcc fwdpy11==0.1.4 msprime==0.5.0 pybind11==2.2.1 pandas
-    https://github.com/molpopgen/fwdpy11_arg_example
+    git clone https://github.com/molpopgen/fwdpy11_arg_example
     cd fwdpy11_arg_example
     python setup.py build_ext -i
 
