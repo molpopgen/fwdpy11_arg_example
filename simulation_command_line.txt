@@ -1,0 +1,7 @@
+python -i test_evolve.py -1 flat 10000 -2 10000 2 500 -nT 1000 -m 0 0 0.5 3 3 -T 0 -B 0 --anc_sam1 1000 5 2000 5 --anc_sam2 300 5 -i 100
+
+python -i test_evolve.py -1 flat 10000 -2 0 0 0 -nT 1000 -m 0 0 0.0 0 0 -T 0 -B 0 --anc_sam1 1000 5 2000 5 -i 100
+
+python -i test_evolve.py -1 flat 10000 -2 0 0 0 -nT 1000 -m 0 0 0.0 0 0 -T 0 -B 0 --anc_sam1 1000 20 2000 20 -ns1 20 -i 300
+
+python -i test_evolve.py -1 flat 2000 -2 2000 100 500 -nT 1000 -m 0 0 1.0 101 101 -T 0 -B 0 --anc_sam1 1000 40 2000 40 --anc_sam2 300 40 -ns1 40 -i 300
