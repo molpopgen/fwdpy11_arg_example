@@ -1,6 +1,7 @@
 import fwdpy11_arg_example.evolve_arg as ea
 import msprime
 import numpy as np
+import scipy.stats as st
 import sys
 from pathlib import Path
 import argparse
@@ -9,6 +10,7 @@ from libsequence.msprime import make_SimData
 from libsequence.fst import Fst
 from libsequence.summstats import PolySIM
 import concurrent.futures
+from ancient_genotypes import *
 
 def get_nlist_tenn(init_pop, burn_in):
     """
@@ -52,6 +54,7 @@ def parse_args():
 	parser.add_argument('--replicates', '-r', type=int, default=100, help="number of simulation replicates")
 	parser.add_argument('--generations', '-g', type=int, default=5920, help="number of generations in flat demography")
 	parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")
+	parser.add_argument('--coverage', '-C', type=int, default=1, help="read coverage")
 	group = parser.add_mutually_exclusive_group(required=False)
 	group.add_argument('--init_tree', '-iT', dest='init_tree', action='store_true')
 	group.add_argument('--no_init_tree', '-niT', dest='init_tree', action='store_false')
@@ -133,6 +136,9 @@ def run_sim(tuple):
 	population = [0]
 	generation = [0]
 	count = 0
+	anc_num = 0
+	num_modern = 0
+	
 	for node in evolver.nodes:
 		if(node.flags == 1):
 			if(node.population == population[len(population)-1] and node.time == generation[len(generation)-1]):
@@ -142,6 +148,10 @@ def run_sim(tuple):
 				count = 1
 				population.append(node.population)
 				generation.append(node.time)
+			if(node.time > 0):
+				anc_num += 1
+			else:
+				num_modern += 1
 		else:
 			samples.append(count)
 			break
@@ -183,7 +193,38 @@ def run_sim(tuple):
 		fst_array[0][1] = fst.hsm()/(1-fst.hsm())
 		fst_array[1][0] = fst_array[0][1]
 		
-	return (fst_array,population,generation,pi_array)		
+	freq = []
+	reads = []
+	GT = []
+	error=st.expon.rvs(size=anc_num,scale=.05,random_state=seeds[4]) #only works with one ancestral sample
+	for ind in range(anc_num):
+		reads.append([])
+		GT.append([])
+	for variant in trees_neutral.variants():
+		var_array = variant.genotypes
+		cur_freq = sum(var_array[:-(2*anc_num)])/float(num_modern)
+		if cur_freq == 0 or cur_freq == 1: continue
+		#TODO: FIX THIS so the results don't need to be re-parsed
+		freq.append(cur_freq)
+		for i in range(anc_num):
+			ind_num = anc_num-i-1 #NB: indexing to get the output vector to be in the right order
+			if i == 0: cur_GT = var_array[-2:]
+			else: cur_GT = var_array[-(2*(i+1)):-(2*i)]
+			cur_GT = sum(cur_GT)
+			GT[ind_num].append(cur_GT)
+			reads[ind_num].append([None,None])
+			if args.coverage:
+				num_reads = st.poisson.rvs(args.coverage)
+				#num_reads = st.geom.rvs(1./coverage)
+				p_der = cur_GT/2.*(1-error[ind_num])+(1-cur_GT/2.)*error[ind_num]
+				derived_reads = st.binom.rvs(num_reads, p_der)
+				reads[ind_num][-1] = (num_reads-derived_reads,derived_reads)
+		
+	pop = [range(anc_num)] #only works with one ancestral sample
+	params_pop_sim_free = optimize_pop_params_error(np.array(freq),reads,pop,detail=False)
+	params_pop_sim_continuity = optimize_pop_params_error(np.array(freq),reads,pop,continuity = True, detail=False)
+	
+	return (fst_array,population,generation,pi_array,params_pop_sim_free,params_pop_sim_continuity)
 
 if __name__ == "__main__":
 	parser = parse_args()
@@ -230,11 +271,10 @@ if __name__ == "__main__":
 		raise RuntimeError("number of replicates must be >= 1")
 	# Get 4 seeds for each sim w/0 replacement from [0,1e6)
 	np.random.seed(args.seed)
-	seeds = np.random.choice(range(1000000), 4*args.replicates, replace=False)
+	seeds = np.random.choice(range(1000000), 5*args.replicates, replace=False)
 
-	seed_list = [(seeds[i],seeds[i+1],seeds[i+2],seeds[i+3]) for i in range(0,len(seeds),4)]
-	#run_sim((args,seed_list[0]))
-	
+	seed_list = [(seeds[i],seeds[i+1],seeds[i+2],seeds[i+3],seeds[i+4]) for i in range(0,len(seeds),5)]
+
 	result_list = []
 	num_cores = None
 	if(args.ncores > 0): num_cores = min(args.ncores,args.replicates)
