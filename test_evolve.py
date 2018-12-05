@@ -155,7 +155,7 @@ def run_sim(tuple):
 		else:
 			samples.append(count)
 			break
-
+	anc_num = int(anc_num/2)
 	cumsum_samples = np.zeros(1, dtype = np.int64)
 	cumsum_samples = np.append(cumsum_samples, np.cumsum(samples,dtype=np.int64))
 	
@@ -221,8 +221,9 @@ def run_sim(tuple):
 				reads[ind_num][-1] = (num_reads-derived_reads,derived_reads)
 		
 	pop = [range(anc_num)] #only works with one ancestral sample
-	params_pop_sim_free = optimize_pop_params_error(np.array(freq),reads,pop,detail=False)
-	params_pop_sim_continuity = optimize_pop_params_error(np.array(freq),reads,pop,continuity = True, detail=False)
+	print(reads)
+	params_pop_sim_free = optimize_pop_params_error_parallel(np.array(freq),reads,pop,detail=False)
+	params_pop_sim_continuity = optimize_pop_params_error_parallel(np.array(freq),reads,pop,continuity = True,detail=False)
 	
 	return (fst_array,population,generation,pi_array,params_pop_sim_free,params_pop_sim_continuity)
 
