@@ -7,10 +7,10 @@ from joblib import Parallel, delayed
 
 def sim_and_infer_continuity(num_ind, i, time, coverage=1):
 	print([coverage, num_ind, time])
-	freq_sim, GT_sim, reads_sim =  ancient_sample_many_pops(num_modern=1000,anc_pop = [1], anc_per_pop = [num_ind],  anc_time=[time],split_time=[400],Ne0=10000,NeAnc=[1000],mu=1.25e-8,length=500,num_rep=100000,coverage=coverage,error=st.expon.rvs(size=num_ind,scale=.05,random_state=i),seed=i)
-	pop = [range(num_ind)]
-	params_pop_sim_free = optimize_pop_params_error_parallel(freq_sim,reads_sim,pop,detail=False)
-	params_pop_sim_continuity = optimize_pop_params_error_parallel(freq_sim,reads_sim,pop,continuity = True, detail=False)
+	freq_sim, GT_sim, reads_sim =  ancient_sample_many_pops(num_modern=1000,anc_pop = [1], anc_per_pop = [num_ind],  anc_time=[time],split_time=[400],Ne0=10000,NeAnc=[1000],mu=1.25e-8,length=500,num_rep=10,coverage=coverage,error=st.expon.rvs(size=num_ind,scale=.05,random_state=i),seed=i)
+	freqs_sim, read_list_sim = get_read_dict(freq_sim,reads_sim)
+	params_pop_sim_free = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=False)
+	params_pop_sim_continuity = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=True)
 	return [params_pop_sim_free,params_pop_sim_continuity]
 
 cov = [.5,4]

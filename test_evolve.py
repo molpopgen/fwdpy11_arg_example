@@ -197,33 +197,29 @@ def run_sim(tuple):
 	reads = []
 	GT = []
 	error=st.expon.rvs(size=anc_num,scale=.05,random_state=seeds[4]) #only works with one ancestral sample
-	for ind in range(anc_num):
-		reads.append([])
-		GT.append([])
 	for variant in trees_neutral.variants():
 		var_array = variant.genotypes
 		cur_freq = sum(var_array[:-(2*anc_num)])/float(num_modern)
 		if cur_freq == 0 or cur_freq == 1: continue
-		#TODO: FIX THIS so the results don't need to be re-parsed
 		freq.append(cur_freq)
+		reads.append([])
+		GT.append([])
 		for i in range(anc_num):
-			ind_num = anc_num-i-1 #NB: indexing to get the output vector to be in the right order
 			if i == 0: cur_GT = var_array[-2:]
 			else: cur_GT = var_array[-(2*(i+1)):-(2*i)]
 			cur_GT = sum(cur_GT)
-			GT[ind_num].append(cur_GT)
-			reads[ind_num].append([None,None])
+			GT[-1].append(cur_GT)
+			reads[-1].append([None,None])
 			if args.coverage:
 				num_reads = st.poisson.rvs(args.coverage)
-				#num_reads = st.geom.rvs(1./coverage)
-				p_der = cur_GT/2.*(1-error[ind_num])+(1-cur_GT/2.)*error[ind_num]
+				p_der = cur_GT/2.*(1-error[i])+(1-cur_GT/2.)*error[i]
 				derived_reads = st.binom.rvs(num_reads, p_der)
-				reads[ind_num][-1] = (num_reads-derived_reads,derived_reads)
+				reads[-1][-1] = (num_reads-derived_reads,derived_reads)
+	
 		
-	pop = [range(anc_num)] #only works with one ancestral sample
-	print(reads)
-	params_pop_sim_free = optimize_pop_params_error_parallel(np.array(freq),reads,pop,detail=False)
-	params_pop_sim_continuity = optimize_pop_params_error_parallel(np.array(freq),reads,pop,continuity = True,detail=False)
+	freqs_sim, read_list_sim = get_read_dict(freq,reads)
+	params_pop_sim_free = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=False)
+	params_pop_sim_continuity = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=True)
 	
 	return (fst_array,population,generation,pi_array,params_pop_sim_free,params_pop_sim_continuity)
 
