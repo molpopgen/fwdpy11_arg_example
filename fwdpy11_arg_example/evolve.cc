@@ -89,7 +89,10 @@ evolve_track_ancestry(
 	const auto pop2_end = pop2array.at(2);
 	const auto mig_start = migarray.at(3);
 	const auto mig_end = migarray.at(4);
+	const bool recover_split = migarray.at(5);
     double time_simulating = 0.0;
+    fwdpp::uint_t split_N1_loss = 0U;
+    
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
         {
@@ -110,7 +113,7 @@ evolve_track_ancestry(
             const auto N_next = popsizes.at(generation);
             auto start = std::clock();
             evolve_generation(
-                rng, pop, N_next, prev_pop2size, pop2size, mig12, mig21, mu_selected, ff, mmodel, recmap, ancestry);
+                rng, pop, N_next, prev_pop2size, pop2size, mig12, mig21, split_N1_loss, recover_split, mu_selected, ff, mmodel, recmap, ancestry);
             pop.N = N_next;
             prev_pop2size = pop2size;
             update_mutations(
