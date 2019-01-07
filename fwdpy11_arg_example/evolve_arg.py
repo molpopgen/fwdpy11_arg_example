@@ -85,7 +85,7 @@ def evolve_track_wrapper(parsed_args, demography, seeds):
     :return: See evolve_track for details.
     """
     
-    dfe = fwdpy11.ConstantS(0, 1, 1, -0.025, 1.0)
+    dfe = fwdpy11.ConstantS(0, 1, 1, parsed_args.selection, 1.0)
     
     if isinstance(dfe, fwdpy11.Sregion) is False:
         raise TypeError("dfe must be a fwdpy11.Sregion")
@@ -103,18 +103,9 @@ def evolve_track_wrapper(parsed_args, demography, seeds):
                 'recregions': [fwdpy11.Region(0,1,1)],
                 'rates': (0.0, mu, recrate),
                 'demography': demography,
-                'gvalue': fwdpy11.genetic_values.SlocusMult(2.0)
+                'gvalue': fwdpy11.genetic_values.SlocusMult(1.0)
             }
     params = fwdpy11.model_params.ModelParams(**pdict)
-	
-#     pdict = {'rates': (0.0, mu, recrate),
-#              'nregions': [],
-#              'sregions': [dfe],
-#              'recregions': [fwdpy11.Region(0, 1, 1)],
-#              'gvalue': fwdpy11.fitness.SlocusMult(2.0),
-#              'demography': demography
-#              }
-# 
-#     params = fwdpy11.model_params.SlocusParams(**pdict)
     rng = fwdpy11.GSLrng(seeds[0])
+    
     return evolve_track(rng, parsed_args, pop, params, seeds, parsed_args.init_tree)

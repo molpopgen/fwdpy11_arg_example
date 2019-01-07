@@ -7,6 +7,9 @@
 #include <fwdpp/poisson_xover.hpp>
 #include <fwdpp/sugar/popgenmut.hpp>
 #include <fwdpp/recbinder.hpp>
+#include <fwdpp/extensions/regions.hpp>
+#include <fwdpy11/types/SlocusPop.hpp>
+#include <fwdpy11/genetic_values/SlocusPopGeneticValue.hpp>
 #include "evolve_generation.hpp"
 
 namespace py = pybind11;
@@ -38,8 +41,11 @@ double
 evolve_track_ancestry(
     const fwdpy11::GSLrng_t& rng, fwdpy11::SlocusPop & pop,  ancestry_tracker & ancestry, 
     py::function sample_simplify, py::array_t<std::uint32_t> popsizes, 
-    py::array_t<std::uint32_t> pop2array, py::array_t<float> migarray,
-    const double mu_selected, const double recrate)
+    py::array_t<std::uint32_t> pop2array, py::array_t<float> migarray, 
+    const double mu_selected, 
+    const fwdpp::extensions::discrete_mut_model<fwdpy11::SlocusPop::mcont_t>
+        &mmodel,
+    const fwdpp::extensions::discrete_rec_model &rmodel)
 {
     if (pop.generation > 0)
         {
@@ -60,26 +66,14 @@ evolve_track_ancestry(
             throw std::runtime_error("negative selected mutation rate: "
                                      + std::to_string(mu_selected));
         }
-    if (recrate < 0.)
-        {
-            throw std::runtime_error("negative recombination rate: "
-                                     + std::to_string(recrate));
-        }
     
     pop.mutations.reserve(
         std::ceil(std::log(2 * pop.N)
                   * (4. * double(pop.N) * (mu_selected)
                      + 0.667 * (4. * double(pop.N) * (mu_selected)))));
         
-    const auto recmap
-        = fwdpp::recbinder(fwdpp::poisson_xover(recrate, 0., 1.), rng.get());
-    const auto mmodel = [&pop, &rng](
-        std::queue<std::size_t>& recbin, fwdpy11::SlocusPop::mcont_t& mutations) {
-        return fwdpy11::infsites_Mutation(
-            recbin, mutations, pop.mut_lookup, pop.generation,
-            [&rng]() { return gsl_rng_uniform(rng.get()); }, []() { return -0.025; },
-            []() { return 1.0; });
-    }; 
+    const auto bound_mmodel = fwdpp::extensions::bind_dmm(rng.get(), mmodel);
+    const auto bound_rmodel = [&rng, &rmodel]() { return rmodel(rng.get()); };
     
     const auto ff = fwdpp::multiplicative_diploid(1.0);   
     
@@ -113,7 +107,7 @@ evolve_track_ancestry(
             const auto N_next = popsizes.at(generation);
             auto start = std::clock();
             evolve_generation(
-                rng, pop, N_next, prev_pop2size, pop2size, mig12, mig21, split_N1_loss, recover_split, mu_selected, ff, mmodel, recmap, ancestry);
+                rng, pop, N_next, prev_pop2size, pop2size, mig12, mig21, split_N1_loss, recover_split, mu_selected, ff, bound_mmodel, bound_rmodel, ancestry);
             pop.N = N_next;
             prev_pop2size = pop2size;
             update_mutations(

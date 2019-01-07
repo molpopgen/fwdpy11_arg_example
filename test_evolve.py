@@ -40,6 +40,7 @@ def parse_args():
 	parser.add_argument('--burn_in', '-B', type=int, default=73100.0, help="number of burn-in generations") 
 	parser.add_argument('--migration', '-m,', nargs=6, default=[0.1,0.1,(100/14474),111,400,0], help="steady migration rate 1 to 2, steady migration rate 2 to 1, split rate, migration start (after burn-in), migration end (after burn-in), split recovery (population 1 immediately recovers size afer split)") 
 	parser.add_argument('--ntheta', '-nT', type=float, default=10.0, help="4Nu: effective mutation rate of neutral mutations scaled to population size 1 at generation 0") 
+	parser.add_argument('--selection', '-s', type=float, default=-0.025, help="selection coefficient: -1 < s ") 
 	parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate of selected mutations scaled to population size 1 at generation 0") #for testing against neutral models, set to 0 and let msprime set mutations on the resulting tree
 	parser.add_argument('--rho', '-R', type=float, default=10.0, help="4Nr: effective recombination rate scaled to population size 1 at generation 0")
 	parser.add_argument('--n_sam1_curr', '-ns1', type=int, default=10, help="Sample size (in diploids) of population 1 in current day.")
@@ -163,6 +164,8 @@ if __name__ == "__main__":
 	if(hasattr(args, 'anc_sam2')):
 		args.anc_sam2 = [int(i)+burn_in*(j%2==1) for j,i in enumerate(args.anc_sam2)]
 	
+	if(args.selection <= -1):
+		raise RuntimeError("--selection coefficient must be > -1")
 	if(int(args.pop1[1]) <= 0):
 		raise RuntimeError("--pop1 initial population size must be > 0")
 	if(args.pop2[0] < 0):
