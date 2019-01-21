@@ -50,20 +50,12 @@ def parse_args():
 	parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
 	parser.add_argument('--replicates', '-r', type=int, default=100, help="number of simulation replicates")
 	parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")
-	parser.add_argument('--iterations', '-i', type=int, default=100, help="GC interval")
 	group = parser.add_mutually_exclusive_group(required=False)
 	group.add_argument('--init_tree', '-iT', dest='init_tree', action='store_true')
 	group.add_argument('--no_init_tree', '-niT', dest='init_tree', action='store_false')
 	parser.set_defaults(init_tree=True)
     
 	return parser
-
-#def msprime_tenn(init_pop, burn_in):
-    
-
-#def run_msprime_sim(tuple):
-    #samples = [msp.Sample(population=0,time=0)]*num_modern
-	#samples.extend([msp.Sample(population=anc_pop,time=anc_time)]*(2*anc_num))
 
 def run_sim(tuple):
 	args = tuple[0]
@@ -160,10 +152,9 @@ if __name__ == "__main__":
 	args.migration = [float(args.migration[0]),float(args.migration[1]),float(args.migration[2]),(int(args.migration[3])+burn_in),(int(args.migration[4])+burn_in),(bool(args.migration[5]))]
 	
 	if(hasattr(args, 'anc_sam1')): 
-		args.anc_sam1 = [int(i)+burn_in*(j%2==1) for j,i in enumerate(args.anc_sam1)] #add burn-in generation to sample generations
+		args.anc_sam1 = [int(i)+burn_in*(j%2==0) for j,i in enumerate(args.anc_sam1)] #add burn-in generation to sample generations
 	if(hasattr(args, 'anc_sam2')):
-		args.anc_sam2 = [int(i)+burn_in*(j%2==1) for j,i in enumerate(args.anc_sam2)]
-	
+		args.anc_sam2 = [int(i)+burn_in*(j%2==0) for j,i in enumerate(args.anc_sam2)]
 	if(args.selection <= -1):
 		raise RuntimeError("--selection coefficient must be > -1")
 	if(int(args.pop1[1]) <= 0):
@@ -186,11 +177,11 @@ if __name__ == "__main__":
 		raise RuntimeError("--migration start/end must be between pop2 (start,end]")
 	if((args.migration[0] > 0 or args.migration[1] > 0 or args.migration[2] > 0) and args.pop2[0] == 0):
 		raise RuntimeError("pop2 does not exist, cannot have migration")
-	if(args.iterations <= 0):
-		raise RuntimeError("number of iterations must be >= 1")
+	if(args.replicates <= 0):
+		raise RuntimeError("number of replicates must be >= 1")
 	# Get 4 seeds for each sim w/0 replacement from [0,1e6)
 	np.random.seed(args.seed)
-	seeds = np.random.choice(range(1000000), 4*args.iterations, replace=False)
+	seeds = np.random.choice(range(1000000), 4*args.replicates, replace=False)
 
 	seed_list = [(seeds[i],seeds[i+1],seeds[i+2],seeds[i+3]) for i in range(0,len(seeds),4)]
 
