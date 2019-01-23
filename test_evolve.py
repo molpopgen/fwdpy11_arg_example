@@ -173,10 +173,10 @@ if __name__ == "__main__":
 		raise RuntimeError("--steady migration rates must be between [0,1] and initial migration rate to population 2 must be (0,1] if population 2 exists")
 	if(args.migration[3] > args.migration[4]):
 		raise RuntimeError("--migration start must be <= end")
-	if(args.pop2[0] > 0 and (args.migration[3] <= args.pop2[1] or args.migration[4] > args.pop2[2] or args.migration[3] > args.pop2[2] or args.migration[4] <= args.pop2[1])):
-		raise RuntimeError("--migration start/end must be between pop2 (start,end]")
 	if((args.migration[0] > 0 or args.migration[1] > 0 or args.migration[2] > 0) and args.pop2[0] == 0):
 		raise RuntimeError("pop2 does not exist, cannot have migration")
+	if(args.migration[0] > 0 and args.migration[1] > 0 and (args.migration[3] <= args.pop2[1] or args.migration[4] > args.pop2[2] or args.migration[3] > args.pop2[2] or args.migration[4] <= args.pop2[1])):
+		raise RuntimeError("--migration start/end must be between pop2 (start,end]")
 	if(args.replicates <= 0):
 		raise RuntimeError("number of replicates must be >= 1")
 	# Get 4 seeds for each sim w/0 replacement from [0,1e6)
@@ -214,7 +214,7 @@ if __name__ == "__main__":
 				exp_lfst = abs(igen - jgen)/(4*int(args.pop1[1]))
 				f.write(str(exp_lfst)+"\t")
 			else:
-				exp_lfst = (2*5920-igen - jgen)/(4*int(args.pop1[1]))
+				exp_lfst = (2*(5920-int(args.pop2[1])+burn_in)-igen - jgen)/(4*int(args.pop1[1]))
 				f.write(str(exp_lfst)+"\t")
 	f.write("\n\nmean_linearlized_fst_array\n")
 	mean_fst_array.tofile(f,sep="\t")

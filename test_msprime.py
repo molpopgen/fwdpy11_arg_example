@@ -54,7 +54,7 @@ def msprime_flat_dem(args):
 			
 	population_configurations = [msprime.PopulationConfiguration(initial_size=pop_size_1),msprime.PopulationConfiguration(initial_size=pop_size_2)]
 	demographic_events = [msprime.MassMigration(time=split_generation,source=1,destination=0,proportion=1.0)]
-	all_sims = msprime.simulate(samples = samples,population_configurations = population_configurations,demographic_events = demographic_events,mutation_rate=args.ntheta/float(4*pop_size_1),num_replicates=args.replicates,random_seed = args.seed)
+	all_sims = msprime.simulate(samples=samples,population_configurations=population_configurations,demographic_events=demographic_events,mutation_rate=args.ntheta/float(4*pop_size_1),recombination_rate=args.rho/float(4*pop_size_1),num_replicates=args.replicates,random_seed=args.seed)
 	result_list = []
 	
 	for sim in all_sims:
@@ -104,8 +104,8 @@ def msprime_flat_dem(args):
 				
 		elif(len(mysamples) == 2):
 	
-			sdata = make_SimData(trees_neutral)
-			fst = Fst(sdata,samples)
+			sdata = make_SimData(sim)
+			fst = Fst(sdata,mysamples)
 			fst_array[0][1] = fst.hsm()/(1-fst.hsm())
 			fst_array[1][0] = fst_array[0][1]
 		
@@ -142,7 +142,7 @@ if __name__ == "__main__":
 				exp_lfst = abs(igen - jgen)/(4*int(args.pop1[1]))
 				f.write(str(exp_lfst)+"\t")
 			else:
-				exp_lfst = (2*5920-igen - jgen)/(4*int(args.pop1[1]))
+				exp_lfst = (2*(5920-int(args.pop2[1]))-igen - jgen)/(4*int(args.pop1[1]))
 				f.write(str(exp_lfst)+"\t")
 	f.write("\n\nmean_linearlized_fst_array\n")
 	mean_fst_array.tofile(f,sep="\t")
