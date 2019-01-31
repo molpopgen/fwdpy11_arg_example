@@ -30,6 +30,7 @@ def parse_args():
 	group.add_argument('--init_tree', '-iT', dest='init_tree', action='store_true')
 	group.add_argument('--no_init_tree', '-niT', dest='init_tree', action='store_false')
 	parser.set_defaults(init_tree=True)
+    parser.add_argument('--outfilename', '-o', default="msprime_simulation.txt", help="outfile name")
     
 	return parser
 	
@@ -131,7 +132,7 @@ if __name__ == "__main__":
 	population = result_list[0][1]
 	generation = result_list[0][2]
 	
-	f = open("msprime_simulation.txt", "w")
+	f = open(args.outfilename, "w")
 	f.write("population in sample\n")
 	np.array(population).tofile(f,sep="\t")
 	f.write("\n\ngeneration in sample\n")
