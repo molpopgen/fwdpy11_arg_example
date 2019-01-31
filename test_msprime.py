@@ -30,7 +30,7 @@ def parse_args():
 	group.add_argument('--init_tree', '-iT', dest='init_tree', action='store_true')
 	group.add_argument('--no_init_tree', '-niT', dest='init_tree', action='store_false')
 	parser.set_defaults(init_tree=True)
-    parser.add_argument('--outfilename', '-o', default="msprime_simulation.txt", help="outfile name")
+	parser.add_argument('--outfilename', '-o', default="msprime_simulation.txt", help="outfile name")
     
 	return parser
 	
