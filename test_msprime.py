@@ -24,6 +24,7 @@ def parse_args():
 	parser.add_argument('--anc_sam2', '-as2', nargs='*', default = argparse.SUPPRESS, help="List of ancient samples (generation after burn-in, number of samples - in diploids) of population 2.")
 	parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
 	parser.add_argument('--replicates', '-r', type=int, default=100, help="number of simulation replicates")
+	parser.add_argument('--generations', '-g', type=int, default=5920, help="number of generations in flat demography")
 	parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")
 	group = parser.add_mutually_exclusive_group(required=False)
 	group.add_argument('--init_tree', '-iT', dest='init_tree', action='store_true')
@@ -35,7 +36,7 @@ def parse_args():
 #burn-in must be 0
 def msprime_flat_dem(args):
 	pop_size_1 = int(args.pop1[1])
-	final_generation = 5920
+	final_generation = args.generations
 	split_generation = final_generation - int(args.pop2[1])
 	pop2_extinct_gen = final_generation - int(args.pop2[2])
 	pop_size_2 = int(args.pop2[0])
@@ -142,7 +143,7 @@ if __name__ == "__main__":
 				exp_lfst = abs(igen - jgen)/(4*int(args.pop1[1]))
 				f.write(str(exp_lfst)+"\t")
 			else:
-				exp_lfst = (2*(5920-int(args.pop2[1]))-igen - jgen)/(4*int(args.pop1[1]))
+				exp_lfst = (2*(args.generations-int(args.pop2[1]))-igen - jgen)/(4*int(args.pop1[1]))
 				f.write(str(exp_lfst)+"\t")
 	f.write("\n\nmean_linearlized_fst_array\n")
 	mean_fst_array.tofile(f,sep="\t")

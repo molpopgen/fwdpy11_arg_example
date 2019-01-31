@@ -49,6 +49,7 @@ def parse_args():
 	parser.add_argument('--anc_sam2', '-as2', nargs='*', default = argparse.SUPPRESS, help="List of ancient samples (generation after burn-in, number of samples - in diploids) of population 2.")
 	parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
 	parser.add_argument('--replicates', '-r', type=int, default=100, help="number of simulation replicates")
+	parser.add_argument('--generations', '-g', type=int, default=5920, help="number of generations in flat demography")
 	parser.add_argument('--gc', '-G', type=int, default=100, help="GC interval")
 	group = parser.add_mutually_exclusive_group(required=False)
 	group.add_argument('--init_tree', '-iT', dest='init_tree', action='store_true')
@@ -62,12 +63,12 @@ def run_sim(tuple):
 	seeds = tuple[1]
 	init_pop_size = int(args.pop1[1])
 	burn_in = args.burn_in
-	demography = [init_pop_size]*(burn_in+5920)
+	demography = [init_pop_size]*(burn_in+args.generations)
 	if(args.pop1[0] == "tenn"):	
 	 	demography = get_nlist_tenn(init_pop_size,burn_in)
 	
 	evolver = ea.evolve_track_wrapper(args, demography, seeds)
-	#print(evolver.times)
+	print(evolver.times)
 	num_sites = evolver.sites.num_rows
 	#print(num_sites)
 
@@ -88,7 +89,7 @@ def run_sim(tuple):
 	mutgen = msprime.MutationGenerator(msp_rng, args.ntheta/float(4*demography[0])) 
 	mutgen.generate(evolver.nodes, evolver.edges, neutral_sites, neutral_mutations)
 	num_sites2 = neutral_sites.num_rows
-	#print(num_sites2)
+	print(num_sites2)
 	
 	samples = []
 	population = [0]
@@ -214,7 +215,7 @@ if __name__ == "__main__":
 				exp_lfst = abs(igen - jgen)/(4*int(args.pop1[1]))
 				f.write(str(exp_lfst)+"\t")
 			else:
-				exp_lfst = (2*(5920-int(args.pop2[1])+burn_in)-igen - jgen)/(4*int(args.pop1[1]))
+				exp_lfst = (2*(args.generations-int(args.pop2[1])+burn_in)-igen - jgen)/(4*int(args.pop1[1]))
 				f.write(str(exp_lfst)+"\t")
 	f.write("\n\nmean_linearlized_fst_array\n")
 	mean_fst_array.tofile(f,sep="\t")
