@@ -38,7 +38,7 @@ def parse_args():
 	parser.add_argument('--pop1', '-1', nargs=2, default=["tenn","7310"], help="demography type (flat/tenn), initial pop") 
 	parser.add_argument('--pop2', '-2', nargs=3, default=[100,110,500], help="size of population 2 in individual diploids, generation after burn-in population 2 arises, generation after burn-in population 2 goes extinct")
 	parser.add_argument('--burn_in', '-B', type=int, default=73100.0, help="number of burn-in generations") 
-	parser.add_argument('--migration', '-m,', nargs=6, default=[0.1,0.1,(100/14474),111,400,0], help="steady migration rate 1 to 2, steady migration rate 2 to 1, split rate, migration start (after burn-in), migration end (after burn-in), split recovery (population 1 immediately recovers size afer split)") 
+	parser.add_argument('--migration', '-m,', nargs=7, default=[0.1,0.1,(100/14474),111,400,0,1], help="steady migration rate 1 to 2, steady migration rate 2 to 1, split rate, migration start (after burn-in), migration end (after burn-in), split recovery (population 1 immediately recovers size afer split), split rate expectation (set pop2 split size to exactly (split rate)*(pop1 size))") 
 	parser.add_argument('--ntheta', '-nT', type=float, default=10.0, help="4Nu: effective mutation rate of neutral mutations scaled to population size 1 at generation 0") 
 	parser.add_argument('--selection', '-s', type=float, default=-0.025, help="selection coefficient: -1 < s ") 
 	parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate of selected mutations scaled to population size 1 at generation 0") #for testing against neutral models, set to 0 and let msprime set mutations on the resulting tree
@@ -151,7 +151,7 @@ if __name__ == "__main__":
 	init_pop_size = int(args.pop1[1])
 	burn_in = args.burn_in
 	args.pop2 = [int(args.pop2[0]),(int(args.pop2[1])+burn_in),(int(args.pop2[2])+burn_in)]
-	args.migration = [float(args.migration[0]),float(args.migration[1]),float(args.migration[2]),(int(args.migration[3])+burn_in),(int(args.migration[4])+burn_in),(bool(args.migration[5]))]
+	args.migration = [float(args.migration[0]),float(args.migration[1]),float(args.migration[2]),(int(args.migration[3])+burn_in),(int(args.migration[4])+burn_in),(bool(args.migration[5])),(bool(args.migration[6]))]
 	
 	if(hasattr(args, 'anc_sam1')): 
 		args.anc_sam1 = [int(i)+burn_in*(j%2==0) for j,i in enumerate(args.anc_sam1)] #add burn-in generation to sample generations
