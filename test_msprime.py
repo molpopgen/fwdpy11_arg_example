@@ -40,7 +40,11 @@ def msprime_flat_dem(args):
 	final_generation = args.generations
 	split_generation = final_generation - int(args.pop2[1])
 	pop2_extinct_gen = final_generation - int(args.pop2[2])
+	split_rate = float(args.migration[2])
+	split_recovery = bool(float(args.migration[5]))
 	pop_size_2 = int(args.pop2[0])
+	if(split_rate < 1 and not(split_recovery)):
+		pop_size_1 -= pop_size_2
 	samples = [msprime.Sample(population=0,time=0)]*(2*args.n_sam1_curr)
 	samples.extend([msprime.Sample(population=1,time=0)]*(2*args.n_sam2_curr))
 	if(hasattr(args, 'anc_sam1')): 
@@ -56,6 +60,16 @@ def msprime_flat_dem(args):
 			
 	population_configurations = [msprime.PopulationConfiguration(initial_size=pop_size_1),msprime.PopulationConfiguration(initial_size=pop_size_2)]
 	demographic_events = [msprime.MassMigration(time=split_generation,source=1,destination=0,proportion=1.0)]
+	if(split_rate < 1):
+		if(not(split_recovery)):
+			demographic_events.append(msprime.PopulationParametersChange(time=split_generation, initial_size=(pop_size_1 + pop_size_2), growth_rate=0, population_id=0))
+		else:
+			demographic_events.append(msprime.PopulationParametersChange(time=split_generation, initial_size=(pop_size_1 - pop_size_2), growth_rate=0, population_id=0))
+			demographic_events.append(msprime.PopulationParametersChange(time=(split_generation+1), initial_size=pop_size_1, growth_rate=0, population_id=0))
+	
+	dd = msprime.DemographyDebugger(population_configurations=population_configurations,demographic_events=demographic_events)
+	dd.print_history()
+	
 	all_sims = msprime.simulate(samples=samples,population_configurations=population_configurations,demographic_events=demographic_events,mutation_rate=args.ntheta/float(4*pop_size_1),recombination_rate=args.rho/float(4*pop_size_1),num_replicates=args.replicates,random_seed=args.seed)
 	result_list = []
 	
