@@ -77,16 +77,14 @@ evolve_track_ancestry(
     
     const auto ff = fwdpp::multiplicative_diploid(1.0);   
     
-    ++pop.generation;
+    ++pop.generation; //simulation starts at demography generation 1
     auto prev_pop2size = 0U;
 	const auto pop2_start = pop2array.at(1);
 	const auto pop2_end = pop2array.at(2);
 	const auto mig_start = migarray.at(3);
 	const auto mig_end = migarray.at(4);
 	const bool recover_split = migarray.at(5);
-	const bool expect_split = migarray.at(6);
     double time_simulating = 0.0;
-    fwdpp::uint_t split_N1_loss = 0U;
     
     for (unsigned generation = 0; generation < generations;
          ++generation, ++pop.generation)
@@ -105,15 +103,15 @@ evolve_track_ancestry(
         		mig12 = migarray.at(2);
         		mig21 = 0;
         	}
-            const auto N_next = popsizes.at(generation);
+            const auto N_next = popsizes.at(pop.generation); //popsizes.at(0) is pop.N
             auto start = std::clock();
             evolve_generation(
-                rng, pop, N_next, prev_pop2size, pop2size, mig12, mig21, split_N1_loss, recover_split, expect_split, mu_selected, ff, bound_mmodel, bound_rmodel, ancestry);
+                rng, pop, N_next, prev_pop2size, pop2size, mig12, mig21, recover_split, mu_selected, ff, bound_mmodel, bound_rmodel, ancestry);
             pop.N = N_next;
             prev_pop2size = pop2size;
             update_mutations(
                 pop.mutations, pop.fixations, pop.fixation_times, pop.mut_lookup, 
-                ancestry, pop.mcounts, pop.generation, 2 * pop.N);
+                ancestry, pop.mcounts, pop.generation, 2 * (pop.N+prev_pop2size));
             auto stop = std::clock();
             auto dur = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
             time_simulating += dur;

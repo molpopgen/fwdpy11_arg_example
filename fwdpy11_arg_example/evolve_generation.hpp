@@ -48,7 +48,7 @@ struct parent_lookup_tables
 inline parent_lookup_tables
 migrate_and_calc_fitness(const gsl_rng *r, fwdpy11::SlocusPop& pop, 
 	                     const fwdpp::uint_t N1, const fwdpp::uint_t N2, 
-	                     const double m12, const double m21, const bool expect_split)
+	                     const double m12, const double m21)
 // This function will be called at the start of each generation.
 // The main goal is to return the lookup tables described above.
 // But, "while we're at it", it does some other stuff that
@@ -67,7 +67,7 @@ migrate_and_calc_fitness(const gsl_rng *r, fwdpy11::SlocusPop& pop,
     unsigned nmig12 = gsl_ran_poisson(r, static_cast<double>(N1) * m12);
     unsigned nmig21 = gsl_ran_poisson(r, static_cast<double>(N2) * m21);
 
-	if(N2 == 0 && m12 > 0){ nmig12 = expect_split ? static_cast<double>(N1) * m12 : std::max(nmig12,2U); } //population 2 is being established, must have at least 2 individuals migrating to it
+	if(N2 == 0 && m12 > 0){ nmig12 = std::round(static_cast<double>(N1) * m12); } //population 2 is being established
 	nmig12 = std::min(nmig12,N1); //can't have more individuals migrating than present in each population
 	nmig21 = std::min(nmig21,N2);
 	
@@ -164,7 +164,7 @@ duplicate_and_calc_fitness(const gsl_rng *r, fwdpy11::SlocusPop& pop,
 inline parent_lookup_tables
 migration_fitness_parents(const gsl_rng *r, fwdpy11::SlocusPop& pop, 
 	                     const fwdpp::uint_t prev_N1, const fwdpp::uint_t prev_N2, 
-	                     const double m12, const double m21, const bool expect_split)
+	                     const double m12, const double m21)
 {
 	if(m12 == 1.f && prev_N2 == 0)
 		{ 
@@ -172,7 +172,7 @@ migration_fitness_parents(const gsl_rng *r, fwdpy11::SlocusPop& pop,
 	   	}
 	else
 	   	{
-	    	return migrate_and_calc_fitness(r, pop, prev_N1, prev_N2, m12, m21, expect_split);
+	    	return migrate_and_calc_fitness(r, pop, prev_N1, prev_N2, m12, m21);
 	   	}
 
 }
@@ -195,7 +195,7 @@ void
 evolve_generation(
     const fwdpy11::GSLrng_t& rng, fwdpy11::SlocusPop& pop,
     const fwdpp::uint_t N1, const fwdpp::uint_t prev_N2, const fwdpp::uint_t N2, 
-    const double m12, const double m21, fwdpp::uint_t & split_N1_loss, const bool recover_split_loss, const bool expect_split, const double mu, const fitness_fxn& wmodel, 
+    const double m12, const double m21, const bool recover_split_loss, const double mu, const fitness_fxn& wmodel, 
     const mutation_fxn& mmodel, const breakpoint_fxn& rmodel, 
     ancestry_tracker& ancestry)
 {
@@ -205,22 +205,17 @@ evolve_generation(
     auto mutation_recycling_bin
         = make_mut_queue(pop.mcounts, ancestry);
     auto lookups 
-		= migration_fitness_parents(rng.get(), pop, pop.N, prev_N2, m12, m21, expect_split);
-		
-	if(m12 < 1.f && prev_N2 == 0 && !recover_split_loss){
-		split_N1_loss = pop.N - lookups.parents1.size(); //allows split size to be random and decrease N1 by exact amount of individuals who left the population to form N2
-	}
+		= migration_fitness_parents(rng.get(), pop, pop.N, prev_N2, m12, m21);
 	
-	auto N1_loss = N1 - split_N1_loss; 
-	
-    decltype(pop.diploids) offspring(N1_loss+N2);
-    decltype(pop.diploid_metadata) offspring_metadata(N1_loss+N2);
+    decltype(pop.diploids) offspring(N1+N2);
+    decltype(pop.diploid_metadata) offspring_metadata(N1+N2);
     
     // Generate the offspring
     std::size_t label = 0;
     for (auto& dip : offspring)
         {
-            int deme = (label >= N1_loss);
+        	//pybind11::print(label);
+            int deme = (label >= N1);
             auto offspring_indexes = ancestry.get_next_indexes(deme);
         	
 	    	auto p1 = get_parent(rng.get(), lookups, deme);
@@ -265,11 +260,12 @@ evolve_generation(
             offspring_metadata[label].w = wmodel(dip, pop.gametes, pop.mutations);
             label++;
         }
+    
     ancestry.finish_generation();
     fwdpp::fwdpp_internal::process_gametes(pop.gametes, pop.mutations,
                                            pop.mcounts);
     fwdpp::fwdpp_internal::gamete_cleaner(pop.gametes, pop.mutations,
-                                          pop.mcounts, 2 * (N1_loss+N2), std::true_type());
+                                          pop.mcounts, 2 * (N1+N2), std::true_type());
     // This is constant-time
     pop.diploids.swap(offspring);
     pop.diploid_metadata.swap(offspring_metadata);

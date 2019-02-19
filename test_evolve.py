@@ -24,7 +24,7 @@ def get_nlist_tenn(init_pop, burn_in):
     
     E5: Ne = 9,300 to Ne = 512,000 during t = -205 to t = -0 ( 205 g of exponential growth at rate 1.95% per gen )  
     """
-    n=[init_pop]*(burn_in) #E1: evolve ancestral size to mutation/selection/drift equilibrium
+    n=[init_pop]*(burn_in+1) #E1: evolve ancestral size to mutation/selection/drift equilibrium
     n.extend([14474]*(5920-2040)) #E2
     n.extend([1861]*(2040-920)) #E3
     n.extend(dem.exponential_size_change(1032,9300,920-205)) #E4
@@ -38,7 +38,7 @@ def parse_args():
 	parser.add_argument('--pop1', '-1', nargs=2, default=["tenn","7310"], help="demography type (flat/tenn), initial pop") 
 	parser.add_argument('--pop2', '-2', nargs=3, default=[100,110,500], help="size of population 2 in individual diploids, generation after burn-in population 2 arises, generation after burn-in population 2 goes extinct")
 	parser.add_argument('--burn_in', '-B', type=int, default=73100.0, help="number of burn-in generations") 
-	parser.add_argument('--migration', '-m,', nargs=7, default=[0.1,0.1,(100/14474),111,400,0,1], help="steady migration rate 1 to 2, steady migration rate 2 to 1, split rate, migration start (after burn-in), migration end (after burn-in), split recovery (population 1 immediately recovers size afer split), split rate expectation (set pop2 split size to exactly (split rate)*(pop1 size))") 
+	parser.add_argument('--migration', '-m,', nargs=6, default=[0.1,0.1,(100/14474),111,400,0], help="steady migration rate 1 to 2, steady migration rate 2 to 1, split rate, migration start (after burn-in), migration end (after burn-in), split recovery (population 1 immediately recovers size afer split)") 
 	parser.add_argument('--ntheta', '-nT', type=float, default=10.0, help="4Nu: effective mutation rate of neutral mutations scaled to population size 1 at generation 0") 
 	parser.add_argument('--selection', '-s', type=float, default=-0.025, help="selection coefficient: -1 < s ") 
 	parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate of selected mutations scaled to population size 1 at generation 0") #for testing against neutral models, set to 0 and let msprime set mutations on the resulting tree
@@ -64,9 +64,12 @@ def run_sim(tuple):
 	seeds = tuple[1]
 	init_pop_size = int(args.pop1[1])
 	burn_in = args.burn_in
-	demography = [init_pop_size]*(burn_in+args.generations)
+	demography = [init_pop_size]*(burn_in+args.generations+1)
 	if(args.pop1[0] == "tenn"):	
 	 	demography = get_nlist_tenn(init_pop_size,burn_in)
+	elif(args.migration[2] < 1 and args.migration[5] == False): #for the split recovery model, only the parental generation of population 1 has the bottleneck during the split
+		for gen in range(args.pop2[1],len(demography)):
+			demography[gen] -=  args.pop2[0]
 	
 	evolver = ea.evolve_track_wrapper(args, demography, seeds)
 	print(evolver.times)
@@ -151,7 +154,13 @@ if __name__ == "__main__":
 	init_pop_size = int(args.pop1[1])
 	burn_in = args.burn_in
 	args.pop2 = [int(args.pop2[0]),(int(args.pop2[1])+burn_in),(int(args.pop2[2])+burn_in)]
-	args.migration = [float(args.migration[0]),float(args.migration[1]),float(args.migration[2]),(int(args.migration[3])+burn_in),(int(args.migration[4])+burn_in),(bool(args.migration[5])),(bool(args.migration[6]))]
+	split_rate = float(args.migration[2])
+	if(split_rate != 1 and split_rate != 0 and args.pop1[0] == "flat"):
+		split_rate = min(args.pop2[0]/init_pop_size,1.0)
+	if(args.pop1[0] == "tenn" and split_rate != 0):
+		split_rate = 1
+			
+	args.migration = [float(args.migration[0]),float(args.migration[1]),split_rate,(int(args.migration[3])+burn_in),(int(args.migration[4])+burn_in),bool(float(args.migration[5]))]
 	
 	if(hasattr(args, 'anc_sam1')): 
 		args.anc_sam1 = [int(i)+burn_in*(j%2==0) for j,i in enumerate(args.anc_sam1)] #add burn-in generation to sample generations
@@ -186,7 +195,8 @@ if __name__ == "__main__":
 	seeds = np.random.choice(range(1000000), 4*args.replicates, replace=False)
 
 	seed_list = [(seeds[i],seeds[i+1],seeds[i+2],seeds[i+3]) for i in range(0,len(seeds),4)]
-
+	#run_sim((args,seed_list[0]))
+	
 	result_list = []
 	with concurrent.futures.ProcessPoolExecutor() as pool:
 		futures = {pool.submit(run_sim, (args,i)) for i in seed_list}

@@ -31,7 +31,7 @@ class ArgEvolver(object):
         self.__params = params
         self.__pop2array = np.array(parsed_args.pop2,dtype=np.uint32)
         self.__migarray = np.array(parsed_args.migration,dtype=np.float32)
-        self.__total_generations = len(params.demography) 
+        self.__total_generations = len(params.demography) - 1 #initialization generation is params.demography[0]
         
         if trees is not None:
             self.__process = False
