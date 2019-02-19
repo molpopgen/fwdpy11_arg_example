@@ -35,7 +35,7 @@ def parse_args():
 	return parser
 	
 #burn-in must be 0
-def msprime_flat_dem(args):
+def run_msprime(args):
 	pop_size_1 = int(args.pop1[1])
 	final_generation = args.generations
 	split_generation = final_generation - int(args.pop2[1])
@@ -57,16 +57,26 @@ def msprime_flat_dem(args):
 		while (i < len(args.anc_sam2)):
 			samples.extend([msprime.Sample(population=1,time=final_generation-int(args.anc_sam2[i]))]*(2*int(args.anc_sam2[i+1])))
 			i += 2
-			
-	population_configurations = [msprime.PopulationConfiguration(initial_size=pop_size_1),msprime.PopulationConfiguration(initial_size=pop_size_2)]
-	demographic_events = [msprime.MassMigration(time=split_generation,source=1,destination=0,proportion=1.0)]
-	if(split_rate < 1):
-		if(not(split_recovery)):
-			demographic_events.append(msprime.PopulationParametersChange(time=split_generation, initial_size=(pop_size_1 + pop_size_2), growth_rate=0, population_id=0))
-		else:
-			demographic_events.append(msprime.PopulationParametersChange(time=split_generation, initial_size=(pop_size_1 - pop_size_2), growth_rate=0, population_id=0))
-			demographic_events.append(msprime.PopulationParametersChange(time=(split_generation+1), initial_size=pop_size_1, growth_rate=0, population_id=0))
 	
+	population_configurations = []		
+	demographic_events = []
+	
+	if(args.pop1[0] == "flat"):
+		population_configurations = [msprime.PopulationConfiguration(initial_size=pop_size_1),msprime.PopulationConfiguration(initial_size=pop_size_2)]
+		demographic_events.append([msprime.MassMigration(time=split_generation,source=1,destination=0,proportion=1.0)])
+		if(split_rate < 1):
+			if(not(split_recovery)):
+				demographic_events.append(msprime.PopulationParametersChange(time=split_generation, initial_size=(pop_size_1 + pop_size_2), growth_rate=0, population_id=0))
+			else:
+				demographic_events.append(msprime.PopulationParametersChange(time=split_generation, initial_size=(pop_size_1 - pop_size_2), growth_rate=0, population_id=0))
+				demographic_events.append(msprime.PopulationParametersChange(time=(split_generation+1), initial_size=pop_size_1, growth_rate=0, population_id=0))
+	else:
+		population_configurations = [msprime.PopulationConfiguration(initial_size=512000, growth_rate=0.019552733)]
+		demographic_events.append(msprime.PopulationParametersChange(time=205, initial_size=9300, growth_rate=0.003074847, population_id=0))
+		demographic_events.append(msprime.PopulationParametersChange(time=920, initial_size=1861, growth_rate=0, population_id=0))
+		demographic_events.append(msprime.PopulationParametersChange(time=2040, initial_size=14474, growth_rate=0, population_id=0))
+		demographic_events.append(msprime.PopulationParametersChange(time=5920, initial_size=pop_size_1, growth_rate=0, population_id=0))
+		
 	dd = msprime.DemographyDebugger(population_configurations=population_configurations,demographic_events=demographic_events)
 	dd.print_history()
 	
@@ -133,7 +143,7 @@ if __name__ == "__main__":
 	parser = parse_args()
 	args = parser.parse_args(sys.argv[1:])
 	
-	result_list = msprime_flat_dem(args)
+	result_list = run_msprime(args)
 	
 	fst_list = []
 	for result in result_list:
