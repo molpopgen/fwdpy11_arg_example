@@ -85,26 +85,30 @@ def evolve_track_wrapper(parsed_args, demography, seeds):
     :return: See evolve_track for details.
     """
     
-    dfe = fwdpy11.ConstantS(0, 1, 1, parsed_args.selection, 1.0)
-    
-    if isinstance(dfe, fwdpy11.Sregion) is False:
-        raise TypeError("dfe must be a fwdpy11.Sregion")
-
-    if dfe.b != 0.0 or dfe.e != 1.0:
-        raise ValueError("DFE beg/end must be 0.0/1.0, repsectively")
-
     initial_popsize = demography[0]
     pop = fwdpy11.SlocusPop(initial_popsize)
     recrate = float(parsed_args.rho) / (4.0 * float(initial_popsize))
     mu = float(parsed_args.theta) / (4.0 * float(initial_popsize))
     
+    dfe = fwdpy11.ConstantS(0, 1, 1, parsed_args.selection, 1.0)
+    if(not(parsed_args.single_locus)):
+    	dfe = fwdpy11.ConstantS(0, parsed_args.region_breaks[0], 1, parsed_args.selection, 1.0)
+    
+    if isinstance(dfe, fwdpy11.Sregion) is False:
+        raise TypeError("dfe must be a fwdpy11.Sregion")
+
+    recregion = fwdpy11.Region(0, 1, 1)
+    if(not(parsed_args.single_locus)):
+        recregion = fwdpy11.Region(parsed_args.region_breaks[0], parsed_args.region_breaks[1], 1)
+    
     pdict = {'nregions': [],
                 'sregions': [dfe],
-                'recregions': [fwdpy11.Region(0,1,1)],
+                'recregions': [recregion],
                 'rates': (0.0, mu, recrate),
                 'demography': demography,
                 'gvalue': fwdpy11.genetic_values.SlocusMult(1.0)
             }
+            
     params = fwdpy11.model_params.ModelParams(**pdict)
     rng = fwdpy11.GSLrng(seeds[0])
     

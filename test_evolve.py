@@ -55,6 +55,10 @@ def parse_args():
 	group.add_argument('--init_tree', '-iT', dest='init_tree', action='store_true')
 	group.add_argument('--no_init_tree', '-niT', dest='init_tree', action='store_false')
 	parser.set_defaults(init_tree=True)
+	group2 = parser.add_mutually_exclusive_group(required=False)
+	group2.add_argument('--one_loc', '-oL', dest='single_locus', action='store_true')
+	group2.add_argument('--two_loc', '-tL', dest='single_locus', action='store_false')
+	parser.set_defaults(single_locus=True)
 	parser.add_argument('--outfilename', '-o', default="simulation.txt", help="outfile name")
     
 	return parser
@@ -71,6 +75,10 @@ def run_sim(tuple):
 		for gen in range(args.pop2[1],len(demography)):
 			demography[gen] -=  args.pop2[0]
 	
+	args.region_breaks = [] #no region breaks
+	if(not(args.single_locus)):
+		args.region_breaks = [0.33,0.66]
+	
 	evolver = ea.evolve_track_wrapper(args, demography, seeds)
 	print(evolver.times)
 	num_sites = evolver.sites.num_rows
@@ -80,7 +88,7 @@ def run_sim(tuple):
 	final_pop1_size = 2*demography[len(demography)-1]
 	final_pop2_size = 0
 	if(args.pop2[2] > evolver.pop.generation):
-	   final_pop2_size =  args.pop2[0]
+	   final_pop2_size = args.pop2[0]
 	curr_samples = np.random.choice(final_pop1_size, args.n_sam1_curr, replace = False).tolist() #np seed reset in evolve_arg.py 
 	if(final_pop2_size > 0 and args.n_sam2_curr > 0):
 		curr_samples += (np.random.choice(final_pop2_size, args.n_sam2_curr, replace = False)+final_pop1_size).tolist()
@@ -90,8 +98,24 @@ def run_sim(tuple):
 	msp_rng = msprime.RandomGenerator(int(seeds[3]))
 	neutral_sites = msprime.SiteTable()
 	neutral_mutations = msprime.MutationTable()
-	mutgen = msprime.MutationGenerator(msp_rng, args.ntheta/float(4*demography[0])) 
+	nmu_rate = args.ntheta/float(4*demography[0])
+	if(not(args.single_locus)): nmu_rate = nmu_rate/(1 - args.region_breaks[1])
+	mutgen = msprime.MutationGenerator(msp_rng, nmu_rate) 
 	mutgen.generate(evolver.nodes, evolver.edges, neutral_sites, neutral_mutations)
+	
+	if(not(args.single_locus)):
+		temp_sites = msprime.SiteTable()
+		temp_mutations = msprime.MutationTable()
+		count = 0
+		for site, mut in zip(neutral_sites,neutral_mutations):
+			if(site.position >= args.region_breaks[1]):
+				temp_sites.add_row(site.position, site.ancestral_state, site.metadata)
+				temp_mutations.add_row(count, mut.node, mut.derived_state, mut.parent, mut.metadata)
+				count += 1
+       
+		neutral_sites = temp_sites
+		neutral_mutations = temp_mutations
+            
 	num_sites2 = neutral_sites.num_rows
 	print(num_sites2)
 	
