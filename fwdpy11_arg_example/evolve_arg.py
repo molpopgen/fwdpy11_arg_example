@@ -22,7 +22,7 @@ class sampler(object):
         	self.__samples_index_pop2 += 2
         return samples
 
-def evolve_track(rng, parsed_args, pop, params, seeds, init_with_TreeSequence):
+def evolve_track(rng, args, pop, params, seeds, init_with_TreeSequence):
     """
     Evolve a population and track its ancestry using msprime.
 
@@ -62,14 +62,14 @@ def evolve_track(rng, parsed_args, pop, params, seeds, init_with_TreeSequence):
     
     samples_pop1 =[] 
     samples_pop2 =[] 
-    if(hasattr(parsed_args, 'anc_sam1')): 
-        samples_pop1 = parsed_args.anc_sam1
-    if(hasattr(parsed_args, 'anc_sam2')):
-        samples_pop2 = parsed_args.anc_sam2
-    return ArgEvolver(rng, parsed_args, pop, params, sampler(samples_pop1,samples_pop2,seeds[2]), initial_TreeSequence)
+    if(hasattr(args, 'anc_sam1')): 
+        samples_pop1 = args.anc_sam1
+    if(hasattr(args, 'anc_sam2')):
+        samples_pop2 = args.anc_sam2
+    return ArgEvolver(rng, args, pop, params, sampler(samples_pop1,samples_pop2,seeds[2]), initial_TreeSequence)
 
 
-def evolve_track_wrapper(parsed_args, demography, seeds):
+def evolve_track_wrapper(args, demography, seeds):
     """
     Wrapper around evolve_track to facilitate testing.
 
@@ -87,23 +87,29 @@ def evolve_track_wrapper(parsed_args, demography, seeds):
     
     initial_popsize = demography[0]
     pop = fwdpy11.SlocusPop(initial_popsize)
-    recrate = float(parsed_args.rho) / (4.0 * float(initial_popsize))
-    mu = float(parsed_args.theta) / (4.0 * float(initial_popsize))
+    recrate = float(args.rho) / (4.0 * float(initial_popsize))
+    mu = float(args.theta) / (4.0 * float(initial_popsize))
     
-    dfe = fwdpy11.ConstantS(0, 1, 1, parsed_args.selection, 1.0)
-    if(not(parsed_args.single_locus)):
-    	dfe = fwdpy11.ConstantS(0, parsed_args.region_breaks[0], 1, parsed_args.selection, 1.0)
+    dfe = [fwdpy11.ConstantS(0, 1, 1, args.selection, 1.0)]
     
-    if isinstance(dfe, fwdpy11.Sregion) is False:
+    if(not(args.single_locus)):
+    	dfe = [fwdpy11.ConstantS(0, args.region_breaks[0], 1, args.selection, 1.0),
+    		   fwdpy11.ConstantS(args.region_breaks[1], 1, 1, args.selection, 1.0)]
+    
+    if isinstance(dfe[0], fwdpy11.Sregion) is False:
         raise TypeError("dfe must be a fwdpy11.Sregion")
-
-    recregion = fwdpy11.Region(0, 1, 1)
-    if(not(parsed_args.single_locus)):
-        recregion = fwdpy11.Region(parsed_args.region_breaks[0], parsed_args.region_breaks[1], 1)
+    if(not(args.single_locus)):
+        if isinstance(dfe[1], fwdpy11.Sregion) is False:
+        	raise TypeError("dfe must be a fwdpy11.Sregion")
+        	
+    recregion = [fwdpy11.Region(0, 1, 1)]
+    if(not(args.single_locus)):
+        recregion = [fwdpy11.Region(0, args.region_breaks[0], 1),
+        			 fwdpy11.Region(args.region_breaks[1], 1, 1)]
     
     pdict = {'nregions': [],
-                'sregions': [dfe],
-                'recregions': [recregion],
+                'sregions': dfe,
+                'recregions': recregion,
                 'rates': (0.0, mu, recrate),
                 'demography': demography,
                 'gvalue': fwdpy11.genetic_values.SlocusMult(1.0)
@@ -112,4 +118,4 @@ def evolve_track_wrapper(parsed_args, demography, seeds):
     params = fwdpy11.model_params.ModelParams(**pdict)
     rng = fwdpy11.GSLrng(seeds[0])
     
-    return evolve_track(rng, parsed_args, pop, params, seeds, parsed_args.init_tree)
+    return evolve_track(rng, args, pop, params, seeds, args.init_tree)

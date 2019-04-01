@@ -7,6 +7,7 @@ import argparse
 import fwdpy11.demography as dem
 from libsequence.msprime import make_SimData
 from libsequence.fst import Fst
+from libsequence.summstats import PolySIM
 import concurrent.futures
 
 def get_nlist_tenn(init_pop, burn_in):
@@ -99,7 +100,7 @@ def run_sim(tuple):
 	neutral_sites = msprime.SiteTable()
 	neutral_mutations = msprime.MutationTable()
 	nmu_rate = args.ntheta/float(4*demography[0])
-	if(not(args.single_locus)): nmu_rate = nmu_rate/(1 - args.region_breaks[1])
+	if(not(args.single_locus)): nmu_rate = nmu_rate/(args.region_breaks[1] - args.region_breaks[0])
 	mutgen = msprime.MutationGenerator(msp_rng, nmu_rate) 
 	mutgen.generate(evolver.nodes, evolver.edges, neutral_sites, neutral_mutations)
 	
@@ -108,7 +109,7 @@ def run_sim(tuple):
 		temp_mutations = msprime.MutationTable()
 		count = 0
 		for site, mut in zip(neutral_sites,neutral_mutations):
-			if(site.position >= args.region_breaks[1]):
+			if(site.position >= args.region_breaks[0] and site.position < args.region_breaks[1]):
 				temp_sites.add_row(site.position, site.ancestral_state, site.metadata)
 				temp_mutations.add_row(count, mut.node, mut.derived_state, mut.parent, mut.metadata)
 				count += 1
@@ -168,6 +169,11 @@ def run_sim(tuple):
 		fst = Fst(sdata,samples)
 		fst_array[0][1] = fst.hsm()/(1-fst.hsm())
 		fst_array[1][0] = fst_array[0][1]
+		
+	else:
+		sdata = make_SimData(trees_neutral)
+		ps = PolySIM(sdata)
+		fst_array[0][0] = ps.thetapi() #for only one sample calculate theta_pi rather than Fst
 		
 	return (fst_array,population,generation)		
 
