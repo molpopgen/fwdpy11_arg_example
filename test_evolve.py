@@ -58,7 +58,7 @@ def parse_args():
 	parser.set_defaults(init_tree=True)
 	group2 = parser.add_mutually_exclusive_group(required=False)
 	group2.add_argument('--one_loc', '-oL', dest='single_locus', action='store_true')
-	group2.add_argument('--mul_loc', '-mL', dest='single_locus', action='store_false')
+	group2.add_argument('--hk95_loc', '-95L', dest='single_locus', action='store_false')
 	parser.set_defaults(single_locus=True)
 	parser.add_argument('--outfilename', '-o', default="simulation.txt", help="outfile name")
     
