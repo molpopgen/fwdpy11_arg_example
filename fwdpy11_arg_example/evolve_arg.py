@@ -112,7 +112,7 @@ def evolve_track_wrapper(args, demography, seeds):
                 'recregions': recregion,
                 'rates': (0.0, mu, recrate),
                 'demography': demography,
-                'gvalue': fwdpy11.genetic_values.SlocusMult(1.0)
+                'gvalue': fwdpy11.genetic_values.SlocusMult(2.0)
             }
             
     params = fwdpy11.model_params.ModelParams(**pdict)
