@@ -75,7 +75,7 @@ evolve_track_ancestry(
     const auto bound_mmodel = fwdpp::extensions::bind_dmm(rng.get(), mmodel);
     const auto bound_rmodel = [&rng, &rmodel]() { return rmodel(rng.get()); };
     
-    const auto ff = fwdpp::multuplicative_diploid(fwdpp::fitness(2.0));   
+    const auto ff = fwdpp::multiplicative_diploid(fwdpp::fitness(2.0));   
     
     ++pop.generation; //simulation starts at demography generation 1
     auto prev_pop2size = 0U;

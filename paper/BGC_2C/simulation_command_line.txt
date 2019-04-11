@@ -1,0 +1,11 @@
+python -i test_evolve.py -o fwdpy11_sim2C_IBGC_R1.txt -g 2000 -1 flat 10000 -2 500 1 1001 -nT 1000 -R 1000 -m 0 0 0.05 3 3 0 -T 0 -B 200000 -niT -T 250 -s=-0.01 -ns1 100 --anc_sam1 1000 5 --anc_sam2 1000 5 -S 18 -r 40 > nohup_IBGC_R1.txt
+python -i test_evolve.py -o fwdpy11_sim2C_HKBGC_R1.txt -g 2000 -1 flat 10000 -2 500 1 1001 -nT 1000 -R 1000 -m 0 0 0.05 3 3 0 -T 0 -B 200000 -niT -T 250 -s=-0.01 -ns1 100 -95L --anc_sam1 1000 5 --anc_sam2 1000 5 -S 19 -r 80 > nohup_HKBGC_R1.txt
+
+python -i test_evolve.py -o fwdpy11_sim2C_IBGC_R3.txt -g 2000 -1 flat 10000 -2 500 1 1001 -nT 1000 -R 3000 -m 0 0 0.05 3 3 0 -T 0 -B 200000 -niT -T 250 -s=-0.01 -ns1 100 --anc_sam1 1000 5 --anc_sam2 1000 5 -S 20 -r 40 > nohup_IBGC_R3.txt
+python -i test_evolve.py -o fwdpy11_sim2C_HKBGC_R3.txt -g 2000 -1 flat 10000 -2 500 1 1001 -nT 1000 -R 3000 -m 0 0 0.05 3 3 0 -T 0 -B 200000 -niT -T 250 -s=-0.01 -ns1 100 -95L --anc_sam1 1000 5 --anc_sam2 1000 5 -S 21 -r 80 > nohup_HKBGC_R3.txt
+
+python -i test_evolve.py -o fwdpy11_sim2C_IBGC_R5.txt -g 2000 -1 flat 10000 -2 500 1 1001 -nT 1000 -R 5000 -m 0 0 0.05 3 3 0 -T 0 -B 200000 -niT -T 250 -s=-0.01 -ns1 100 --anc_sam1 1000 5 --anc_sam2 1000 5 -S 22 -r 40 > nohup_IBGC_R5.txt
+python -i test_evolve.py -o fwdpy11_sim2C_HKBGC_R5h.txt -g 2000 -1 flat 10000 -2 500 1 1001 -nT 1000 -R 5000 -m 0 0 0.05 3 3 0 -T 0 -B 200000 -niT -T 250 -s=-0.01 -ns1 100 -95L --anc_sam1 1000 5 --anc_sam2 1000 5 -S 23 -r 80 > nohup_HKBGC_R5.txt
+
+python -i test_evolve.py -o fwdpy11_sim2C_IBGC_R7.txt -g 2000 -1 flat 10000 -2 500 1 1001 -nT 1000 -R 7000 -m 0 0 0.05 3 3 0 -T 0 -B 200000 -niT -T 250 -s=-0.01 -ns1 100 --anc_sam1 1000 5 --anc_sam2 1000 5 -S 24 -r 40 > nohup_IBGC_R7.txt
+python -i test_evolve.py -o fwdpy11_sim2C_HKBGC_R7.txt -g 2000 -1 flat 10000 -2 500 1 1001 -nT 1000 -R 7000 -m 0 0 0.05 3 3 0 -T 0 -B 200000 -niT -T 250 -s=-0.01 -ns1 100 -95L --anc_sam1 1000 5 --anc_sam2 1000 5 -S 25 -r 80 > nohup_HKBGC_R7.txt
