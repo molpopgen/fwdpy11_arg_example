@@ -60,6 +60,7 @@ def parse_args():
 	group2.add_argument('--one_loc', '-oL', dest='single_locus', action='store_true')
 	group2.add_argument('--hk95_loc', '-95L', dest='single_locus', action='store_false')
 	parser.set_defaults(single_locus=True)
+	parser.add_argument("--ncores", '-nc', type=int, default=-1, help="max number of cores concurrent futures can use")
 	parser.add_argument('--outfilename', '-o', default="simulation.txt", help="outfile name")
     
 	return parser
@@ -228,7 +229,9 @@ if __name__ == "__main__":
 	#run_sim((args,seed_list[0]))
 	
 	result_list = []
-	with concurrent.futures.ProcessPoolExecutor() as pool:
+	num_cores = None
+	if(args.ncores > 0): num_cores = args.ncores
+	with concurrent.futures.ProcessPoolExecutor(max_workers=num_cores) as pool:
 		futures = {pool.submit(run_sim, (args,i)) for i in seed_list}
 		for fut in concurrent.futures.as_completed(futures):
 			result_list.append(fut.result())
