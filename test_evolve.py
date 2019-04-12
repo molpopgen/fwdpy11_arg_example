@@ -65,6 +65,12 @@ def parse_args():
     
 	return parser
 
+def population_table(num_populations):
+	populations = msprime.PopulationTable()
+	for i in range(num_populations):
+		populations.add_row()
+	return populations	
+		
 def run_sim(tuple):
 	args = tuple[0]
 	seeds = tuple[1]
@@ -97,28 +103,26 @@ def run_sim(tuple):
 	samples = curr_samples+evolver.anc_samples
 	msprime.simplify_tables(samples, nodes = evolver.nodes, edges = evolver.edges, sites = evolver.sites, mutations = evolver.mutations)
 
-	msp_rng = msprime.RandomGenerator(int(seeds[3]))
-	neutral_sites = msprime.SiteTable()
-	neutral_mutations = msprime.MutationTable()
+	ts = msprime.load_tables(evolver.nodes, evolver.edges, populations = population_table(2))
 	nmu_rate = args.ntheta/float(4*demography[0])
 	if(not(args.single_locus)): nmu_rate = nmu_rate/(args.region_breaks[1] - args.region_breaks[0])
-	mutgen = msprime.MutationGenerator(msp_rng, nmu_rate) 
-	mutgen.generate(evolver.nodes, evolver.edges, neutral_sites, neutral_mutations)
+	trees_neutral = msprime.mutate(ts, rate = nmu_rate, random_seed = int(seeds[3]))
 	
 	if(not(args.single_locus)):
-		temp_sites = msprime.SiteTable()
-		temp_mutations = msprime.MutationTable()
+		ts_neutral_col = trees_neutral.dump_tables();
+		neutral_sites = ts_neutral_col.sites.copy();
+		neutral_mutations = ts_neutral_col.mutations.copy();
+		ts_neutral_col.sites.clear()
+		ts_neutral_col.mutations.clear()
 		count = 0
 		for site, mut in zip(neutral_sites,neutral_mutations):
 			if(site.position >= args.region_breaks[0] and site.position < args.region_breaks[1]):
-				temp_sites.add_row(site.position, site.ancestral_state, site.metadata)
-				temp_mutations.add_row(count, mut.node, mut.derived_state, mut.parent, mut.metadata)
+				ts_neutral_col.sites.add_row(site.position, site.ancestral_state, site.metadata)
+				ts_neutral_col.mutations.add_row(count, mut.node, mut.derived_state, mut.parent, mut.metadata)
 				count += 1
-       
-		neutral_sites = temp_sites
-		neutral_mutations = temp_mutations
-            
-	num_sites2 = neutral_sites.num_rows
+		trees_neutral = ts_neutral_col.tree_sequence()
+         
+	num_sites2 = trees_neutral.num_mutations
 	print(num_sites2)
 	
 	samples = []
@@ -140,7 +144,6 @@ def run_sim(tuple):
 
 	cumsum_samples = np.zeros(1, dtype = np.int64)
 	cumsum_samples = np.append(cumsum_samples, np.cumsum(samples,dtype=np.int64))
-	trees_neutral = msprime.load_tables(nodes=evolver.nodes, edges=evolver.edges, sites=neutral_sites, mutations=neutral_mutations)
 	
 	fst_array = np.zeros((len(samples),len(samples)))
 		
@@ -152,11 +155,11 @@ def run_sim(tuple):
 				mymutations = msprime.MutationTable()
 				mysites = msprime.SiteTable()
 				
-				trees_neutral.dump_tables(nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
+				ts_col = trees_neutral.dump_tables()
 				sample_nodes = list(range(cumsum_samples[i],cumsum_samples[i+1]))
 				sample_nodes.extend(list(range(cumsum_samples[j],cumsum_samples[j+1])))
-				msprime.simplify_tables(samples=sample_nodes, nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
-				subtree_neutral = msprime.load_tables(nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
+				ts_col.simplify(samples=sample_nodes)
+				subtree_neutral = ts_col.tree_sequence()
 				
 				sdata = make_SimData(subtree_neutral)
 				subtree_sample = [samples[i],samples[j]]
