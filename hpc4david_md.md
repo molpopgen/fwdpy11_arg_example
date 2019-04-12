@@ -48,7 +48,8 @@ well-thought out subdirectories, etc..
 #$ -q krt2
 #$ -pe openmp 128
 
-cd $SGE_O_WORKDIR
+# makes sure to write to output file in directory from which program was launched
+cd $SGE_O_WORKDIR 
 
 module load krthornt/anaconda
 source activate fwdpy11_0_2_0
