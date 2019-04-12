@@ -230,7 +230,7 @@ if __name__ == "__main__":
 	
 	result_list = []
 	num_cores = None
-	if(args.ncores > 0): num_cores = args.ncores
+	if(args.ncores > 0): num_cores = min(args.ncores,args.replicates)
 	with concurrent.futures.ProcessPoolExecutor(max_workers=num_cores) as pool:
 		futures = {pool.submit(run_sim, (args,i)) for i in seed_list}
 		for fut in concurrent.futures.as_completed(futures):
