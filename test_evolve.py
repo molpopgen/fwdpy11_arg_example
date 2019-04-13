@@ -64,12 +64,6 @@ def parse_args():
 	parser.add_argument('--outfilename', '-o', default="simulation.txt", help="outfile name")
     
 	return parser
-
-def population_table(num_populations):
-	populations = msprime.PopulationTable()
-	for i in range(num_populations):
-		populations.add_row()
-	return populations	
 		
 def run_sim(tuple):
 	args = tuple[0]
