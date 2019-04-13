@@ -23,8 +23,8 @@ class ArgEvolver(object):
         """
         self.__gc_interval = parsed_args.gc
         self.__tc = msprime.TableCollection(1)
-        self.__tc.populations.add_row() #two populations
-        self.__tc.populations.add_row()
+        a = self.__tc.populations.add_row() #two populations
+        b = self.__tc.populations.add_row()
         self.__rng = rng
         self.__pop = pop
         self.__params = params
@@ -143,8 +143,9 @@ class ArgEvolver(object):
                                       derived_state_offset=np.arange(len(ama) + 1, dtype=np.uint32))        
         self.__time_appending += time.process_time() - before
         
-        before = time.process_time()                              
-        self.__tc.sort()
+        before = time.process_time()                             
+        self.__tc.sort()	    	
+        self.__tc.deduplicate_sites()
         self.__time_sorting += time.process_time() - before
         before = time.process_time()
         
@@ -154,26 +155,7 @@ class ArgEvolver(object):
             samples = self._gc_anc_samples
         
         all_samples = samples + self.__anc_samples #due to sampler behavior, anc_samples won't overlap with samples
-        try:
-        	sample_map =  self.__tc.simplify(samples = all_samples)
-        except:
-        	print("WTF\n")
-        	count = 0
-        	for site in self.__tc.sites:
-        		count1 = 0
-        		for site1 in self.__tc.sites:
-        			if(count1 > count and site1.position == site.position):
-        				print(count, count1, generation)
-        				print(site)
-        				print(site1)
-        				for mut in self.__tc.mutations:
-        					if(mut.site == count or mut.site == count1):
-        						print(mut)
-        				print("\n")
-        			count1 += 1
-        		count += 1
-        		
-        	raise RuntimeError
+        sample_map =  self.__tc.simplify(samples = all_samples, filter_populations = False)
         
         self.__anc_samples = self._gc_anc_samples + self.__anc_samples #doesn't need to be in there before because these ancestral samples will be in the current samples list
         self._gc_anc_samples = []
@@ -197,7 +179,7 @@ class ArgEvolver(object):
            
         if(not(simplification)): self._anc_sampler(False) 
     @property
-    def table_collection(self):
+    def tc(self):
         """
         An msprime Table Collection.
         """

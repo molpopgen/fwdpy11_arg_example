@@ -101,7 +101,7 @@ def run_sim(tuple):
 	if(final_pop2_size > 0 and args.n_sam2_curr > 0):
 		curr_samples += (np.random.choice(final_pop2_size, args.n_sam2_curr, replace = False)+final_pop1_size).tolist()
 	samples = curr_samples+evolver.anc_samples
-	evolver.tc.simplify(samples)
+	evolver.tc.simplify(samples, filter_populations = False)
 	
 	ts = evolver.tc.tree_sequence()
 	nmu_rate = args.ntheta/float(4*demography[0])
