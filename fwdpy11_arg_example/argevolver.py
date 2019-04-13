@@ -155,8 +155,23 @@ class ArgEvolver(object):
             samples = self._gc_anc_samples
         
         all_samples = samples + self.__anc_samples #due to sampler behavior, anc_samples won't overlap with samples
-        sample_map = msprime.simplify_tables(samples= all_samples,
+        try:
+        	sample_map = msprime.simplify_tables(samples= all_samples,
                                              nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
+        except:
+        	count = 0
+        	for site in self.__sites:
+        		count1 = 0
+        		for site1 in self.__sites:
+        			if(count1 > count and site1.pos == site.pos):
+        				print(count, count1)
+        				print(site)
+        				print(site1)
+        				print("\n")
+        			count1 += 1
+        		count += 1
+        		
+        	raise RuntimeError
         
         self.__anc_samples = self._gc_anc_samples + self.__anc_samples #doesn't need to be in there before because these ancestral samples will be in the current samples list
         self._gc_anc_samples = []
