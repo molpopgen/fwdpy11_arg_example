@@ -22,10 +22,9 @@ class ArgEvolver(object):
         runs forward simulation defined by above params
         """
         self.__gc_interval = parsed_args.gc
-        self.__nodes = msprime.NodeTable()
-        self.__edges = msprime.EdgeTable()
-        self.__sites = msprime.SiteTable()
-        self.__mutations = msprime.MutationTable()
+        self.__tc = msprime.TableCollection(1)
+        self.__tc.populations.add_row() #two populations
+        self.__tc.populations.add_row()
         self.__rng = rng
         self.__pop = pop
         self.__params = params
@@ -35,25 +34,25 @@ class ArgEvolver(object):
         
         if trees is not None:
             self.__process = False
-            trees.dump_tables(nodes=self.__nodes, edges=self.__edges, sites = self.__sites, mutations = self.__mutations)
+            self.__tc = trees.dump_tables()
             
-            if self.__nodes.num_rows > 0: #add simulation time to input trees
+            if self.__tc.nodes.num_rows > 0: #add simulation time to input trees
                
-               tc = self.__nodes.time
+               time_corr = self.__tc.nodes.time
                dt = float(self.__total_generations)
-               tc += dt
-               flags = np.ones(self.__nodes.num_rows, dtype=np.uint32)
-               self.__nodes.set_columns(
-                   flags=flags, population=self.__nodes.population, time=tc)
+               time_corr += dt
+               flags = np.ones(self.__tc.nodes.num_rows, dtype=np.uint32)
+               self.__tc.nodes.set_columns(
+                   flags=flags, population=self.__tc.nodes.population, time=time_corr)
                    
-            if(self.__mutations.num_rows > 0 and len(self.__mutations.metadata) == 0): #add default mutation metadata if none present (differentiates these mutations from those generated in simulation)
-            	meta_list = np.full(len(self.__mutations),-1,dtype=np.int32)
+            if(self.__tc.mutations.num_rows > 0 and len(self.__tc.mutations.metadata) == 0): #add default mutation metadata if none present (differentiates these mutations from those generated in simulation)
+            	meta_list = np.full(len(self.__tc.mutations),-1,dtype=np.int32)
             	encoded = meta_list.view(np.int8)
             	offset = np.arange(0,4*(len(meta_list)+1),4,dtype=np.uint32)
-            	self.mutations.set_columns(site=self.__mutations.site, node=self.__mutations.node, derived_state=self.__mutations.derived_state, derived_state_offset=self.__mutations.derived_state_offset, parent=self.__mutations.parent, metadata_offset=offset, metadata=encoded)
+            	self.__tc.mutations.set_columns(site=self.__tc.mutations.site, node=self.__tc.mutations.node, derived_state=self.__tc.mutations.derived_state, derived_state_offset=self.__tc.mutations.derived_state_offset, parent=self.__tc.mutations.parent, metadata_offset=offset, metadata=encoded)
         
         
-        self._anc_tracker = AncestryTracker(pop.N, self.__nodes.num_rows, self.__total_generations)
+        self._anc_tracker = AncestryTracker(pop.N, self.__tc.nodes.num_rows, self.__total_generations)
         self._sampler = anc_sampler
         self.__anc_samples = []
         self._gc_anc_samples = []
@@ -125,27 +124,27 @@ class ArgEvolver(object):
         self.__time_prepping += time.process_time() - before
         
         before = time.process_time()
-        self.__nodes.append_columns(flags=flags,
+        self.__tc.nodes.append_columns(flags=flags,
                                     population=ana['population'],
                                     time=ana['generation'])
 
-        self.__edges.append_columns(left=aea['left'],
+        self.__tc.edges.append_columns(left=aea['left'],
                                     right=aea['right'],
                                     parent=aea['parent'],
                                     child=aea['child'])
         
         if(ama.size > 0):
-            self.__sites.append_columns(ama['pos'],
+            self.__tc.sites.append_columns(ama['pos'],
                                   ancestral_state=np.zeros(len(ama), np.int8) + ord('0'),
                                   ancestral_state_offset=np.arange(len(ama) + 1, dtype=np.uint32))
-            self.__mutations.append_columns(site=np.arange(len(ama), dtype=np.int32) + self.__mutations.num_rows,
+            self.__tc.mutations.append_columns(site=np.arange(len(ama), dtype=np.int32) + self.__tc.mutations.num_rows,
                                       node=ama['node_id'],
                                       derived_state=np.ones(len(ama), np.int8) + ord('0'),
                                       derived_state_offset=np.arange(len(ama) + 1, dtype=np.uint32))        
         self.__time_appending += time.process_time() - before
         
         before = time.process_time()                              
-        msprime.sort_tables(nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
+        self.__tc.sort()
         self.__time_sorting += time.process_time() - before
         before = time.process_time()
         
@@ -156,18 +155,18 @@ class ArgEvolver(object):
         
         all_samples = samples + self.__anc_samples #due to sampler behavior, anc_samples won't overlap with samples
         try:
-        	sample_map = msprime.simplify_tables(samples= all_samples,
-                                             nodes=self.__nodes, edges=self.__edges, sites=self.__sites, mutations=self.__mutations)
+        	sample_map =  self.__tc.simplify(samples = all_samples)
         except:
+        	print("WTF\n")
         	count = 0
-        	for site in self.__sites:
+        	for site in self.__tc.sites:
         		count1 = 0
-        		for site1 in self.__sites:
+        		for site1 in self.__tc.sites:
         			if(count1 > count and site1.position == site.position):
         				print(count, count1, generation)
         				print(site)
         				print(site1)
-        				for mut in self.__mutations:
+        				for mut in self.__tc.mutations:
         					if(mut.site == count or mut.site == count1):
         						print(mut)
         				print("\n")
@@ -182,7 +181,7 @@ class ArgEvolver(object):
            
         # Release any locks on the ancestry object
         #self._anc_tracker.release()
-        self._anc_tracker.post_process_gc(self.__nodes.num_rows)
+        self._anc_tracker.post_process_gc(self.__tc.nodes.num_rows)
         self.__time_simplifying += time.process_time() - before
         
     def __call__(self):
@@ -197,34 +196,39 @@ class ArgEvolver(object):
            self._simplify()
            
         if(not(simplification)): self._anc_sampler(False) 
-        
+    @property
+    def table_collection(self):
+        """
+        An msprime Table Collection.
+        """
+        return self.__tc
     @property
     def nodes(self):
         """
         An msprime Node Table.
         """
-        return self.__nodes
+        return self.__tc.nodes
 
     @property
     def edges(self):
         """
         An msprime Edge Table.
         """
-        return self.__edges
+        return self.__tc.edges
 
     @property
     def sites(self):
         """
         An msprime Site Table.
         """
-        return self.__sites
+        return self.__tc.sites
 
     @property
     def mutations(self):
         """
         An msprime Mutation Table.
         """
-        return self.__mutations
+        return self.__tc.mutations
         
     @property
     def anc_samples(self):
