@@ -163,10 +163,13 @@ class ArgEvolver(object):
         	for site in self.__sites:
         		count1 = 0
         		for site1 in self.__sites:
-        			if(count1 > count and site1.pos == site.pos):
-        				print(count, count1)
+        			if(count1 > count and site1.position == site.position):
+        				print(count, count1, generation)
         				print(site)
         				print(site1)
+        				for mut in self.__mutations:
+        					if(mut.site == count or mut.site == count1):
+        						print(mut)
         				print("\n")
         			count1 += 1
         		count += 1
