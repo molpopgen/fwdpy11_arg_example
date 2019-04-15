@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #$ -q krt2
-#$ -pe openmp 128
+#$ -pe openmp 105
 
 cd $SGE_O_WORKDIR 
 
