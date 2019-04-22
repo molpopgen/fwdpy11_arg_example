@@ -140,7 +140,7 @@ def run_sim(tuple):
 	cumsum_samples = np.append(cumsum_samples, np.cumsum(samples,dtype=np.int64))
 	
 	fst_array = np.zeros((len(samples),len(samples)))
-	pi_array = 	np.zeros(len(samples))
+	pi_array = np.zeros(len(samples))
 	
 	for i in range(len(samples)):
 		mynodes = msprime.NodeTable()
@@ -155,7 +155,7 @@ def run_sim(tuple):
 				
 		sdata = make_SimData(subtree_neutral)
 		ps = PolySIM(sdata)
-		pi_array[i] = ps.thetapi()
+		pi_array[i] = ps.thetapi()/args.ntheta
 	
 	if(len(samples) > 2):
 		for i in range(len(samples)):
@@ -292,7 +292,7 @@ if __name__ == "__main__":
 	std_fst_array.tofile(f,sep="\t")
 		
 	f.write("\n\nlinearlized_fst_array\t\tpi_array\n")
-	for fst_vector in fst_list:
+	for fst_vector, pi_vector in zip(fst_list,pi_list):
 		fst_vector.tofile(f,sep="\t")
 		f.write("\t")
 		pi_vector.tofile(f,sep="\t")
