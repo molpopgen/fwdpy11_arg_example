@@ -140,7 +140,22 @@ def run_sim(tuple):
 	cumsum_samples = np.append(cumsum_samples, np.cumsum(samples,dtype=np.int64))
 	
 	fst_array = np.zeros((len(samples),len(samples)))
-		
+	pi_array = 	np.zeros(len(samples))
+	
+	for i in range(len(samples)):
+		mynodes = msprime.NodeTable()
+		myedges = msprime.EdgeTable()
+		mymutations = msprime.MutationTable()
+		mysites = msprime.SiteTable()
+				
+		ts_col = trees_neutral.dump_tables()
+		sample_nodes = list(range(cumsum_samples[i],cumsum_samples[i+1]))
+		ts_col.simplify(samples=sample_nodes)
+		subtree_neutral = ts_col.tree_sequence()
+				
+		sdata = make_SimData(subtree_neutral)
+		pi_array[i] = ps.thetapi()
+	
 	if(len(samples) > 2):
 		for i in range(len(samples)):
 			for j in range((i+1),len(samples)):
@@ -168,12 +183,7 @@ def run_sim(tuple):
 		fst_array[0][1] = fst.hsm()/(1-fst.hsm())
 		fst_array[1][0] = fst_array[0][1]
 		
-	else:
-		sdata = make_SimData(trees_neutral)
-		ps = PolySIM(sdata)
-		fst_array[0][0] = ps.thetapi() #for only one sample calculate theta_pi rather than Fst
-		
-	return (fst_array,population,generation)		
+	return (fst_array,population,generation,pi_array)		
 
 if __name__ == "__main__":
 	parser = parse_args()
@@ -233,14 +243,21 @@ if __name__ == "__main__":
 		for fut in concurrent.futures.as_completed(futures):
 			result_list.append(fut.result())
 
+	pi_list = []
 	fst_list = []
 	for result in result_list:
+		pi_list.append(result[3])
 		fst_list.append(result[0])
 		
 	fst_array = np.array(fst_list)
+	pi_array = np.array(pi_list)
+	
 	mean_fst_array = np.mean(fst_array,axis=0)
 	median_fst_array = np.median(fst_array,axis=0)
 	std_fst_array = np.std(fst_array,axis=0)
+	mean_pi_array = np.mean(pi_array,axis=0)
+	median_pi_array = np.median(pi_array,axis=0)
+	std_pi_array = np.std(pi_array,axis=0)
 	population = result_list[0][1]
 	generation = result_list[0][2]
 	
@@ -258,14 +275,26 @@ if __name__ == "__main__":
 			else:
 				exp_lfst = (2*(args.generations-int(args.pop2[1])+burn_in)-igen - jgen)/(4*int(args.pop1[1]))
 				f.write(str(exp_lfst)+"\t")
+	
+	f.write("\n\nmean_pi_array\n")
+	mean_pi_array.tofile(f,sep="\t")
+	f.write("\n\nmedian_pi_array\n")
+	median_pi_array.tofile(f,sep="\t")
+	f.write("\n\nstd_pi_array\n")
+	std_pi_array.tofile(f,sep="\t")
+	
 	f.write("\n\nmean_linearlized_fst_array\n")
 	mean_fst_array.tofile(f,sep="\t")
 	f.write("\n\nmedian_linearlized_fst_array\n")
 	median_fst_array.tofile(f,sep="\t")
 	f.write("\n\nstd_linearlized_fst_array\n")
 	std_fst_array.tofile(f,sep="\t")
-	f.write("\n\nlinearlized_fst_array\n")
-	for fst_array in fst_list:
-		fst_array.tofile(f,sep="\t")
+		
+	f.write("\n\nlinearlized_fst_array\t\tpi_array\n")
+	for fst_vector in fst_list:
+		fst_vector.tofile(f,sep="\t")
+		f.write("\t")
+		pi_vector.tofile(f,sep="\t")
 		f.write("\n")
+		
 	f.close()
