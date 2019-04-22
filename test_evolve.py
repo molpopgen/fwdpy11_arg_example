@@ -154,6 +154,7 @@ def run_sim(tuple):
 		subtree_neutral = ts_col.tree_sequence()
 				
 		sdata = make_SimData(subtree_neutral)
+		ps = PolySIM(sdata)
 		pi_array[i] = ps.thetapi()
 	
 	if(len(samples) > 2):
