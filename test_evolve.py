@@ -62,6 +62,7 @@ def parse_args():
 	parser.set_defaults(single_locus=True)
 	parser.add_argument("--ncores", '-nc', type=int, default=-1, help="max number of cores concurrent futures can use")
 	parser.add_argument('--outfilename', '-o', default="simulation.txt", help="outfile name")
+	parser.add_argument('--out_tree_sequence', '-ots', default="", help="outfile path for tree sequence")
     
 	return parser
 		
@@ -173,7 +174,7 @@ def run_sim(tuple):
 		fst_array[0][1] = fst.hsm()/(1-fst.hsm())
 		fst_array[1][0] = fst_array[0][1]
 		
-	return (fst_array,population,generation,pi_array)		
+	return (fst_array,population,generation,pi_array,trees_neutral)		
 
 if __name__ == "__main__":
 	parser = parse_args()
@@ -235,9 +236,11 @@ if __name__ == "__main__":
 
 	pi_list = []
 	fst_list = []
+	ts_list = []
 	for result in result_list:
 		pi_list.append(result[3])
 		fst_list.append(result[0])
+		ts_list.append(result[4])
 		
 	fst_array = np.array(fst_list)
 	pi_array = np.array(pi_list)
@@ -288,3 +291,10 @@ if __name__ == "__main__":
 		f.write("\n")
 		
 	f.close()
+	
+	if(len(args.out_tree_sequence) > 0):
+		for i in range(len(ts_list)):
+			file_name = args.out_tree_sequence + "_" + str(i) + ".txt"
+			f = open(file_name, "w")
+			ts_list[i].dump(file_name)
+			f.close()
