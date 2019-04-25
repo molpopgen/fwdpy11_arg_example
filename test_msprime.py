@@ -84,17 +84,13 @@ def run_msprime(args):
 	result_list = []
 	
 	for sim in all_sims:
-		mynodes = msprime.NodeTable()
-		myedges = msprime.EdgeTable()
-		mymutations = msprime.MutationTable()
-		mysites = msprime.SiteTable()	
-		sim.dump_tables(nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
+		ts_col =  sim.dump_tables()
 		
 		mysamples = []
 		population = [0]
 		generation = [0]
 		count = 0
-		for node in mynodes:
+		for node in ts_col.nodes:
 			if(node.flags == 1):
 				if(node.population == population[len(population)-1] and node.time == generation[len(generation)-1]):
 					count += 1
@@ -106,21 +102,30 @@ def run_msprime(args):
 			else:
 				mysamples.append(count)
 				break
+		
+		pi_array = np.zeros(len(samples))
 		fst_array = np.zeros((len(mysamples),len(mysamples)))
 		cumsum_samples = np.zeros(1, dtype = np.int64)
 		cumsum_samples = np.append(cumsum_samples, np.cumsum(mysamples,dtype=np.int64))
+
+		for i in range(len(samples)):
+			ts_col = trees_neutral.dump_tables()
+			sample_nodes = list(range(cumsum_samples[i],cumsum_samples[i+1]))
+			ts_col.simplify(samples=sample_nodes)
+			subtree_neutral = ts_col.tree_sequence()
+				
+			sdata = make_SimData(subtree_neutral)
+			ps = PolySIM(sdata)
+			pi_array[i] = ps.thetapi()/args.ntheta
+		
 		if(len(mysamples) > 2):
 			for i in range(len(mysamples)):
-				for j in range((i+1),len(mysamples)):	
-					mynodes = msprime.NodeTable()
-					myedges = msprime.EdgeTable()
-					mymutations = msprime.MutationTable()
-					mysites = msprime.SiteTable()		
-					sim.dump_tables(nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
+				for j in range((i+1),len(mysamples)):		
+					ts_col = sim.dump_tables()
 					sample_nodes = list(range(cumsum_samples[i],cumsum_samples[i+1]))
 					sample_nodes.extend(list(range(cumsum_samples[j],cumsum_samples[j+1])))
-					msprime.simplify_tables(samples=sample_nodes, nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
-					subtree_neutral = msprime.load_tables(nodes=mynodes, edges=myedges, sites=mysites, mutations=mymutations)
+					ts_col.simplify_tables(samples=sample_nodes)
+					subtree_neutral = ts_col.tree_sequence()
 				
 					sdata = make_SimData(subtree_neutral)
 					subtree_sample = [mysamples[i],mysamples[j]]
@@ -129,13 +134,12 @@ def run_msprime(args):
 					fst_array[j][i] = fst_array[i][j]
 				
 		elif(len(mysamples) == 2):
-	
 			sdata = make_SimData(sim)
 			fst = Fst(sdata,mysamples)
 			fst_array[0][1] = fst.hsm()/(1-fst.hsm())
 			fst_array[1][0] = fst_array[0][1]
 		
-		result_list.append((fst_array,population,generation))
+		result_list.append((fst_array,population,generation,pi_array))
 	
 	return result_list
 
@@ -146,13 +150,18 @@ if __name__ == "__main__":
 	result_list = run_msprime(args)
 	
 	fst_list = []
+	pi_list = []
 	for result in result_list:
+		pi_list.append(result[3])
 		fst_list.append(result[0])
 		
 	fst_array = np.array(fst_list)
 	mean_fst_array = np.mean(fst_array,axis=0)
 	median_fst_array = np.median(fst_array,axis=0)
 	std_fst_array = np.std(fst_array,axis=0)
+	mean_pi_array = np.mean(pi_array,axis=0)
+	median_pi_array = np.median(pi_array,axis=0)
+	std_pi_array = np.std(pi_array,axis=0)
 	population = result_list[0][1]
 	generation = result_list[0][2]
 	
@@ -169,7 +178,15 @@ if __name__ == "__main__":
 				f.write(str(exp_lfst)+"\t")
 			else:
 				exp_lfst = (2*(args.generations-int(args.pop2[1]))-igen - jgen)/(4*int(args.pop1[1]))
-				f.write(str(exp_lfst)+"\t")
+				f.write(str(exp_lfst)+"\t")	
+	
+	f.write("\n\nmean_pi_array\n")
+	mean_pi_array.tofile(f,sep="\t")
+	f.write("\n\nmedian_pi_array\n")
+	median_pi_array.tofile(f,sep="\t")
+	f.write("\n\nstd_pi_array\n")
+	std_pi_array.tofile(f,sep="\t")
+	
 	f.write("\n\nmean_linearlized_fst_array\n")
 	mean_fst_array.tofile(f,sep="\t")
 	f.write("\n\nmedian_linearlized_fst_array\n")
@@ -177,7 +194,11 @@ if __name__ == "__main__":
 	f.write("\n\nstd_linearlized_fst_array\n")
 	std_fst_array.tofile(f,sep="\t")
 	f.write("\n\nlinearlized_fst_array\n")
-	for fst_array in fst_list:
-		fst_array.tofile(f,sep="\t")
+	f.write("\n\nlinearlized_fst_array\t\tpi_array\n")
+	
+	for fst_vector, pi_vector in zip(fst_list,pi_list):
+		fst_vector.tofile(f,sep="\t")
+		f.write("\t")
+		pi_vector.tofile(f,sep="\t")
 		f.write("\n")
 	f.close()

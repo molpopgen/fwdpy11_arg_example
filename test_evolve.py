@@ -142,12 +142,7 @@ def run_sim(tuple):
 	fst_array = np.zeros((len(samples),len(samples)))
 	pi_array = np.zeros(len(samples))
 	
-	for i in range(len(samples)):
-		mynodes = msprime.NodeTable()
-		myedges = msprime.EdgeTable()
-		mymutations = msprime.MutationTable()
-		mysites = msprime.SiteTable()
-				
+	for i in range(len(samples)):				
 		ts_col = trees_neutral.dump_tables()
 		sample_nodes = list(range(cumsum_samples[i],cumsum_samples[i+1]))
 		ts_col.simplify(samples=sample_nodes)
@@ -160,11 +155,6 @@ def run_sim(tuple):
 	if(len(samples) > 2):
 		for i in range(len(samples)):
 			for j in range((i+1),len(samples)):
-				mynodes = msprime.NodeTable()
-				myedges = msprime.EdgeTable()
-				mymutations = msprime.MutationTable()
-				mysites = msprime.SiteTable()
-				
 				ts_col = trees_neutral.dump_tables()
 				sample_nodes = list(range(cumsum_samples[i],cumsum_samples[i+1]))
 				sample_nodes.extend(list(range(cumsum_samples[j],cumsum_samples[j+1])))
@@ -178,7 +168,6 @@ def run_sim(tuple):
 				fst_array[j][i] = fst_array[i][j]
 				
 	elif(len(samples) == 2):
-	
 		sdata = make_SimData(trees_neutral)
 		fst = Fst(sdata,samples)
 		fst_array[0][1] = fst.hsm()/(1-fst.hsm())
