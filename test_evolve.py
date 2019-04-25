@@ -184,7 +184,7 @@ if __name__ == "__main__":
 	args.pop2 = [int(args.pop2[0]),(int(args.pop2[1])+burn_in),(int(args.pop2[2])+burn_in)]
 	split_rate = float(args.migration[2])
 	if(split_rate != 1 and split_rate != 0 and args.pop1[0] == "flat"):
-		split_rate = min(args.pop2[0]/init_pop_size,1.0)
+		split_rate = min(args.pop2[0]/init_pop_size,1.0) #if args.pop[0] == init_pop_size then it duplicates, split_rate == 1
 	if(args.pop1[0] == "tenn" and split_rate != 0):
 		split_rate = 1
 			

@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 import argparse
 from libsequence.msprime import make_SimData
+from libsequence.summstats import PolySIM
 from libsequence.fst import Fst
 
 def parse_args():
@@ -63,7 +64,7 @@ def run_msprime(args):
 	
 	if(args.pop1[0] == "flat"):
 		population_configurations = [msprime.PopulationConfiguration(initial_size=pop_size_1),msprime.PopulationConfiguration(initial_size=pop_size_2)]
-		demographic_events.append([msprime.MassMigration(time=split_generation,source=1,destination=0,proportion=1.0)])
+		demographic_events.append(msprime.MassMigration(time=split_generation,source=1,destination=0,proportion=1.0))
 		if(split_rate < 1):
 			if(not(split_recovery)):
 				demographic_events.append(msprime.PopulationParametersChange(time=split_generation, initial_size=(pop_size_1 + pop_size_2), growth_rate=0, population_id=0))
