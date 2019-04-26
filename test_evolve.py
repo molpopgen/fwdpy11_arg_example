@@ -123,7 +123,7 @@ def run_sim(tuple):
 	if(len(args.out_tree_sequence) > 0):
 		seed_string = ""
 		for s in seeds:
-			seed_string += "_" + s 
+			seed_string += "_" + str(s) 
 		file_name = args.out_tree_sequence + seed_string + ".txt"
 		f = open(file_name, "w")
 		trees_neutral.dump(file_name)
