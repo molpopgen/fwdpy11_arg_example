@@ -104,7 +104,7 @@ def run_msprime(args):
 				mysamples.append(count)
 				break
 		
-		pi_array = np.zeros(len(samples))
+		pi_array = np.zeros(len(mysamples))
 		fst_array = np.zeros((len(mysamples),len(mysamples)))
 		cumsum_samples = np.zeros(1, dtype = np.int64)
 		cumsum_samples = np.append(cumsum_samples, np.cumsum(mysamples,dtype=np.int64))
