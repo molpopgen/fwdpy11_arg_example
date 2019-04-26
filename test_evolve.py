@@ -120,6 +120,15 @@ def run_sim(tuple):
 	num_sites2 = trees_neutral.num_mutations
 	print(num_sites2)
 	
+	if(len(args.out_tree_sequence) > 0):
+		seed_string = ""
+		for s in seeds:
+			seed_string += "_" + s 
+		file_name = args.out_tree_sequence + seed_string + ".txt"
+		f = open(file_name, "w")
+		trees_neutral.dump(file_name)
+		f.close()
+	
 	samples = []
 	population = [0]
 	generation = [0]
@@ -174,7 +183,7 @@ def run_sim(tuple):
 		fst_array[0][1] = fst.hsm()/(1-fst.hsm())
 		fst_array[1][0] = fst_array[0][1]
 		
-	return (fst_array,population,generation,pi_array,trees_neutral)		
+	return (fst_array,population,generation,pi_array)		
 
 if __name__ == "__main__":
 	parser = parse_args()
@@ -236,11 +245,9 @@ if __name__ == "__main__":
 
 	pi_list = []
 	fst_list = []
-	ts_list = []
 	for result in result_list:
 		pi_list.append(result[3])
 		fst_list.append(result[0])
-		ts_list.append(result[4])
 		
 	fst_array = np.array(fst_list)
 	pi_array = np.array(pi_list)
@@ -291,10 +298,3 @@ if __name__ == "__main__":
 		f.write("\n")
 		
 	f.close()
-	
-	if(len(args.out_tree_sequence) > 0):
-		for i in range(len(ts_list)):
-			file_name = args.out_tree_sequence + "_" + str(i) + ".txt"
-			f = open(file_name, "w")
-			ts_list[i].dump(file_name)
-			f.close()
