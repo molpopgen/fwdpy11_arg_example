@@ -109,8 +109,8 @@ def run_msprime(args):
 		cumsum_samples = np.zeros(1, dtype = np.int64)
 		cumsum_samples = np.append(cumsum_samples, np.cumsum(mysamples,dtype=np.int64))
 
-		for i in range(len(samples)):
-			ts_col = trees_neutral.dump_tables()
+		for i in range(len(mysamples)):
+			ts_col = sim.dump_tables()
 			sample_nodes = list(range(cumsum_samples[i],cumsum_samples[i+1]))
 			ts_col.simplify(samples=sample_nodes)
 			subtree_neutral = ts_col.tree_sequence()
@@ -125,7 +125,7 @@ def run_msprime(args):
 					ts_col = sim.dump_tables()
 					sample_nodes = list(range(cumsum_samples[i],cumsum_samples[i+1]))
 					sample_nodes.extend(list(range(cumsum_samples[j],cumsum_samples[j+1])))
-					ts_col.simplify_tables(samples=sample_nodes)
+					ts_col.simplify(samples=sample_nodes)
 					subtree_neutral = ts_col.tree_sequence()
 				
 					sdata = make_SimData(subtree_neutral)
@@ -157,6 +157,8 @@ if __name__ == "__main__":
 		fst_list.append(result[0])
 		
 	fst_array = np.array(fst_list)
+	pi_array = np.array(pi_list)
+
 	mean_fst_array = np.mean(fst_array,axis=0)
 	median_fst_array = np.median(fst_array,axis=0)
 	std_fst_array = np.std(fst_array,axis=0)
@@ -194,12 +196,12 @@ if __name__ == "__main__":
 	median_fst_array.tofile(f,sep="\t")
 	f.write("\n\nstd_linearlized_fst_array\n")
 	std_fst_array.tofile(f,sep="\t")
-	f.write("\n\nlinearlized_fst_array\n")
+
 	f.write("\n\nlinearlized_fst_array\t\tpi_array\n")
-	
 	for fst_vector, pi_vector in zip(fst_list,pi_list):
 		fst_vector.tofile(f,sep="\t")
 		f.write("\t")
 		pi_vector.tofile(f,sep="\t")
 		f.write("\n")
+
 	f.close()
