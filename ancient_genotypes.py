@@ -43,7 +43,7 @@ def parse_reads(read_file_name,cutoff=0):
 	for line_no, line in enumerate(read_file):
 		if line_no % 10000 == 0: print(line_no)
 		splitLine = line.strip().split()
-		read_counts = np.array(map(int,splitLine[3:]))
+		read_counts = np.array(list(map(int,splitLine[3:])))
 		der_counts = read_counts[der_indices]
 		anc_counts = read_counts[anc_indices]
 		sample_has_reads = (der_counts > 0) | (anc_counts > 0)
@@ -65,7 +65,7 @@ def parse_reads_by_pop(read_file_name,ind_file,cutoff=0):
 	elif headerSplit[2] == "kref" and headerSplit[3] == "nref": 
 		ind_start = 4
 	else:
-		print("ERROR: improperly formatted header")
+		print("ERROR: improperly formatted header") 
 		print(headerSplit)
 		return 1
 	inds_alleles = np.array(headerSplit[ind_start:]) 
@@ -83,7 +83,7 @@ def parse_reads_by_pop(read_file_name,ind_file,cutoff=0):
 			sys.stdout.write("Reading line: %d \r"%line_no)
 			sys.stdout.flush()
 		splitLine = line.strip().split()
-		read_counts = np.array(map(int,splitLine[ind_start:])) 
+		read_counts = np.array(list(map(int,splitLine[ind_start:]))) 
 		der_counts = read_counts[der_indices]
 		anc_counts = read_counts[anc_indices]
 		sample_has_reads = (der_counts > 0) | (anc_counts > 0)
@@ -124,10 +124,10 @@ def coverage_filter(read_lists, min_cutoff=2.5,max_cutoff=97.5):
 	cuts_per_pop = []
 	for i in range(len(read_lists)):
 		#first compute quantiles
-		all_cov = map(lambda x: np.sum(x,axis=2),read_lists[i])
+		all_cov = [np.sum(x,axis=2) for x in read_lists[i]]
 		cuts = np.percentile(np.vstack(all_cov),[min_cutoff,max_cutoff],axis=0)
 		cuts_per_pop.append(cuts)
-		bad_sites = map(lambda x: (x < cuts[0]) + (x > cuts[1]),all_cov)
+		bad_sites = [(x < cuts[0]) + (x > cuts[1]) for x in all_cov]
 		for j in range(len(bad_sites)):
 			#Set bad sites to have zero coverage
 			if np.sum(bad_sites[j]) == 0: continue
@@ -143,7 +143,7 @@ def subsample_ref(N, freqs, read_lists, include_lower = True):
 	new_freqs = set()
 	for i in range(len(read_lists)):
 		new_read_dicts.append({})
-		sites_per_freq = np.array(map(len,read_lists[i]))
+		sites_per_freq = np.array(list(map(len,read_lists[i])))
 		for j in range(len(freqs)):
 			if (freqs[j,1] < N) and (include_lower):
 				#just keep these sites
@@ -176,11 +176,11 @@ def subsample_ref(N, freqs, read_lists, include_lower = True):
 
 def create_bootstrap(freqs,read_lists):
 	new_read_lists = []
-	sites_per_freq = np.array(map(len,read_lists[0]),dtype=np.float64)
+	sites_per_freq = np.array(list(map(len,read_lists[0])),dtype=np.float64)
 	total_sites = sum(sites_per_freq)
 	p_freq = sites_per_freq/total_sites
 	resamples_per_freq = rn.multinomial(total_sites,p_freq,1)[0]
-	resampled_sites = np.array([rn.choice(range(len(read_lists[0][i])),size=resamples_per_freq[i]) for i in range(len(freqs))])
+	resampled_sites = np.array([rn.choice(list(range(len(read_lists[0][i]))),size=resamples_per_freq[i]) for i in range(len(freqs))])
 	bad_freqs = np.where(resamples_per_freq == 0)[0]
 	new_freqs = np.delete(freqs,bad_freqs,axis=0)
 	for i in range(len(read_lists)):
@@ -217,7 +217,7 @@ def get_read_dict(freq,reads):
 	read_list = []
 	for freq in freqs:
 		read_list.append(read_dict[freq])
-	read_list = map(np.array, read_list)
+	read_list = list(map(np.array, read_list))
 	read_list = [read_list]
 	return freqs, read_list
 
@@ -272,7 +272,7 @@ def generate_Q_het(n):
 
 def generate_het(freq, n):
 	pows = np.arange(0,n+1)
-	hetMat = np.array(map(lambda x: x**pows*(1-x)**(n-pows),np.array(freq)))
+	hetMat = np.array([x**pows*(1-x)**(n-pows) for x in np.array(freq)])
 	return np.transpose(hetMat)
 
 #k should be a vector of 0, 1, 2, ..., n
@@ -313,10 +313,10 @@ def get_bounds_reads(reads):
 	min_d = []
 	max_d = []
 	for i in range(len(reads)):
-		min_a.append(min(map(lambda x: np.amin(x[:,:,0]),reads[i])))
-		max_a.append(max(map(lambda x: np.amax(x[:,:,0]),reads[i])))
-		min_d.append(min(map(lambda x: np.amin(x[:,:,1]),reads[i])))
-		max_d.append(max(map(lambda x: np.amax(x[:,:,1]),reads[i])))
+		min_a.append(min([np.amin(x[:,:,0]) for x in reads[i]]))
+		max_a.append(max([np.amax(x[:,:,0]) for x in reads[i]]))
+		min_d.append(min([np.amin(x[:,:,1]) for x in reads[i]]))
+		max_d.append(max([np.amax(x[:,:,1]) for x in reads[i]]))
 	return min_a, max_a, min_d, max_d
 
 def precompute_read_like(min_a,max_a,min_d,max_d):
@@ -467,7 +467,7 @@ def get_beta_params(freqs,read_lists,min_samples=15):
 		print("WARNING: minimum number of samples to include when computing alpha, beta is bigger than maximum sample size")
 		print("Returning default alpha = 0.5, beta = 0.5")
 		return 0.5, 0.5
-	num_sites_per_freq = np.array(map(len,read_lists[0]))
+	num_sites_per_freq = np.array(list(map(len,read_lists[0])))
 	good_freqs = freqs[:,1]>=min_samples
 	cur_opt = opt.fmin_l_bfgs_b(lambda x: -np.sum(num_sites_per_freq[good_freqs]*beta_binom(freqs[good_freqs,0],freqs[good_freqs,1],x[0],x[1])), x0 = [.5,.5], approx_grad=True, bounds = [[1e-10,1000],[1e-10,1000]])
 	alpha = cur_opt[0][0]

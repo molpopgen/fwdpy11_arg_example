@@ -4,7 +4,7 @@ import numpy as np
 
 def ancient_sample_mix_multiple(num_modern=1000,anc_pop = 0, anc_num = 1, anc_time=200,mix_time=300,split_time=400,f=0.0,Ne0=10000,Ne1=10000,mu=1.25e-8,length=1000,num_rep=1000, error = None, contamination = None, coverage=False, seed = None):
 	if mix_time > split_time:
-		printe("mixture occurs more anciently than population split!")
+		print("mixture occurs more anciently than population split!")
 		return None
 	if f < 0 or f > 1:
 		print("Admixture fraction is not in [0,1]")
@@ -169,9 +169,9 @@ def write_beagle_output(freq, reads, file_name, num_modern = 100):
 	for i in range(len(freq)):
 		HW = ((1-freq[i])**2, 2*freq[i]*(1.-freq[i]),freq[i]**2)
 		modern_genotypes_draw = rn.multinomial(1,HW,num_modern)
-		modern_genotypes = map(lambda x: np.where(x==1)[0][0],modern_genotypes_draw)
+		modern_genotypes = [np.where(x==1)[0][0] for x in modern_genotypes_draw]
 		modern_GL = np.zeros((num_modern,3))
-		modern_GL[range(num_modern),modern_genotypes] = 1
+		modern_GL[list(range(num_modern)),modern_genotypes] = 1
 		outfile.write("marker_%d\t0\t1"%i)
 		for ind in modern_GL:
 			outfile.write("\t")

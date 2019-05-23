@@ -21,7 +21,7 @@ time_out_errors = open("admixture_cont_time_out.txt","w")
 
 def sim_ghost_admixture(num_ind, i, f, coverage=1):
 	print([coverage, num_ind, f])
-	freq_sim, GT_sim, reads_sim = ancient_sample_ghost_mix(anc_pop = 0, anc_num = num_ind, Ne1=1000,f=f, anc_time = 300, mix_time = 200, length=500,num_rep=100000,coverage=coverage,error=st.expon.rvs(size=num_ind,scale=.05,random_state=i),seed = i)
+	freq_sim, GT_sim, reads_sim = ancient_sample_ghost_mix(anc_pop = 0, anc_num = num_ind, Ne1=1000,f=f, anc_time = 300, mix_time = 200, length=500,num_rep=100,coverage=coverage,error=st.expon.rvs(size=num_ind,scale=.05,random_state=i),seed = i)
 	freqs_sim, read_list_sim = get_read_dict(freq_sim,reads_sim)
 	signal.alarm(21600) 
 	try:
@@ -36,7 +36,7 @@ def sim_ghost_admixture(num_ind, i, f, coverage=1):
 cov = [.5,4]
 results = []
 for cur_cov in cov:
-	print(cur_cov) 
+	print(cur_cov)
 	results.append([])
 	for num_ind in [1,5]:
 		results[-1].append([])
