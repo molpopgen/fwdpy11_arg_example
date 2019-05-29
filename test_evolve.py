@@ -68,6 +68,36 @@ def parse_args():
 	parser.add_argument('--out_tree_sequence', '-ots', default="", help="outfile path for tree sequence")
     
 	return parser
+
+def tree_continuity_analyses(trees_neutral,num_modern,anc_num,coverage):
+	freq = []
+	reads = []
+	GT = []
+	error=st.expon.rvs(size=anc_num,scale=.05,random_state=seeds[4]) #only works with one ancestral sample
+	for variant in trees_neutral.variants():
+		var_array = variant.genotypes
+		cur_freq = sum(var_array[:-(2*anc_num)])/float(num_modern)
+		if cur_freq == 0 or cur_freq == 1: continue
+		freq.append(cur_freq)
+		reads.append([])
+		GT.append([])
+		for i in range(anc_num):
+			if i == 0: cur_GT = var_array[-2:]
+			else: cur_GT = var_array[-(2*(i+1)):-(2*i)]
+			cur_GT = sum(cur_GT)
+			GT[-1].append(cur_GT)
+			reads[-1].append([None,None])
+			if coverage:
+				num_reads = st.poisson.rvs(coverage)
+				p_der = cur_GT/2.*(1-error[i])+(1-cur_GT/2.)*error[i]
+				derived_reads = st.binom.rvs(num_reads, p_der)
+				reads[-1][-1] = (num_reads-derived_reads,derived_reads)
+	
+	freqs_sim, read_list_sim = get_read_dict(freq,reads)
+	params_pop_sim_free = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=False)
+	params_pop_sim_continuity = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=True)
+	
+	return (params_pop_sim_continuity, params_pop_sim_free)
 		
 def run_sim(tuple):
 	args = tuple[0]
@@ -136,26 +166,31 @@ def run_sim(tuple):
 	population = [0]
 	generation = [0]
 	count = 0
-	anc_num = 0
-	num_modern = 0
+	anc_num = []
+	num_modern = []
+	
+	def record_count():
+		samples.append(count)
+		if(generation[-1] > 0):
+			anc_num.append(round(count/2))
+			num_modern.append(0)
+		else:
+			anc_num.append(0)
+			num_modern.append(count)
 	
 	for node in evolver.nodes:
 		if(node.flags == 1):
-			if(node.population == population[len(population)-1] and node.time == generation[len(generation)-1]):
+			if(node.population == population[len(population)-1] and node.time == generation[-1]):
 				count += 1
 			else:
-				samples.append(count)
+				record_count()	
 				count = 1
 				population.append(node.population)
 				generation.append(node.time)
-			if(node.time > 0):
-				anc_num += 1
-			else:
-				num_modern += 1
 		else:
-			samples.append(count)
+			record_count()	
 			break
-	anc_num = int(anc_num/2)
+
 	cumsum_samples = np.zeros(1, dtype = np.int64)
 	cumsum_samples = np.append(cumsum_samples, np.cumsum(samples,dtype=np.int64))
 	
@@ -172,6 +207,8 @@ def run_sim(tuple):
 		ps = PolySIM(sdata)
 		pi_array[i] = ps.thetapi()/args.ntheta
 	
+	continuity_results = []
+	
 	if(len(samples) > 2):
 		for i in range(len(samples)):
 			for j in range((i+1),len(samples)):
@@ -187,41 +224,20 @@ def run_sim(tuple):
 				fst_array[i][j] = fst.hsm()/(1-fst.hsm())
 				fst_array[j][i] = fst_array[i][j]
 				
+				if(i == 0 and generation[j] > 0): 
+					continuity_results.append(tree_continuity_analyses(subtree_neutral,num_modern[i],anc_num[j],args.coverage))
+				
 	elif(len(samples) == 2):
 		sdata = make_SimData(trees_neutral)
+		
 		fst = Fst(sdata,samples)
 		fst_array[0][1] = fst.hsm()/(1-fst.hsm())
 		fst_array[1][0] = fst_array[0][1]
 		
-	freq = []
-	reads = []
-	GT = []
-	error=st.expon.rvs(size=anc_num,scale=.05,random_state=seeds[4]) #only works with one ancestral sample
-	for variant in trees_neutral.variants():
-		var_array = variant.genotypes
-		cur_freq = sum(var_array[:-(2*anc_num)])/float(num_modern)
-		if cur_freq == 0 or cur_freq == 1: continue
-		freq.append(cur_freq)
-		reads.append([])
-		GT.append([])
-		for i in range(anc_num):
-			if i == 0: cur_GT = var_array[-2:]
-			else: cur_GT = var_array[-(2*(i+1)):-(2*i)]
-			cur_GT = sum(cur_GT)
-			GT[-1].append(cur_GT)
-			reads[-1].append([None,None])
-			if args.coverage:
-				num_reads = st.poisson.rvs(args.coverage)
-				p_der = cur_GT/2.*(1-error[i])+(1-cur_GT/2.)*error[i]
-				derived_reads = st.binom.rvs(num_reads, p_der)
-				reads[-1][-1] = (num_reads-derived_reads,derived_reads)
-	
+		if(generation[1] > 0):
+			continuity_results.append(tree_continuity_analyses(trees_neutral,num_modern[0],anc_num[1],args.coverage))
 		
-	freqs_sim, read_list_sim = get_read_dict(freq,reads)
-	params_pop_sim_free = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=False)
-	params_pop_sim_continuity = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=True)
-	
-	return (fst_array,population,generation,pi_array,params_pop_sim_free,params_pop_sim_continuity)
+	return (fst_array,population,generation,pi_array,continuity_results)
 
 if __name__ == "__main__":
 	parser = parse_args()
