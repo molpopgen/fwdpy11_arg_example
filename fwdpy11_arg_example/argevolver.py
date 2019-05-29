@@ -35,9 +35,9 @@ class ArgEvolver(object):
         if trees is not None:
             self.__process = False
             self.__tc = trees.dump_tables()
+            a = self.__tc.populations.add_row() #two populations (trees has only one)
             
             if self.__tc.nodes.num_rows > 0: #add simulation time to input trees
-               
                time_corr = self.__tc.nodes.time
                dt = float(self.__total_generations)
                time_corr += dt
@@ -50,7 +50,6 @@ class ArgEvolver(object):
             	encoded = meta_list.view(np.int8)
             	offset = np.arange(0,4*(len(meta_list)+1),4,dtype=np.uint32)
             	self.__tc.mutations.set_columns(site=self.__tc.mutations.site, node=self.__tc.mutations.node, derived_state=self.__tc.mutations.derived_state, derived_state_offset=self.__tc.mutations.derived_state_offset, parent=self.__tc.mutations.parent, metadata_offset=offset, metadata=encoded)
-        
         
         self._anc_tracker = AncestryTracker(pop.N, self.__tc.nodes.num_rows, self.__total_generations)
         self._sampler = anc_sampler
