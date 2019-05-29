@@ -96,8 +96,8 @@ def tree_continuity_analyses(trees_neutral,num_modern,anc_num,coverage):
 	freqs_sim, read_list_sim = get_read_dict(freq,reads)
 	params_pop_sim_free = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=False)
 	params_pop_sim_continuity = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=True)
-	
-	return (params_pop_sim_continuity, params_pop_sim_free)
+
+	return (params_pop_sim_continuity[0][1], params_pop_sim_free[0][1])
 		
 def run_sim(tuple):
 	args = tuple[0]
@@ -225,7 +225,7 @@ def run_sim(tuple):
 				fst_array[j][i] = fst_array[i][j]
 				
 				if(i == 0 and generation[j] > 0): 
-					continuity_results.append(tree_continuity_analyses(subtree_neutral,num_modern[i],anc_num[j],args.coverage))
+					continuity_results.append(((i,j),tree_continuity_analyses(subtree_neutral,num_modern[i],anc_num[j],args.coverage)))
 				
 	elif(len(samples) == 2):
 		sdata = make_SimData(trees_neutral)
@@ -235,7 +235,7 @@ def run_sim(tuple):
 		fst_array[1][0] = fst_array[0][1]
 		
 		if(generation[1] > 0):
-			continuity_results.append(tree_continuity_analyses(trees_neutral,num_modern[0],anc_num[1],args.coverage))
+			continuity_results.append(((0,1),tree_continuity_analyses(trees_neutral,num_modern[0],anc_num[1],args.coverage)))
 		
 	return (fst_array,population,generation,pi_array,continuity_results)
 
@@ -298,9 +298,11 @@ if __name__ == "__main__":
 
 	pi_list = []
 	fst_list = []
+	continuity_list = []
 	for result in result_list:
 		pi_list.append(result[3])
 		fst_list.append(result[0])
+		continuity_list.append(result[4])
 		
 	fst_array = np.array(fst_list)
 	pi_array = np.array(pi_list)
@@ -351,3 +353,19 @@ if __name__ == "__main__":
 		f.write("\n")
 		
 	f.close()
+	
+	num_continuity = len(continuity_list[0][1]) 
+	if(num_continuity > 0):
+		f = open("continuity_"+args.outfilename, "w")
+		for i in range(num_continuity):
+			f.write(str(continuity_list[0][i][0]) + "\t" + str(continuity_list[0][i][0]) + "\t")
+		f.write("\n")
+		for i in range(num_continuity):
+			f.write("Continuity" + "\t" + "Free" + "\t")
+		f.write("\n")
+		for c_tuple in continuity_list:
+			for i in range(num_continuity):
+				f.write(str(c_tuple[i][1][0]) + "\t" + str(c_tuple[i][1][1]) + "\t")
+			f.write("\n")
+		f.close()
+			
