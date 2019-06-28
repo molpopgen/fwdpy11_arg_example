@@ -1,26 +1,37 @@
 from ancient_genotypes_simulation import *
 from ancient_genotypes import *
 from numpy import *
-import pandas
-import pickle
-from joblib import Parallel, delayed
+import concurrent.futures
 
-def sim_ghost_admixture(anc_pop, i):
+def sim(tuple):
+	anc_pop_id = tuple[0] 
+	i = tuple[1]
 	coverage=1
 	num_ind=10
 	print([coverage, num_ind])
-	freq_sim, GT_sim, reads_sim = ancient_sample_test(num_modern=100,anc_pop=0,anc_num=num_ind,Ne0=3000,Ne1=3000,anc_time=5419,split_time_anc=5919,length=500,num_rep=10,coverage=coverage,error=st.expon.rvs(size=num_ind,scale=.05,random_state=i),seed = i)
+	freq_sim, GT_sim, reads_sim = ancient_sample_test(num_modern=100,anc_pop=anc_pop_id,anc_num=num_ind,Ne0=3000,Ne1=3000,anc_time=5419,split_time_anc=5919,length=500,num_rep=13333,coverage=coverage,error=st.expon.rvs(size=num_ind,scale=.05,random_state=i),seed = i)
 	freqs_sim, read_list_sim = get_read_dict(freq_sim,reads_sim) 
 	params_pop_sim_free = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=False)
 	params_pop_sim_continuity = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=True)
-	return [params_pop_sim_free,params_pop_sim_continuity]
+	return [params_pop_sim_continuity[0][1], params_pop_sim_free[0][1]]
 
-cov = [1]
 results = []
 random.seed(42)
+num_replicates = 80
+list = [i for i in random.choice(range(1000000),size=num_replicates*2,replace=False)]
+
 for anc_pop in [0,1]:
 	print(anc_pop)
-	results.append([])
-	results[-1].append([])
-	results[-1][-1].append(Parallel(n_jobs=50)(delayed(sim_ghost_admixture)(anc_pop,i) for i in random.randint(1000000,size=20)))
-	pickle.dump(results,open("results_ghost_admixture_cont_half_4_coverage_1_5_ind_f_0_half_rep.pickle","wb"))
+	list2 = [list[i] for i in range(num_replicates*anc_pop,num_replicates*(anc_pop+1))]
+	with concurrent.futures.ProcessPoolExecutor() as pool:
+		futures = {pool.submit(sim, (anc_pop,i)) for i in list2}
+		for fut in concurrent.futures.as_completed(futures):
+			results.append(fut.result())
+
+file = open("results.txt","w")
+file.write("(0,1)\t(0,1)\t(0,2)\t(0,2)\n")
+file.write("Continuity\tFree\tContinuity\tFree\n")
+for i in range(num_replicates):
+	file.write(str(results[i][0]) + "\t" + str(results[i][1]) + "\t" + str(results[i+num_replicates][0]) + "\t" + str(results[i+num_replicates][1]) + "\n")
+
+file.close()

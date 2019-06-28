@@ -63,7 +63,9 @@ def ancient_sample_test(num_modern=1000, anc_pop = 0, anc_num = 1, anc_time = 20
 	reads = []
 	GT = []
 	sim_num = 0
+	poly_count = 0
 	for sim in sims:
+		poly_count += sim.num_mutations
 		for variant in sim.variants():
 			var_array = variant.genotypes
 			cur_freq = sum(var_array[:-(2*anc_num)])/float(num_modern)
@@ -82,6 +84,7 @@ def ancient_sample_test(num_modern=1000, anc_pop = 0, anc_num = 1, anc_time = 20
 					p_der = cur_GT/2.*(1-error[i])+(1-cur_GT/2.)*error[i]
 					derived_reads = st.binom.rvs(num_reads, p_der)
 					reads[-1][-1] = (num_reads-derived_reads,derived_reads)
+	print(poly_count)
 	return np.array(freq), GT, reads
 
 #NB: This function does not support admixture
