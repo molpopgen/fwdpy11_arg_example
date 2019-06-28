@@ -51,22 +51,13 @@ def ancient_sample_mix_multiple(num_modern=1000,anc_pop = 0, anc_num = 1, anc_ti
 					reads[-1][-1] = (num_reads-derived_reads,derived_reads)
 	return np.array(freq), GT, reads
 
-def ancient_sample_ghost_mix(num_modern=1000, anc_pop = 0, anc_num = 1, anc_time = 200, mix_time = 300, split_time_anc = 400, split_time_ghost = 800, f = 0.0, Ne0 = 10000, Ne1 = 10000, NeGhost = 10000, mu = 1.25e-8, length = 1000, num_rep = 1000, error = None, coverage = False, seed = None):
-	if mix_time > split_time_anc:
-		print("Mixture with ghost occurs more anciently than modern/ancient split")
-		return None
-	if mix_time > split_time_ghost:
-		print("Mixture with ghost occurs more anciently than ghost pop existed!")
-		return None
-	if f < 0 or f > 1:
-		print("Admixture fraction is not in [0, 1]")
-		return None
+def ancient_sample_test(num_modern=1000, anc_pop = 0, anc_num = 1, anc_time = 200, split_time_anc = 400, Ne0 = 10000, Ne1 = 10000, mu = 1.25e-8, length = 1000, num_rep = 1000, error = None, coverage = False, seed = None):
 	if error is None:
 		error = np.zeros(anc_num)
 	samples = [msp.Sample(population = 0, time = 0)]*num_modern
 	samples.extend([msp.Sample(population = anc_pop, time = anc_time)]*(2*anc_num))
-	pop_config = [msp.PopulationConfiguration(initial_size = Ne0), msp.PopulationConfiguration(initial_size = Ne1), msp.PopulationConfiguration(initial_size = NeGhost)]
-	divergence = [msp.MassMigration(time=mix_time, source = 0, destination = 2, proportion = f), msp.MassMigration(time = split_time_anc, source = 1, destination = 0, proportion = 1.0), msp.MassMigration(time = split_time_ghost, source = 2, destination = 0, proportion = 1.0)]
+	pop_config = [msp.PopulationConfiguration(initial_size = Ne0), msp.PopulationConfiguration(initial_size = Ne1)]
+	divergence = [msp.MassMigration(time = split_time_anc, source = 1, destination = 0, proportion = 1.0)]
 	sims = msp.simulate(samples=samples,Ne=Ne0,population_configurations=pop_config,demographic_events=divergence,mutation_rate=mu,length=length,num_replicates=num_rep, random_seed = seed)
 	freq = []
 	reads = []
