@@ -1,3 +1,8 @@
+import os
+os.environ["MKL_NUM_THREADS"] = "1" 
+os.environ["NUMEXPR_NUM_THREADS"] = "1" 
+os.environ["OMP_NUM_THREADS"] = "1" 
+
 from ancient_genotypes_simulation import *
 from ancient_genotypes import *
 from numpy import *

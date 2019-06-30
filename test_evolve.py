@@ -1,3 +1,8 @@
+import os
+os.environ["MKL_NUM_THREADS"] = "1" 
+os.environ["NUMEXPR_NUM_THREADS"] = "1" 
+os.environ["OMP_NUM_THREADS"] = "1" 
+
 import msprime
 import scipy.stats as st
 import numpy as np
@@ -363,7 +368,7 @@ if __name__ == "__main__":
 			f.write(str(continuity_list[0][i][0]) + "\t" + str(continuity_list[0][i][0]) + "\t" + str(continuity_list[0][i][0]) + "\t" + str(continuity_list[0][i][0]) + "\t" + str(continuity_list[0][i][0]) + "\t" + str(continuity_list[0][i][0]) + "\t")
 		f.write("\n")
 		for i in range(num_continuity):
-			f.write("Continuity_L" + "\t" + "Free_L" + "\t" + "Continuity_t1" + "\t" + "Free_t1" + "Continuity_t2" + "\t" + "Free_t2")
+			f.write("Continuity_L" + "\t" + "Free_L" + "\t" + "Continuity_t1" + "\t" + "Free_t1" + "\t" + "Continuity_t2" + "\t" + "Free_t2" + "\t")
 		f.write("\n")
 		for c_tuple in continuity_list:
 			for i in range(num_continuity):
