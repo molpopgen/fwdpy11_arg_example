@@ -1,11 +1,11 @@
 import numpy as np
 import scipy.optimize as opt
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import scipy.stats as st
 import scipy.special as sp
 from scipy.sparse.linalg import expm_multiply as expma
 from numpy import random as rn
-from joblib import Parallel, delayed
+#from joblib import Parallel, delayed
 import pandas
 import sys
 
@@ -412,14 +412,14 @@ def optimize_single_pop_thread(r, freqs, min_a, max_a, min_d, max_d, detail = Fa
 	return cur_opt
 
 
-def optimize_pop_params_error_parallel(freqs,read_lists,num_core = 1, detail=False, continuity=False, alpha = None, beta = None):
+def optimize_pop_params_error_serial(freqs, read_lists, detail=False, continuity=False, alpha = None, beta = None):
 	if (hasattr(freqs[0],"__len__")) and ((alpha is None) or (beta is None)):
 		print("ERROR: Need to specify alpha and beta parameters when using discrete reference allele frequencies")
 		return 1
 	min_a, max_a, min_d, max_d = get_bounds_reads(read_lists)
 	seeds = st.randint.rvs(0,100000,size=len(read_lists))
 	#freqs, read_lists = make_read_dict_by_pop(freq,reads,pops)
-	opts = Parallel(n_jobs=num_core)(delayed(optimize_single_pop_thread)(read_lists[i], freqs, min_a[i], max_a[i], min_d[i], max_d[i], detail, continuity,seed=seeds[i], alpha = alpha, beta = beta) for i in range(len(read_lists)))
+	opts = [optimize_single_pop_thread(read_lists[i], freqs, min_a[i], max_a[i], min_d[i], max_d[i], detail, continuity,seed=seeds[i], alpha = alpha, beta = beta) for i in range(len(read_lists))]
 	return opts
 
 def optimize_params_one_pop(freq,reads,pop,detail=False):

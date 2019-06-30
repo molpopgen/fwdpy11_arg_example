@@ -94,8 +94,8 @@ def tree_continuity_analyses(trees_neutral,num_modern,anc_num,coverage):
 				reads[-1][-1] = (num_reads-derived_reads,derived_reads)
 	
 	freqs_sim, read_list_sim = get_read_dict(freq,reads)
-	params_pop_sim_free = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=False)
-	params_pop_sim_continuity = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=True)
+	params_pop_sim_free = optimize_pop_params_error_serial(freqs_sim,read_list_sim,detail=0,continuity=False)
+	params_pop_sim_continuity = optimize_pop_params_error_serial(freqs_sim,read_list_sim,detail=0,continuity=True)
 
 	return (params_pop_sim_continuity[0][1], params_pop_sim_free[0][1], params_pop_sim_continuity[0][0][0], params_pop_sim_free[0][0][0], params_pop_sim_continuity[0][0][1], params_pop_sim_free[0][0][1])
 		

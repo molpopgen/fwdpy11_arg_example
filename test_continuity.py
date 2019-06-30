@@ -11,8 +11,8 @@ def sim(tuple):
 	print([coverage, num_ind])
 	freq_sim, GT_sim, reads_sim = ancient_sample_test(num_modern=100,anc_pop=anc_pop_id,anc_num=num_ind,Ne0=3000,Ne1=3000,anc_time=5419,split_time_anc=5919,length=500,num_rep=13333,coverage=coverage,error=st.expon.rvs(size=num_ind,scale=.05,random_state=i),seed = i)
 	freqs_sim, read_list_sim = get_read_dict(freq_sim,reads_sim) 
-	params_pop_sim_free = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=False)
-	params_pop_sim_continuity = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=True)
+	params_pop_sim_free = optimize_pop_params_error_serial(freqs_sim,read_list_sim,detail=0,continuity=False)
+	params_pop_sim_continuity = optimize_pop_params_error_serial(freqs_sim,read_list_sim,detail=0,continuity=True)
 	return (params_pop_sim_continuity[0][1], params_pop_sim_free[0][1], params_pop_sim_continuity[0][0][0], params_pop_sim_free[0][0][0], params_pop_sim_continuity[0][0][1], params_pop_sim_free[0][0][1])
 
 results = []
@@ -28,7 +28,7 @@ for anc_pop in [0,1]:
 		for fut in concurrent.futures.as_completed(futures):
 			results.append(fut.result())
 
-file = open("results.txt","w")
+file = open("continuity_continuity_sim_neutral.txt","w")
 file.write("(0,1)\t(0,1)\t(0,1)\t(0,1)\t(0,1)\t(0,1)\t(0,2)\t(0,2)\t(0,2)\t(0,2)\t(0,2)\t(0,2)\n")
 file.write("Continuity_L\tFree_L\tContinuity_t1\tFree_t1\tContinuity_t2\tFree_t2\tContinuity_L\tFree_L\tContinuity_t1\tFree_t1\tContinuity_t2\tFree_t2\n")
 for i in range(num_replicates):
