@@ -13,7 +13,7 @@ def sim(tuple):
 	freqs_sim, read_list_sim = get_read_dict(freq_sim,reads_sim) 
 	params_pop_sim_free = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=False)
 	params_pop_sim_continuity = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=True)
-	return [params_pop_sim_continuity[0][1], params_pop_sim_free[0][1]]
+	return (params_pop_sim_continuity[0][1], params_pop_sim_free[0][1], params_pop_sim_continuity[0][0][0], params_pop_sim_free[0][0][0], params_pop_sim_continuity[0][0][1], params_pop_sim_free[0][0][1])
 
 results = []
 random.seed(42)
@@ -29,9 +29,9 @@ for anc_pop in [0,1]:
 			results.append(fut.result())
 
 file = open("results.txt","w")
-file.write("(0,1)\t(0,1)\t(0,2)\t(0,2)\n")
-file.write("Continuity\tFree\tContinuity\tFree\n")
+file.write("(0,1)\t(0,1)\t(0,1)\t(0,1)\t(0,1)\t(0,1)\t(0,2)\t(0,2)\t(0,2)\t(0,2)\t(0,2)\t(0,2)\n")
+file.write("Continuity_L\tFree_L\tContinuity_t1\tFree_t1\tContinuity_t2\tFree_t2\tContinuity_L\tFree_L\tContinuity_t1\tFree_t1\tContinuity_t2\tFree_t2\n")
 for i in range(num_replicates):
-	file.write(str(results[i][0]) + "\t" + str(results[i][1]) + "\t" + str(results[i+num_replicates][0]) + "\t" + str(results[i+num_replicates][1]) + "\n")
+	file.write(str(results[i][0]) + "\t" + str(results[i][1]) + "\t" + str(results[i][2]) + "\t" + str(results[i][3]) + "\t" + str(results[i][4]) + "\t" + str(results[i][5]) + "\t" + str(results[i+num_replicates][0]) + "\t" + str(results[i+num_replicates][1]) + "\t" + str(results[i+num_replicates][2]) + "\t" + str(results[i+num_replicates][3]) + "\t" + str(results[i+num_replicates][4]) + "\t" + str(results[i+num_replicates][5]) + "\n")
 
 file.close()

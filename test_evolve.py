@@ -97,7 +97,7 @@ def tree_continuity_analyses(trees_neutral,num_modern,anc_num,coverage):
 	params_pop_sim_free = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=False)
 	params_pop_sim_continuity = optimize_pop_params_error_parallel(freqs_sim,read_list_sim,num_core=1,detail=0,continuity=True)
 
-	return (params_pop_sim_continuity[0][1], params_pop_sim_free[0][1])
+	return (params_pop_sim_continuity[0][1], params_pop_sim_free[0][1], params_pop_sim_continuity[0][0][0], params_pop_sim_free[0][0][0], params_pop_sim_continuity[0][0][1], params_pop_sim_free[0][0][1])
 		
 def run_sim(tuple):
 	args = tuple[0]
@@ -360,14 +360,14 @@ if __name__ == "__main__":
 	if(num_continuity > 0):
 		f = open("continuity_"+args.outfilename, "w")
 		for i in range(num_continuity):
-			f.write(str(continuity_list[0][i][0]) + "\t" + str(continuity_list[0][i][0]) + "\t")
+			f.write(str(continuity_list[0][i][0]) + "\t" + str(continuity_list[0][i][0]) + "\t" + str(continuity_list[0][i][0]) + "\t" + str(continuity_list[0][i][0]) + "\t" + str(continuity_list[0][i][0]) + "\t" + str(continuity_list[0][i][0]) + "\t")
 		f.write("\n")
 		for i in range(num_continuity):
-			f.write("Continuity" + "\t" + "Free" + "\t")
+			f.write("Continuity_L" + "\t" + "Free_L" + "\t" + "Continuity_t1" + "\t" + "Free_t1" + "Continuity_t2" + "\t" + "Free_t2")
 		f.write("\n")
 		for c_tuple in continuity_list:
 			for i in range(num_continuity):
-				f.write(str(c_tuple[i][1][0]) + "\t" + str(c_tuple[i][1][1]) + "\t")
+				f.write(str(c_tuple[i][1][0]) + "\t" + str(c_tuple[i][1][1]) + "\t" + str(c_tuple[i][1][2]) + "\t" + str(c_tuple[i][1][3]) + "\t" + str(c_tuple[i][1][4]) + "\t" + str(c_tuple[i][1][5]) + "\t")
 			f.write("\n")
 		f.close()
 			
