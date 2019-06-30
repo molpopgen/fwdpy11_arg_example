@@ -73,7 +73,7 @@ def tree_continuity_analyses(trees_neutral,num_modern,anc_num,coverage):
 	freq = []
 	reads = []
 	GT = []
-	error=st.expon.rvs(size=anc_num,scale=.05,random_state=seeds[4]) #only works with one ancestral sample
+	error=st.expon.rvs(size=anc_num,scale=.05) 
 	for variant in trees_neutral.variants():
 		var_array = variant.genotypes
 		cur_freq = sum(var_array[:-(2*anc_num)])/float(num_modern)
@@ -114,7 +114,7 @@ def run_sim(tuple):
 	args.region_breaks = [] #no region breaks
 	if(not(args.single_locus)):
 		args.region_breaks = [1./3.,2./3.]
-	
+	np.random.seed(seeds[2])
 	evolver = ea.evolve_track_wrapper(args, demography, seeds)
 	print(evolver.times)
 	num_sites = evolver.sites.num_rows
@@ -125,7 +125,7 @@ def run_sim(tuple):
 	final_pop2_size = 0
 	if(args.pop2[2] > evolver.pop.generation):
 	   final_pop2_size = args.pop2[0]
-	curr_samples = np.random.choice(final_pop1_size, args.n_sam1_curr, replace = False).tolist() #np seed reset in evolve_arg.py 
+	curr_samples = np.random.choice(final_pop1_size, args.n_sam1_curr, replace = False).tolist() 
 	if(final_pop2_size > 0 and args.n_sam2_curr > 0):
 		curr_samples += (np.random.choice(final_pop2_size, args.n_sam2_curr, replace = False)+final_pop1_size).tolist()
 	samples = curr_samples+evolver.anc_samples
@@ -151,7 +151,6 @@ def run_sim(tuple):
 		trees_neutral = ts_neutral_col.tree_sequence()
          
 	num_sites2 = trees_neutral.num_mutations
-	print(num_sites2)
 	
 	if(len(args.out_tree_sequence) > 0):
 		seed_string = ""
@@ -208,7 +207,7 @@ def run_sim(tuple):
 		pi_array[i] = ps.thetapi()/args.ntheta
 	
 	continuity_results = []
-	
+	num_sites_list = []
 	if(len(samples) > 2):
 		for i in range(len(samples)):
 			for j in range((i+1),len(samples)):
@@ -217,6 +216,7 @@ def run_sim(tuple):
 				sample_nodes.extend(list(range(cumsum_samples[j],cumsum_samples[j+1])))
 				ts_col.simplify(samples=sample_nodes)
 				subtree_neutral = ts_col.tree_sequence()
+				num_sites_list.append(subtree_neutral.num_mutations)
 				
 				sdata = make_SimData(subtree_neutral)
 				subtree_sample = [samples[i],samples[j]]
@@ -237,6 +237,8 @@ def run_sim(tuple):
 		if(generation[1] > 0):
 			continuity_results.append(((0,1),tree_continuity_analyses(trees_neutral,num_modern[0],anc_num[1],args.coverage)))
 		
+	
+	print(num_sites2,num_sites_list)
 	return (fst_array,population,generation,pi_array,continuity_results)
 
 if __name__ == "__main__":
@@ -284,9 +286,9 @@ if __name__ == "__main__":
 		raise RuntimeError("number of replicates must be >= 1")
 	# Get 4 seeds for each sim w/0 replacement from [0,1e6)
 	np.random.seed(args.seed)
-	seeds = np.random.choice(range(1000000), 5*args.replicates, replace=False)
+	seeds = np.random.choice(range(1000000), 4*args.replicates, replace=False)
 
-	seed_list = [(seeds[i],seeds[i+1],seeds[i+2],seeds[i+3],seeds[i+4]) for i in range(0,len(seeds),5)]
+	seed_list = [(seeds[i],seeds[i+1],seeds[i+2],seeds[i+3]) for i in range(0,len(seeds),4)]
 
 	result_list = []
 	num_cores = None

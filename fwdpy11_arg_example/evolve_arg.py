@@ -5,8 +5,7 @@ import numpy as np
 import msprime
 
 class sampler(object):
-    def __init__(self, samples_pop1, samples_pop2, seed):
-        np.random.seed(seed)
+    def __init__(self, samples_pop1, samples_pop2):
         self.__samples_pop1 = samples_pop1
         self.__samples_pop2 = samples_pop2
         self.__samples_index_pop1 = 0
@@ -66,7 +65,7 @@ def evolve_track(rng, args, pop, params, seeds, init_with_TreeSequence):
         samples_pop1 = args.anc_sam1
     if(hasattr(args, 'anc_sam2')):
         samples_pop2 = args.anc_sam2
-    return ArgEvolver(rng, args, pop, params, sampler(samples_pop1,samples_pop2,seeds[2]), initial_TreeSequence)
+    return ArgEvolver(rng, args, pop, params, sampler(samples_pop1,samples_pop2), initial_TreeSequence)
 
 
 def evolve_track_wrapper(args, demography, seeds):
