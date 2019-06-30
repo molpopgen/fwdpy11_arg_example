@@ -1,2 +1,4 @@
 python -i test_msprime.py -o msprime_sim2C.txt -g 2000 -1 flat 10000 -2 500 1 1001 -nT 1000 -R 1000 -m 0 0 0.05 3 3 0 -T 0 -B 0 -ns1 100 --anc_sam1 1000 5 --anc_sam2 1000 5 -S 5 -r 10000 
 python -i test_evolve.py -o fwdpy11_sim2C.txt -g 2000 -1 flat 10000 -2 500 1 1001 -nT 1000 -R 1000 -m 0 0 0.05 3 3 0 -T 0 -B 0 -ns1 100 --anc_sam1 1000 5 --anc_sam2 1000 5 -S 6 -r 10000 
+
+nohup python -i ../../test_msprime.py -o msprime_sim2C.txt -g 2000 -1 flat 10000 -2 500 1 1001 -nT 1000 -R 1000 -m 0 0 0.05 3 3 0 -T 0 -B 0 -ns1 100 --anc_sam1 1000 5 --anc_sam2 1000 5 -S 5 -r 10000 > nohup_msprime2C.txt &

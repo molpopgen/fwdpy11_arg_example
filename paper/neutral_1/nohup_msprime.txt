@@ -1,2 +1,19 @@
-_frozen_importlib:219: RuntimeWarning: numpy.dtype size changed, may indicate binary incompatibility. Expected 96, got 88
+==============================
+Epoch: 0 -- 5919.0 generations
+==============================
+     start     end      growth_rate |     0        1    
+   -------- --------       -------- | -------- -------- 
+0 |  3e+03    3e+03               0 |     0        0    
+1 |  3e+03    3e+03               0 |     0        0    
+
+Events @ generation 5919.0
+   - Mass migration: lineages move from 1 to 0 with probability 1.0
+================================
+Epoch: 5919.0 -- inf generations
+================================
+     start     end      growth_rate |     0        1    
+   -------- --------       -------- | -------- -------- 
+0 |  3e+03    3e+03               0 |     0        0    
+1 |  3e+03    3e+03               0 |     0        0    
+
 >>> 

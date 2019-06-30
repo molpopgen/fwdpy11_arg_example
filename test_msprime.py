@@ -19,10 +19,10 @@ def parse_args():
 	parser.add_argument('--selection', '-s', type=float, default=-0.025, help="selection coefficient: -1 < s ") 
 	parser.add_argument('--theta', '-T', type=float, default=10.0, help="4Nu: effective mutation rate of selected mutations scaled to population size 1 at generation 0") #for testing against neutral models, set to 0 and let msprime set mutations on the resulting tree
 	parser.add_argument('--rho', '-R', type=float, default=10.0, help="4Nr: effective recombination rate scaled to population size 1 at generation 0")
-	parser.add_argument('--n_sam1_curr', '-ns1', type=int, default=10, help="Sample size (in diploids) of population 1 in current day.")
-	parser.add_argument('--n_sam2_curr', '-ns2', type=int, default=0, help="Sample size (in diploids) of population 2 in current day.")
-	parser.add_argument('--anc_sam1', '-as1', nargs='*', default = argparse.SUPPRESS, help="List of ancient samples (generation after burn-in, number of samples - in diploids) of population 1.")
-	parser.add_argument('--anc_sam2', '-as2', nargs='*', default = argparse.SUPPRESS, help="List of ancient samples (generation after burn-in, number of samples - in diploids) of population 2.")
+	parser.add_argument('--n_sam1_curr', '-ns1', type=int, default=10, help="Sample size (in haploids) of population 1 in current day.")
+	parser.add_argument('--n_sam2_curr', '-ns2', type=int, default=0, help="Sample size (in haploids) of population 2 in current day.")
+	parser.add_argument('--anc_sam1', '-as1', nargs='*', default = argparse.SUPPRESS, help="List of ancient samples (generation after burn-in, number of samples - in diploid individuals) of population 1.")
+	parser.add_argument('--anc_sam2', '-as2', nargs='*', default = argparse.SUPPRESS, help="List of ancient samples (generation after burn-in, number of samples - in diploid individuals) of population 2.")
 	parser.add_argument('--seed', '-S', type=int, default=42, help="RNG seed")
 	parser.add_argument('--replicates', '-r', type=int, default=100, help="number of simulation replicates")
 	parser.add_argument('--generations', '-g', type=int, default=5920, help="number of generations in flat demography")
@@ -46,8 +46,8 @@ def run_msprime(args):
 	pop_size_2 = int(args.pop2[0])
 	if(split_rate < 1 and not(split_recovery)):
 		pop_size_1 -= pop_size_2
-	samples = [msprime.Sample(population=0,time=0)]*(2*args.n_sam1_curr)
-	samples.extend([msprime.Sample(population=1,time=0)]*(2*args.n_sam2_curr))
+	samples = [msprime.Sample(population=0,time=0)]*(args.n_sam1_curr)
+	samples.extend([msprime.Sample(population=1,time=0)]*(args.n_sam2_curr))
 	if(hasattr(args, 'anc_sam1')): 
 		i = 0
 		while (i < len(args.anc_sam1)):
