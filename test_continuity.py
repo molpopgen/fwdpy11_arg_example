@@ -17,13 +17,13 @@ def sim(tuple):
 
 results = []
 random.seed(42)
-num_replicates = 80
+num_replicates = 1000
 list = [i for i in random.choice(range(1000000),size=num_replicates*2,replace=False)]
 
 for anc_pop in [0,1]:
 	print(anc_pop)
 	list2 = [list[i] for i in range(num_replicates*anc_pop,num_replicates*(anc_pop+1))]
-	with concurrent.futures.ProcessPoolExecutor() as pool:
+	with concurrent.futures.ProcessPoolExecutor(max_workers=105) as pool:
 		futures = {pool.submit(sim, (anc_pop,i)) for i in list2}
 		for fut in concurrent.futures.as_completed(futures):
 			results.append(fut.result())
