@@ -22,7 +22,7 @@ def sim(tuple):
 
 results = []
 random.seed(42)
-num_replicates = 1000
+num_replicates = 10000
 list = [i for i in random.choice(range(1000000),size=num_replicates*2,replace=False)]
 
 for anc_pop in [0,1]:
