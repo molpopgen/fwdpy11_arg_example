@@ -22,8 +22,8 @@ def sim(tuple):
 	return (params_pop_sim_continuity[0][1], params_pop_sim_free[0][1], params_pop_sim_continuity[0][0][0], params_pop_sim_free[0][0][0], params_pop_sim_continuity[0][0][1], params_pop_sim_free[0][0][1])
 
 if __name__ == "__main__":
-	seed = int(sys.argv[0])
-	range_delimeter = int(sys.argv[1])
+	seed = int(sys.argv[1])
+	range_delimeter = int(sys.argv[2])
 	result_suffix = "_"+str(range_delimeter)
 	if(range_delimeter == 0): result_suffix = ""
 	results = []
