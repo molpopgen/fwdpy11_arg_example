@@ -7,4 +7,4 @@ cd $SGE_O_WORKDIR
 module load krthornt/anaconda
 source activate fwdpy11_0_2_0
 
-PYTHONPATH=/share/kevin2/dlawrie/fwdpy11_arg_example python ../../test_continuity.py -42 -8 > nohup_continuity_8.txt
+PYTHONPATH=/share/kevin2/dlawrie/fwdpy11_arg_example python ../../test_continuity.py 42 8 > nohup_continuity_8.txt
