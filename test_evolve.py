@@ -291,7 +291,7 @@ if __name__ == "__main__":
 		raise RuntimeError("number of replicates must be >= 1")
 	# Get 4 seeds for each sim w/0 replacement from [0,1e6)
 	np.random.seed(args.seed)
-	seeds = np.random.choice(range(1000000), 4*args.replicates, replace=False)
+	seeds = np.random.choice(range(1,1000001), 4*args.replicates, replace=False) #msprime doesn't like seeds of 0
 
 	seed_list = [(seeds[i],seeds[i+1],seeds[i+2],seeds[i+3]) for i in range(0,len(seeds),4)]
 
