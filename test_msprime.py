@@ -37,7 +37,8 @@ def parse_args():
 	
 #burn-in must be 0
 def run_msprime(args):
-	pop_size_1 = int(args.pop1[1])
+	first_size = int(args.pop1[1])
+	pop_size_1 = first_size
 	final_generation = args.generations
 	split_generation = final_generation - int(args.pop2[1])
 	pop2_extinct_gen = final_generation - int(args.pop2[2])
@@ -81,7 +82,7 @@ def run_msprime(args):
 	dd = msprime.DemographyDebugger(population_configurations=population_configurations,demographic_events=demographic_events)
 	dd.print_history()
 	
-	all_sims = msprime.simulate(samples=samples,population_configurations=population_configurations,demographic_events=demographic_events,mutation_rate=args.ntheta/float(4*pop_size_1),recombination_rate=args.rho/float(4*pop_size_1),num_replicates=args.replicates,random_seed=args.seed)
+	all_sims = msprime.simulate(samples=samples,population_configurations=population_configurations,demographic_events=demographic_events,mutation_rate=args.ntheta/float(4*first_size),recombination_rate=args.rho/float(4*first_size),num_replicates=args.replicates,random_seed=args.seed)
 	result_list = []
 	
 	for sim in all_sims:

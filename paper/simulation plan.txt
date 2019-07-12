@@ -23,32 +23,25 @@ parameters: 10,000 individuals (population 1), 500 individuals (population 2)
 msprime
 fwdpy11
 
-(not doing 2B)
-B: population 2 smaller than population 1, recovery, expected size split
-parameters: 10,000 individuals (before split population 1), population 1 loses 500 individuals during split, immediately recovers to a size of 10,000 in the next generation, 500 individuals (population 2)
-
-msprime
-fwdpy11
-
-C: population 2 smaller than population 1, combined population size is constant 10,000, non-duplication, expected size split
+B: population 2 smaller than population 1, combined population size is constant 10,000, non-duplication, expected size split
 parameters: 10,000 individuals (before split population 1), 9,500 individuals (after split population 1), 500 individuals (population 2)
 
 msprime
 fwdpy11
 
-D: population 2 smaller than population 1, duplication split
+C: population 2 smaller than population 1, duplication split
 parameters: 10,000 individuals (population 1), 5000 individuals (population 2)
 
 msprime
 fwdpy11
 
-E: population 2 smaller than population 1, combined population size is constant 10,000, non-duplication, expected size split
-parameters: 5,000 individuals (before split population 1), 5,000 individuals (after split population 1), 5000 individuals (population 2)
+D: combined population size is constant 10,000, non-duplication, expected size split
+parameters: 10,000 individuals (before split population 1), 5,000 individuals (after split population 1), 5000 individuals (population 2)
 
 msprime
 fwdpy11
 
-F: population 2 smaller than population 1, combined population size is constant 10,000, non-duplication, expected size split
+E: population 2 smaller than population 1, combined population size is constant 15,000, non-duplication, expected size split
 parameters: 15,000 individuals (before split population 1), 10,000 individuals (after split population 1), 5000 individuals (population 2)
 
 msprime
