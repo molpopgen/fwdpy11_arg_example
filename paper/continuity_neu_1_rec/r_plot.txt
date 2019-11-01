@@ -1,0 +1,43 @@
+library(ggplot2)
+library("reshape2")
+library(scales)
+library(gridExtra)
+
+results_R1 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_fwdpy11_neutral_R500.txt', sep='\t',skip=2,header=F)$V6
+results_R2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_fwdpy11_neutral_R1000.txt', sep='\t',skip=2,header=F)$V6
+results_R3 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_fwdpy11_neutral_R3000.txt', sep='\t',skip=2,header=F)$V6
+results_R5 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_fwdpy11_neutral_R5000.txt', sep='\t',skip=2,header=F)$V6
+results_R7 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_fwdpy11_neutral_R7000.txt', sep='\t',skip=2,header=F)$V6
+results_R9 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_fwdpy11_neutral_R9000.txt', sep='\t',skip=2,header=F)$V6
+results_R11 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_fwdpy11_neutral_R11000.txt', sep='\t',skip=2,header=F)$V6
+results_Rinf = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_continuity_sim_neutral_all.txt', sep='\t',skip=2,header=F)$V6
+
+free_t2 = c(results_R1,results_R2,results_R3,results_R5,results_R7,results_R9,results_R11)
+r = c(rep(0.042,each=length(results_R1)),rep(0.083,each=length(results_R2)),rep(0.25,each=length(results_R3)),rep(0.42,each=length(results_R5)),rep(0.58,each=length(results_R7)),rep(0.75,each=length(results_R9)),rep(0.92,each=length(results_R11)))
+
+continuity_data = data.frame(r, free_t2)
+
+results_R1_2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_fwdpy11_neutral_R500.txt', sep='\t',skip=2,header=F)$V12
+results_R2_2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_fwdpy11_neutral_R1000.txt', sep='\t',skip=2,header=F)$V12
+results_R3_2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_fwdpy11_neutral_R3000.txt', sep='\t',skip=2,header=F)$V12
+results_R5_2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_fwdpy11_neutral_R5000.txt', sep='\t',skip=2,header=F)$V12
+results_R7_2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_fwdpy11_neutral_R7000.txt', sep='\t',skip=2,header=F)$V12
+results_R9_2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_fwdpy11_neutral_R9000.txt', sep='\t',skip=2,header=F)$V12
+results_R11_2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_fwdpy11_neutral_R11000.txt', sep='\t',skip=2,header=F)$V12
+results_Rinf_2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_continuity_sim_neutral_all.txt', sep='\t',skip=2,header=F)$V12
+
+free_t2_2 = c(results_R1_2,results_R2_2,results_R3_2,results_R5_2,results_R7_2,results_R9_2,results_R11_2)
+r_2 = c(rep(0.042,each=length(results_R1_2)),rep(0.083,each=length(results_R2_2)),rep(0.25,each=length(results_R3_2)),rep(0.42,each=length(results_R5_2)),rep(0.58,each=length(results_R7_2)),rep(0.75,each=length(results_R9_2)),rep(0.92,each=length(results_R11_2)))
+
+continuity_data_2 = data.frame(r_2, free_t2_2)
+
+#using standard deviation NOT standard error!!!!! Making point about distributions not accuracy of estimations
+p = ggplot(data= continuity_data, aes(x=r,y= free_t2)) + ggtitle("B") + theme_bw() + stat_summary(fun.data = "mean_sdl", geom = "pointrange", color="#D55E00",fun.args = list(mult=1),size=0.3) + geom_hline(aes(yintercept=mean(results_Rinf),linetype = "msprime"),colour="#0072B2") + scale_linetype_manual(values = c("dotdash")) + ylab(expression(italic(t[2]))) + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.80,0.8), legend.text = element_text(size=11)) + guides(linetype = guide_legend(title=element_blank())) + annotate("rect", xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = 0, fill = "black", alpha = .3, color = NA) + annotate("rect", xmin = -Inf, xmax = Inf, ymin = mean(results_Rinf)-sd(results_Rinf), ymax = mean(results_Rinf)+sd(results_Rinf), fill = "#0072B2", alpha = .2, color = NA)
+
+p2 = ggplot(data= continuity_data_2, aes(x= r_2,y= free_t2_2)) + ggtitle("A") + theme_bw() + stat_summary(fun.data = "mean_sdl", geom = "pointrange", color="#D55E00",fun.args = list(mult=1),size=0.3) + geom_hline(aes(yintercept=mean(results_Rinf_2),linetype = "msprime"),colour="#0072B2") + scale_linetype_manual(values = c("dotdash")) + annotate("rect", xmin = -Inf, xmax = Inf, ymin = mean(results_Rinf_2)-sd(results_Rinf_2), ymax = mean(results_Rinf_2)+sd(results_Rinf_2), fill = "#0072B2", alpha = .2, color = NA) + ylab(expression(italic(t[2]))) + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.text = element_text(size=11), axis.title=element_text(size=14), legend.position = "none", axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())  
+
+p3 = grid.arrange(p2,p,ncol=1)
+p3
+
+ggsave(plot = p3, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/plot_t2.pdf")
+ggsave(plot = p3, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/plot_t2.tiff")
