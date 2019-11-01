@@ -3,13 +3,13 @@ library("reshape2")
 library(scales)
 library(gridExtra)
 
-results_T11 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2C_IBGS_T250.txt', sep='\t',skip=2,header=F)$V12
-results_T7 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2C_IBGS_T301.txt', sep='\t',skip=2,header=F)$V12
-results_T5 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2C_IBGS_T378.txt', sep='\t',skip=2,header=F)$V12
-results_T3 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2C_IBGS_T509.txt', sep='\t',skip=2,header=F)$V12
-results_T2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2C_IBGS_T776.txt', sep='\t',skip=2,header=F)$V12
-results_T1 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2C_IBGS_T1639.txt', sep='\t',skip=2,header=F)$V12
-results_neutral = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2C_neutral.txt', sep='\t',skip=2,header=F)$V12
+results_T11 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2B_IBGS_T250.txt', sep='\t',skip=2,header=F)$V12
+results_T7 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2B_IBGS_T301.txt', sep='\t',skip=2,header=F)$V12
+results_T5 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2B_IBGS_T378.txt', sep='\t',skip=2,header=F)$V12
+results_T3 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2B_IBGS_T509.txt', sep='\t',skip=2,header=F)$V12
+results_T2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2B_IBGS_T776.txt', sep='\t',skip=2,header=F)$V12
+results_T1 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2B_IBGS_T1639.txt', sep='\t',skip=2,header=F)$V12
+results_neutral = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2B_neutral.txt', sep='\t',skip=2,header=F)$V12
 
 free_t2 = c(results_T1,results_T2,results_T3,results_T5,results_T7,results_T11)
 u = c(rep(0.26,each=length(results_T1)),rep(0.167,each=length(results_T2)),rep(0.123,each=length(results_T3)),rep(0.0806,each=length(results_T5)),rep(0.06,each=length(results_T7)),rep(0.0397,each=length(results_T11)))
