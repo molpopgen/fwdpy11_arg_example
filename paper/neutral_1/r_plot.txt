@@ -8,3 +8,4 @@ p = ggplot(data= fst_data, aes(x=simulation,y=Fst)) + geom_violin() + theme_bw()
 p
 
 ggsave(plot = p, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/neutral_1/plot1.pdf")
+ggsave(plot = p, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/neutral_1/plot1.tiff")
