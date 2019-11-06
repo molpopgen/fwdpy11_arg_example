@@ -1,28 +1,41 @@
 library(ggplot2)
 library("reshape2")
 library(scales)
+library(gridExtra)
 
 fst_data = read.table('~/Dropbox/fwdpy11_arg_example/paper/neutral_2/neutral_2A/Fst_pop0m1a.csv', sep=',', header= T)
+simulation = c(rep("0_msprime",10000),rep("0_fwdpy11",10000))
+Fst = fst_data$Fst
+duplication = rep("duplication",length(simulation))
+
+fst_data2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/neutral_2/neutral_2B/Fst_pop0m1a.csv', sep=',', header= T)
+
+simulation = c(simulation, simulation = c(rep("1_msprime",10000),rep("1_fwdpy11",10000)))
+Fst = c(Fst,fst_data2$Fst)
+duplication = c(duplication,rep("non-duplication",length(fst_data2$simulation)))
+
+fst_final = data.frame(simulation,duplication,Fst)
+
 palette <- c("#009E73", "#56B4E9")
-p = ggplot(data= fst_data, aes(x=simulation,y=Fst)) + geom_violin() + theme_bw() + ggtitle("A") + stat_summary(fun.data=mean_sdl, geom="pointrange", color="#D55E00", fun.args = list(mult=1)) +  scale_y_continuous(name="Fst", expand=c(0,0)) + scale_colour_manual(values= palette) + scale_linetype_manual(values = c(2), guide = guide_legend(override.aes = list(color = c("#000000")))) + theme(axis.title.x = element_blank(), axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.50,0.8),legend.title = element_blank(), legend.text = element_text(size=11)) + guides(color = guide_legend(reverse = T)) 
+p = ggplot(data= fst_final, aes(x=simulation,y=Fst,color=duplication)) + geom_violin() + theme_bw() + ggtitle("A") + stat_summary(fun.data=mean_sdl, geom="pointrange", color="#D55E00", fun.args = list(mult=1)) +  scale_y_continuous(name="Fst") + scale_x_discrete(labels=c("fwdpy11","msprime","fwdpy11","msprime")) + scale_colour_manual(values= palette) + scale_linetype_manual(values = c(2), guide = guide_legend(override.aes = list(color = c("#000000")))) + theme(axis.title.x = element_blank(), axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position="none",legend.title = element_blank(), legend.text = element_text(size=11)) + guides(color = guide_legend(reverse = F)) 
 p
 
+fst_data = read.table('~/Dropbox/fwdpy11_arg_example/paper/neutral_2/neutral_2C/Fst_pop0m1a.csv', sep=',', header= T)
+simulation = c(rep("0_msprime",10000),rep("0_fwdpy11",10000))
+Fst = fst_data$Fst
+duplication = rep("duplication",length(simulation))
 
-fst_data = read.table('~/Dropbox/fwdpy11_arg_example/paper/neutral_2/neutral_2B/Fst_pop0m1a.csv', sep=',', header= T)
-palette <- c("#009E73", "#56B4E9")
-p2 = ggplot(data= fst_data, aes(x=simulation,y=Fst)) + geom_violin() + theme_bw() + ggtitle("B") + stat_summary(fun.data=mean_sdl, geom="pointrange", color="#D55E00", fun.args = list(mult=1)) +  scale_y_continuous(name="Fst", expand=c(0,0)) + scale_colour_manual(values= palette) + scale_linetype_manual(values = c(2), guide = guide_legend(override.aes = list(color = c("#000000")))) + theme(axis.title.x = element_blank(), axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.50,0.8),legend.title = element_blank(), legend.text = element_text(size=11)) + guides(color = guide_legend(reverse = T)) 
+fst_data2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/neutral_2/neutral_2D/Fst_pop0m1a.csv', sep=',', header= T)
+
+simulation = c(simulation, simulation = c(rep("1_msprime",10000),rep("1_fwdpy11",10000)))
+Fst = c(Fst,fst_data2$Fst)
+duplication = c(duplication,rep("non-duplication",length(fst_data2$simulation)))
+
+fst_final = data.frame(simulation,duplication,Fst)
+
+p2 = ggplot(data= fst_final, aes(x=simulation,y=Fst,color=duplication)) + geom_violin() + theme_bw() + ggtitle("B") + stat_summary(fun.data=mean_sdl, geom="pointrange", color="#D55E00", fun.args = list(mult=1)) +  scale_y_continuous(name="Fst") + scale_x_discrete(labels=c("fwdpy11","msprime","fwdpy11","msprime")) + scale_colour_manual(values= palette) + scale_linetype_manual(values = c(2), guide = guide_legend(override.aes = list(color = c("#000000")))) + theme(axis.title.x = element_blank(), axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.30,0.9),legend.title = element_blank(), legend.text = element_text(size=11)) + guides(color = guide_legend(reverse = F)) 
 p2
 
-fst_data = read.table('~/Dropbox/fwdpy11_arg_example/paper/neutral_2/neutral_2C/Fst_pop0m1a.csv', sep=',', header= T)
-palette <- c("#009E73", "#56B4E9")
-p3 = ggplot(data= fst_data, aes(x=simulation,y=Fst)) + geom_violin() + theme_bw() + ggtitle("C") + stat_summary(fun.data=mean_sdl, geom="pointrange", color="#D55E00", fun.args = list(mult=1)) +  scale_y_continuous(name="Fst", expand=c(0,0)) + scale_colour_manual(values= palette) + scale_linetype_manual(values = c(2), guide = guide_legend(override.aes = list(color = c("#000000")))) + theme(axis.title.x = element_blank(), axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.50,0.8),legend.title = element_blank(), legend.text = element_text(size=11)) + guides(color = guide_legend(reverse = T)) 
-p3
-
-fst_data = read.table('~/Dropbox/fwdpy11_arg_example/paper/neutral_2/neutral_2D/Fst_pop0m1a.csv', sep=',', header= T)
-palette <- c("#009E73", "#56B4E9")
-p4 = ggplot(data= fst_data, aes(x=simulation,y=Fst)) + geom_violin() + theme_bw() + ggtitle("D") + stat_summary(fun.data=mean_sdl, geom="pointrange", color="#D55E00", fun.args = list(mult=1)) +  scale_y_continuous(name="Fst", expand=c(0,0)) + scale_colour_manual(values= palette) + scale_linetype_manual(values = c(2), guide = guide_legend(override.aes = list(color = c("#000000")))) + theme(axis.title.x = element_blank(), axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.50,0.8),legend.title = element_blank(), legend.text = element_text(size=11)) + guides(color = guide_legend(reverse = T)) 
-p4
-
-p5 = grid.arrange(p,p2,p3,p4,nrow=2,ncol=2)
-ggsave(plot = p5, width = 7.5, height = 7.5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/neutral_2/plot2.pdf")
-ggsave(plot = p5, width = 7.5, height = 7.5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/neutral_2/plot2.tiff")
+p3 = grid.arrange(p,p2,nrow=1)
+ggsave(plot = p3, width = 7.5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/neutral_2/plot2.pdf")
+ggsave(plot = p3, width = 7.5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/neutral_2/plot2.tiff")
