@@ -17,7 +17,7 @@ duplication = c(duplication,rep("non-duplication",length(fst_data2$simulation)))
 fst_final = data.frame(simulation,duplication,Fst)
 
 palette <- c("#009E73", "#56B4E9")
-p = ggplot(data= fst_final, aes(x=simulation,y=Fst,color=duplication)) + geom_violin() + theme_bw() + ggtitle("A") + stat_summary(fun.data=mean_sdl, geom="pointrange", color="#D55E00", fun.args = list(mult=1)) +  scale_y_continuous(name="Fst") + scale_x_discrete(labels=c("fwdpy11","msprime","fwdpy11","msprime")) + scale_colour_manual(values= palette) + scale_linetype_manual(values = c(2), guide = guide_legend(override.aes = list(color = c("#000000")))) + theme(axis.title.x = element_blank(), axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position="none",legend.title = element_blank(), legend.text = element_text(size=11)) + guides(color = guide_legend(reverse = F)) 
+p = ggplot(data= fst_final, aes(x=simulation,y=Fst,color=duplication)) + geom_violin() + theme_bw() + ggtitle("A") + stat_summary(fun.data=mean_sdl, geom="pointrange", color="#D55E00", fun.args = list(mult=1)) +  scale_y_continuous(name="Fst") + scale_x_discrete(labels=c("fwdpy11","msprime","fwdpy11","msprime")) + scale_colour_manual(values= palette) + scale_linetype_manual(values = c(2), guide = guide_legend(override.aes = list(color = c("#000000")))) + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.title.x = element_blank(), axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position="none",legend.title = element_blank(), legend.text = element_text(size=11)) + guides(color = guide_legend(reverse = F)) 
 p
 
 fst_data = read.table('~/Dropbox/fwdpy11_arg_example/paper/neutral_2/neutral_2C/Fst_pop0m1a.csv', sep=',', header= T)
@@ -33,9 +33,10 @@ duplication = c(duplication,rep("non-duplication",length(fst_data2$simulation)))
 
 fst_final = data.frame(simulation,duplication,Fst)
 
-p2 = ggplot(data= fst_final, aes(x=simulation,y=Fst,color=duplication)) + geom_violin() + theme_bw() + ggtitle("B") + stat_summary(fun.data=mean_sdl, geom="pointrange", color="#D55E00", fun.args = list(mult=1)) +  scale_y_continuous(name="Fst") + scale_x_discrete(labels=c("fwdpy11","msprime","fwdpy11","msprime")) + scale_colour_manual(values= palette) + scale_linetype_manual(values = c(2), guide = guide_legend(override.aes = list(color = c("#000000")))) + theme(axis.title.x = element_blank(), axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.30,0.9),legend.title = element_blank(), legend.text = element_text(size=11)) + guides(color = guide_legend(reverse = F)) 
+p2 = ggplot(data= fst_final, aes(x=simulation,y=Fst,color=duplication)) + geom_violin() + theme_bw() + ggtitle("B") + stat_summary(fun.data=mean_sdl, geom="pointrange", color="#D55E00", fun.args = list(mult=1)) +  scale_y_continuous(name="Fst") + scale_x_discrete(labels=c("fwdpy11","msprime","fwdpy11","msprime")) + scale_colour_manual(values= palette) + scale_linetype_manual(values = c(2), guide = guide_legend(override.aes = list(color = c("#000000")))) + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.title.x = element_blank(), axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.30,0.9),legend.title = element_blank(), legend.text = element_text(size=11)) + guides(color = guide_legend(reverse = F)) 
 p2
 
 p3 = grid.arrange(p,p2,nrow=1)
 ggsave(plot = p3, width = 7.5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/neutral_2/plot2.pdf")
 ggsave(plot = p3, width = 7.5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/neutral_2/plot2.tiff")
+ggsave(plot = p3, width = 7.5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/neutral_2/plot2.jpg")

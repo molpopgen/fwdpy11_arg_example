@@ -22,3 +22,4 @@ p
 
 ggsave(plot = p, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/plot_t2.pdf")
 ggsave(plot = p, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/plot_t2.tiff")
+ggsave(plot = p, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/plot_t2.jpg")

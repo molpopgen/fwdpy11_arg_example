@@ -38,5 +38,6 @@ ggsave(plot = p, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11
 ggsave(plot = p2, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/BGS_2B/plot_BGS2B.pdf")
 ggsave(plot = p2, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/BGS_2B/plot_BGS2B.tiff")
 
-ggsave(plot = p3, width = 10, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/BGS_1/plot_BGS_both.pdf")
-ggsave(plot = p3, width = 10, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/BGS_1/plot_BGS_both.tiff")
+ggsave(plot = p3, width = 7.5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/BGS_1/plot_BGS_both.pdf")
+ggsave(plot = p3, width = 7.5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/BGS_1/plot_BGS_both.tiff")
+ggsave(plot = p3, width = 7.5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/BGS_1/plot_BGS_both.jpg")
