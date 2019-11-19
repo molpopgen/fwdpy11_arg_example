@@ -2,6 +2,10 @@ library(ggplot2)
 library("reshape2")
 library(scales)
 library(gridExtra)
+options("tikzLatex"='/Library/TeX/texbin/pdflatex')
+old_path <- Sys.getenv("PATH")
+Sys.setenv(PATH = paste(old_path, "/Library/TeX/texbin/", sep = ":"))
+library(tikzDevice)
 
 results_R1 = read.table('~/Dropbox/fwdpy11_arg_example/paper/BGS_1/fwdpy11_sim1_IBGS_R1.txt', sep='\t',skip=28,header=F)$V3
 results_R2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/BGS_1/fwdpy11_sim1_IBGS_R2.txt', sep='\t',skip=28,header=F)$V3
@@ -14,9 +18,10 @@ r = c(rep(0.025,each=length(results_R1)),rep(0.05,each=length(results_R2)),rep(0
 cbPalette <- c("#CC79A7", "#E69F00", "#009E73", "#F0E442", "#56B4E9", "#D55E00")
 mylabels <- list("0.76","0.84","0.88","0.92","0.94","0.96")
 funX <- function(x) 0.5348333333333334/exp(-0.0125/(2*0.01+x))
+shape_list <- c(0,1,2,4,5,6)
 
 fst_data = data.frame(r,Fst)
-p = ggplot(data= fst_data, aes(x=r,y=Fst)) + ggtitle("A") + theme_bw() + stat_summary(fun.data = "mean_se", geom = "point",aes(colour= as.factor(r))) + stat_summary(fun.data = "mean_se", geom = "errorbar",colour= cbPalette,size=0.3) + scale_colour_manual(values = cbPalette, labels = mylabels) + geom_hline(aes(yintercept=0.5348333333333334,linetype = "neutral"))  + stat_function(fun = funX, aes(linetype="theoretical\nexpectation")) + scale_linetype_manual(values = c("dotted","dashed"), guide = guide_legend(override.aes = list(color = c("#000000")))) + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.70,0.7), legend.text = element_text(size=11)) + guides(color = guide_legend(ncol =2, order = 1,reverse = F,title=expression(pi/pi[0]))) + guides(linetype = guide_legend(title=element_blank())) 
+p = ggplot(data= fst_data, aes(x=r,y=Fst)) + ggtitle("A") + theme_bw() + stat_summary(fun.data = "mean_se", geom = "point",aes(colour= as.factor(r), shape= as.factor(r)),size = 2, stroke = 1) + stat_summary(fun.data = "mean_se", geom = "errorbar",colour= cbPalette,size=0.6) + scale_colour_manual(values = cbPalette, labels = mylabels) + scale_shape_manual(values = shape_list, labels = mylabels) + geom_hline(aes(yintercept=0.5348333333333334,linetype = "neutral"))  + stat_function(fun = funX, aes(linetype="theoretical\nexpectation")) + scale_linetype_manual(values = c("dotted","dashed"), guide = guide_legend(override.aes = list(color = c("#000000")))) + ylab("$\\eta^{_{(2)}}$") + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.text = element_text(size=11), axis.title=element_text(size=14),axis.title.x=element_text(face="italic"),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.70,0.7), legend.text = element_text(size=11)) + guides(color = guide_legend(ncol =2, order = 1,reverse = F,title="$\\pi/\\pi_0$")) + guides(linetype = guide_legend(title=element_blank())) + guides(shape = guide_legend(ncol =2, order = 1,reverse = F,title="$\\pi/\\pi_0$"))  
 
 results_R1 = read.table('~/Dropbox/fwdpy11_arg_example/paper/BGS_2B/fwdpy11_sim2B_IBGS_R1.txt', sep='\t',skip=28,header=F)$V3
 results_R2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/BGS_2B/fwdpy11_sim2B_IBGS_R2.txt', sep='\t',skip=28,header=F)$V3
@@ -28,10 +33,25 @@ Fst = c(results_R1,results_R2,results_R3,results_R5,results_R7,results_R11)
 r = c(rep(0.025,each=length(results_R1)),rep(0.05,each=length(results_R2)),rep(0.075,each=length(results_R3)),rep(0.125,each=length(results_R5)),rep(0.175,each=length(results_R7)),rep(0.275,each=length(results_R11)))
 
 fst_data = data.frame(r,Fst)
-p2 = ggplot(data= fst_data, aes(x=r,y=Fst)) + ggtitle("B") + theme_bw() + stat_summary(fun.data = "mean_se", geom = "point",aes(colour= as.factor(r))) + stat_summary(fun.data = "mean_se", geom = "errorbar",aes(colour= as.factor(r)),size=0.3) + scale_colour_manual(values = cbPalette, labels = mylabels) + geom_hline(aes(yintercept=0.5496549733620931,linetype = "neutral Fst")) + scale_linetype_manual(values = c("dotted","dashed"), guide = guide_legend(override.aes = list(color = c("#000000")))) + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.text = element_text(size=11), axis.title=element_text(size=14), legend.position = "none") + scale_y_continuous(breaks=c(.55,.6, .65))
+p2 = ggplot(data= fst_data, aes(x=r,y=Fst)) + ggtitle("B") + theme_bw() + stat_summary(fun.data = "mean_se", geom = "point",aes(colour= as.factor(r), shape= as.factor(r)),size = 2, stroke = 1) + stat_summary(fun.data = "mean_se", geom = "errorbar",aes(colour= as.factor(r)),size=0.6) + scale_colour_manual(values = cbPalette, labels = mylabels) + scale_shape_manual(values = shape_list, labels = mylabels) + geom_hline(aes(yintercept=0.5496549733620931,linetype = "neutral Fst")) + scale_linetype_manual(values = c("dotted","dashed"), guide = guide_legend(override.aes = list(color = c("#000000")))) + ylab("$\\eta^{_{(2)}}$") + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.text = element_text(size=11), axis.title=element_text(size=14),axis.title.x=element_text(face="italic"), legend.position = "none") + scale_y_continuous(breaks=c(.55,.6, .65))
 
 p3 = grid.arrange(p,p2,nrow=1)
 p3
+
+oldwd = getwd()
+setwd("~/Dropbox/fwdpy11_arg_example/paper/BGS_1/")
+tikz(
+  file = "plot_BGS_both.tex",
+  standAlone = T,
+  width = 7.5,
+  height = 5
+)
+temp = p
+temp2 = p2;
+p3 = grid.arrange(temp, temp2,nrow=1)
+dev.off()
+tools::texi2pdf('plot_BGS_both.tex', clean = T)
+setwd(oldwd)
 
 ggsave(plot = p, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/BGS_1/plot_BGS1.pdf")
 ggsave(plot = p, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/BGS_1/plot_BGS1.tiff")
