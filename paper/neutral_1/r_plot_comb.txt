@@ -1,0 +1,65 @@
+library(ggplot2)
+library("reshape2")
+library(scales)
+options("tikzLatex"='/Library/TeX/texbin/pdflatex')
+old_path <- Sys.getenv("PATH")
+Sys.setenv(PATH = paste(old_path, "/Library/TeX/texbin/", sep = ":"))
+library(tikzDevice)
+
+fst_data = read.table('~/Dropbox/fwdpy11_arg_example/paper/neutral_1/Fst_pop0m1a.csv', sep=',', header= T)
+palette <- c("#009E73", "#56B4E9")
+p = ggplot(data= fst_data, aes(x=simulation,y=Fst)) + geom_violin() + theme_bw() + ggtitle("A") + stat_summary(fun.data=mean_sdl, geom="pointrange", color="#D55E00", fun.args = list(mult=1))+  geom_hline(aes(yintercept= 0.5348333333333334, linetype="theoretical\nexpectation"), colour="#000000")+  scale_y_continuous(name="$\\eta^{_{(2)}}$", expand=c(0,0), limits=c(0.35,0.75)) + scale_colour_manual(values= palette) + scale_linetype_manual(values = c(2), guide = guide_legend(override.aes = list(color = c("#000000")))) + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.title.x = element_blank(), axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.50,0.8),legend.title = element_blank(), legend.text = element_text(size=11)) + guides(color = guide_legend(reverse = T)) 
+p
+
+fst_data = read.table('~/Dropbox/fwdpy11_arg_example/paper/neutral_2/neutral_2A/Fst_pop0m1a.csv', sep=',', header= T)
+Fst = fst_data$Fst[-1:-10000]
+duplication = rep("duplication", length(Fst))
+
+fst_data2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/neutral_2/neutral_2B/Fst_pop0m1a.csv', sep=',', header= T)
+
+additional_Fst = fst_data2$Fst[-1:-10000]
+Fst = c(Fst, additional_Fst)
+duplication = c(duplication,rep("non-duplication",length(additional_Fst)))
+
+fst_final = data.frame(duplication,Fst)
+
+palette <- c("#009E73", "#56B4E9")
+p2 = ggplot(data= fst_final, aes(x= duplication,y=Fst)) + geom_violin() + theme_bw() + ggtitle("B") + stat_summary(fun.data=mean_sdl, geom="pointrange", color="#D55E00", fun.args = list(mult=1)) +  scale_y_continuous(name="$\\eta^{_{(2)}}$") + scale_colour_manual(values= palette) + scale_linetype_manual(values = c(2), guide = guide_legend(override.aes = list(color = c("#000000")))) + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.title.x = element_blank(), axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position="none",legend.title = element_blank(), legend.text = element_text(size=11)) + guides(color = guide_legend(reverse = F)) 
+p2
+
+fst_data = read.table('~/Dropbox/fwdpy11_arg_example/paper/neutral_2/neutral_2C/Fst_pop0m1a.csv', sep=',', header= T)
+Fst = fst_data$Fst[-1:-10000]
+duplication = rep("duplication",length(Fst))
+
+fst_data2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/neutral_2/neutral_2D/Fst_pop0m1a.csv', sep=',', header= T)
+additional_Fst = fst_data2$Fst[-1:-10000]
+Fst = c(Fst, additional_Fst)
+duplication = c(duplication,rep("non-duplication",length(additional_Fst)))
+
+fst_final = data.frame(duplication,Fst)
+
+p3 = ggplot(data= fst_final, aes(x=duplication,y=Fst)) + geom_violin() + theme_bw() + ggtitle("C") + stat_summary(fun.data=mean_sdl, geom="pointrange", color="#D55E00", fun.args = list(mult=1)) +  scale_y_continuous(name="$\\eta^{_{(2)}}$") + scale_linetype_manual(values = c(2), guide = guide_legend(override.aes = list(color = c("#000000")))) + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.title.x = element_blank(), axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.30,0.9),legend.title = element_blank(), legend.text = element_text(size=11)) + guides(color = guide_legend(reverse = F)) 
+p3
+
+p4 = grid.arrange(p,p2,p3, nrow=2)
+
+oldwd = getwd()
+setwd("~/Dropbox/fwdpy11_arg_example/paper/neutral_1/")
+tikz(
+  file = "plot_comb.tex",
+  standAlone = T,
+  width = 7.5,
+  height = 7.5
+)
+temp = p
+temp2 = p2;
+temp3 = p3;
+temp4 = ggplot() + theme_void()
+p4 = grid.arrange(temp, temp4, temp2, temp3, nrow=2)
+dev.off()
+tools::texi2pdf('plot_comb.tex', clean = T)
+setwd(oldwd)
+
+ggsave(plot = p, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/neutral_1/plot1.pdf")
+ggsave(plot = p, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/neutral_1/plot1.tiff")
+ggsave(plot = p, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/neutral_1/plot1.jpg")
