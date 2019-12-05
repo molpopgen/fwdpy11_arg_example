@@ -1,0 +1,96 @@
+library(ggplot2)
+library("reshape2")
+library(scales)
+library(gridExtra)
+options("tikzLatex"='/Library/TeX/texbin/pdflatex')
+old_path <- Sys.getenv("PATH")
+Sys.setenv(PATH = paste(old_path, "/Library/TeX/texbin/", sep = ":"))
+library(tikzDevice)
+
+u <- c(0.0820, 0.0388, 0.0255, 0.0188, 0.015, 0.0125)
+cbPalette <- rev(c("#CC79A7", "#E69F00", "#009E73", "#F0E442", "#56B4E9", "#D55E00"))
+mylabels <- rev(list("0.76","0.84","0.88","0.92","0.94","0.96"))
+shape_list <- c(0,1,2,4,5,6)
+
+fst_1_results_T11 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/fwdpy11_sim1_IBGS_T75.txt', sep='\t',skip=28,header=F)$V3
+fst_1_results_T7 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/fwdpy11_sim1_IBGS_T90.txt', sep='\t',skip=28,header=F)$V3
+fst_1_results_T5 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/fwdpy11_sim1_IBGS_T113.txt', sep='\t',skip=28,header=F)$V3
+fst_1_results_T3 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/fwdpy11_sim1_IBGS_T153.txt', sep='\t',skip=28,header=F)$V3
+fst_1_results_T2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/fwdpy11_sim1_IBGS_T233.txt', sep='\t',skip=28,header=F)$V3
+fst_1_results_T1 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/fwdpy11_sim1_IBGS_T492.txt', sep='\t',skip=28,header=F)$V3
+fst_1_results_neutral = 0.534515830212263
+
+Fst_1 = c(fst_1_results_T1,fst_1_results_T2,fst_1_results_T3,fst_1_results_T5,fst_1_results_T7,fst_1_results_T11)
+u_fst_1 = c(rep(u[1],each=length(fst_1_results_T1)),rep(u[2],each=length(fst_1_results_T2)),rep(u[3],each=length(fst_1_results_T3)),rep(u[4],each=length(fst_1_results_T5)),rep(u[5],each=length(fst_1_results_T7)),rep(u[6],each=length(fst_1_results_T11)))
+fst_data_1 = data.frame(u_fst_1,Fst_1)
+
+funX <- function(x) fst_1_results_neutral/exp(-x/(2*0.01+0.275))
+
+fst_2_results_T11 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/fwdpy11_sim2B_IBGS_T250.txt', sep='\t',skip=28,header=F)$V3
+fst_2_results_T7 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/fwdpy11_sim2B_IBGS_T301.txt', sep='\t',skip=28,header=F)$V3
+fst_2_results_T5 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/fwdpy11_sim2B_IBGS_T378.txt', sep='\t',skip=28,header=F)$V3
+fst_2_results_T3 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/fwdpy11_sim2B_IBGS_T509.txt', sep='\t',skip=28,header=F)$V3
+fst_2_results_T2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/fwdpy11_sim2B_IBGS_T776.txt', sep='\t',skip=28,header=F)$V3
+fst_2_results_T1 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/fwdpy11_sim2B_IBGS_T1639.txt', sep='\t',skip=28,header=F)$V3
+fst_2_results_neutral = 0.5428030962877005
+
+Fst_2 = c(fst_2_results_T1,fst_2_results_T2,fst_2_results_T3,fst_2_results_T5,fst_2_results_T7,fst_2_results_T11)
+u_fst_2 = c(rep(u[1],each=length(fst_2_results_T1)),rep(u[2],each=length(fst_2_results_T2)),rep(u[3],each=length(fst_2_results_T3)),rep(u[4],each=length(fst_2_results_T5)),rep(u[5],each=length(fst_2_results_T7)),rep(u[6],each=length(fst_2_results_T11)))
+fst_data_2 = data.frame(u_fst_2,Fst_2)
+
+t2_1_results_T11 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/continuity_fwdpy11_sim1_IBGS_T75.txt', sep='\t',skip=2,header=F)$V12
+t2_1_results_T7 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/continuity_fwdpy11_sim1_IBGS_T90.txt', sep='\t',skip=2,header=F)$V12
+t2_1_results_T5 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/continuity_fwdpy11_sim1_IBGS_T113.txt', sep='\t',skip=2,header=F)$V12
+t2_1_results_T3 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/continuity_fwdpy11_sim1_IBGS_T153.txt', sep='\t',skip=2,header=F)$V12
+t2_1_results_T2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/continuity_fwdpy11_sim1_IBGS_T233.txt', sep='\t',skip=2,header=F)$V12
+t2_1_results_T1 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/continuity_fwdpy11_sim1_IBGS_T492.txt', sep='\t',skip=2,header=F)$V12
+t2_1_results_neutral = mean(read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_neu_1_rec/continuity_continuity_sim_neutral_all.txt', sep='\t',skip=2,header=F)$V12)
+
+free_t2_1 = c(t2_1_results_T1,t2_1_results_T2,t2_1_results_T3,t2_1_results_T5,t2_1_results_T7,t2_1_results_T11)
+u_t2_1 = c(rep(u[1],each=length(t2_1_results_T1)),rep(u[2],each=length(t2_1_results_T2)),rep(u[3],each=length(t2_1_results_T3)),rep(u[4],each=length(t2_1_results_T5)),rep(u[5],each=length(t2_1_results_T7)),rep(u[6],each=length(t2_1_results_T11)))
+continuity_data_1 = data.frame(u_t2_1, free_t2_1)
+
+funY <- function(y) t2_1_results_neutral/exp(-y/(2*0.01+0.275))
+
+t2_2_results_T11 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2B_IBGS_T250.txt', sep='\t',skip=2,header=F)$V12
+t2_2_results_T7 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2B_IBGS_T301.txt', sep='\t',skip=2,header=F)$V12
+t2_2_results_T5 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2B_IBGS_T378.txt', sep='\t',skip=2,header=F)$V12
+t2_2_results_T3 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2B_IBGS_T509.txt', sep='\t',skip=2,header=F)$V12
+t2_2_results_T2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2B_IBGS_T776.txt', sep='\t',skip=2,header=F)$V12
+t2_2_results_T1 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2B_IBGS_T1639.txt', sep='\t',skip=2,header=F)$V12
+t2_2_results_neutral = mean(read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_2B_rec11/continuity_fwdpy11_sim2B_neutral.txt', sep='\t',skip=2,header=F)$V12)
+
+free_t2_2 = c(t2_2_results_T1,t2_2_results_T2,t2_2_results_T3,t2_2_results_T5,t2_2_results_T7,t2_2_results_T11)
+u_t2_2 = c(rep(u[1],each=length(t2_2_results_T1)),rep(u[2],each=length(t2_2_results_T2)),rep(u[3],each=length(t2_2_results_T3)),rep(u[4],each=length(t2_2_results_T5)),rep(u[5],each=length(t2_2_results_T7)),rep(u[6],each=length(t2_2_results_T11)))
+continuity_data_2 = data.frame(u_t2_2, free_t2_2)
+
+p  = ggplot(data= fst_data_1, aes(x=u_fst_1,y=Fst_1)) + ggtitle("A") + theme_bw() + stat_summary(fun.data = "mean_se", geom = "point",aes(colour= as.factor(u_fst_1), shape= as.factor(u_fst_1)),size = 2, stroke = 1) + scale_colour_manual(values = cbPalette, labels = mylabels) + scale_shape_manual(values = shape_list, labels = mylabels) + geom_hline(aes(yintercept=fst_1_results_neutral,linetype = "neutral"))  + stat_function(fun = funX, aes(linetype="theoretical\nexpectation")) + scale_linetype_manual(values = c("dotted","dashed"), guide = guide_legend(override.aes = list(color = c("#000000")))) + ylab("$\\eta^{_{(2)}}$") + xlab("$\\mu_d$") + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.text = element_text(size=11), axis.title=element_text(size=14),axis.title.x=element_text(face="italic"),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.20,0.8), legend.text = element_text(size=11)) + guides(color = guide_legend(ncol =2, order = 1,reverse = F,title="$\\pi/\\pi_0$")) + guides(linetype = guide_legend(title=element_blank())) + guides(shape = guide_legend(ncol =2, order = 1,reverse = F,title="$\\pi/\\pi_0$"))  
+p
+
+p2 = ggplot(data= continuity_data_1, aes(x=u_t2_1,y=free_t2_1)) + ggtitle("B") + theme_bw() + stat_summary(fun.data = "mean_se", geom = "point",aes(colour= as.factor(u_t2_1), shape= as.factor(u_t2_1)),size = 2, stroke = 1) + stat_summary(fun.data = "mean_se", geom = "errorbar",colour= cbPalette,size=0.6) + stat_function(fun = funY, aes(linetype="theoretical\nexpectation")) + scale_colour_manual(values = cbPalette, labels = mylabels) + scale_shape_manual(values = shape_list, labels = mylabels) + geom_hline(aes(yintercept=t2_1_results_neutral,linetype = "neutral"),colour="#000000") + scale_linetype_manual(values = c("dotted","dashed")) + ylab("${t_{_2}}^{_{(2)}}$") + xlab("$\\mu_d$") + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.text = element_text(size=11), axis.title=element_text(size=14), legend.position="none") 
+p2
+
+p3 = ggplot(data= fst_data_2, aes(x=u_fst_2,y=Fst_2)) + ggtitle("C") + theme_bw() + stat_summary(fun.data = "mean_se", geom = "point",aes(colour= as.factor(u_fst_2), shape= as.factor(u_fst_2)),size = 2, stroke = 1) + stat_summary(fun.data = "mean_se", geom = "errorbar",colour= cbPalette,size=0.6)  + scale_colour_manual(values = cbPalette, labels = mylabels) + scale_shape_manual(values = shape_list, labels = mylabels) + geom_hline(aes(yintercept=fst_2_results_neutral,linetype = "neutral")) + scale_linetype_manual(values = c("dotted"), guide = guide_legend(override.aes = list(color = c("#000000")))) + ylab("$\\eta^{_{(2)}}$") + xlab("$\\mu_d$") + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.text = element_text(size=11), axis.title=element_text(size=14),axis.title.x=element_text(face="italic"), legend.position="none")  
+p3
+
+p4 = ggplot(data= continuity_data_2, aes(x=u_t2_2,y=free_t2_2)) + ggtitle("D") + theme_bw() + stat_summary(fun.data = "mean_se", geom = "point",aes(colour= as.factor(u_t2_2), shape= as.factor(u_t2_2)),size = 2, stroke = 1) + stat_summary(fun.data = "mean_se", geom = "errorbar",colour= cbPalette,size=0.6) + scale_colour_manual(values = cbPalette, labels = mylabels) + scale_shape_manual(values = shape_list, labels = mylabels) + geom_hline(aes(yintercept=t2_2_results_neutral,linetype = "neutral"),colour="#000000") + scale_linetype_manual(values = c("dotted","dashed")) + ylab("${t_{_2}}^{_{(2)}}$") + xlab("$\\mu_d$") + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.text = element_text(size=11), axis.title=element_text(size=14), legend.position="none") 
+p4
+
+p5 = grid.arrange(p,p2,p3,p4,nrow=2)
+
+oldwd = getwd()
+setwd("~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/")
+tikz(
+  file = "plot_contBGS_comb.tex",
+  standAlone = T,
+  width = 10,
+  height = 10
+)
+temp = p;
+temp2 = p2;
+temp3 = p3;
+temp4 = p4;
+final = grid.arrange(temp,temp2,temp3,temp4,nrow=2)
+dev.off()
+tools::texi2pdf('plot_contBGS_comb.tex', clean = T)
+setwd(oldwd)
