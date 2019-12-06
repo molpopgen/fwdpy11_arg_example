@@ -1,0 +1,61 @@
+library(ggplot2)
+library("reshape2")
+library(scales)
+library(gridExtra)
+options("tikzLatex"='/Library/TeX/texbin/pdflatex')
+old_path <- Sys.getenv("PATH")
+Sys.setenv(PATH = paste(old_path, "/Library/TeX/texbin/", sep = ":"))
+library(tikzDevice)
+
+results_R1 = read.table('~/Dropbox/fwdpy11_arg_example/paper/BGS_1/fwdpy11_sim1_IBGS_R1.txt', sep='\t',skip=28,header=F)$V10
+results_R2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/BGS_1/fwdpy11_sim1_IBGS_R2.txt', sep='\t',skip=28,header=F)$V10
+results_R3 = read.table('~/Dropbox/fwdpy11_arg_example/paper/BGS_1/fwdpy11_sim1_IBGS_R3.txt', sep='\t',skip=28,header=F)$V10
+results_R5 = read.table('~/Dropbox/fwdpy11_arg_example/paper/BGS_1/fwdpy11_sim1_IBGS_R5.txt', sep='\t',skip=28,header=F)$V10
+results_R7 = read.table('~/Dropbox/fwdpy11_arg_example/paper/BGS_1/fwdpy11_sim1_IBGS_R7.txt', sep='\t',skip=28,header=F)$V10
+results_R11 = read.table('~/Dropbox/fwdpy11_arg_example/paper/BGS_1/fwdpy11_sim1_IBGS_R11.txt', sep='\t',skip=28,header=F)$V10
+
+r_cbPalette <- c("#CC79A7", "#E69F00", "#009E73", "#F0E442", "#56B4E9", "#D55E00")
+r_mylabels <- list("0.76","0.84","0.88","0.92","0.94","0.96")
+r_shape_list <- rev(c(0,1,2,4,5,6))
+funX <- function(x) exp(-0.0125/(2*0.01+x))
+pi_R = c(results_R1, results_R2, results_R3, results_R5, results_R7, results_R11)
+r = c(rep(0.025,each=length(results_R1)),rep(0.05,each=length(results_R2)),rep(0.075,each=length(results_R3)),rep(0.125,each=length(results_R5)),rep(0.175,each=length(results_R7)),rep(0.275,each=length(results_R11)))
+r_data = data.frame(r, pi_R)
+
+results_T11 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/fwdpy11_sim1_IBGS_T75.txt', sep='\t',skip=28,header=F)$V10
+results_T7 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/fwdpy11_sim1_IBGS_T90.txt', sep='\t',skip=28,header=F)$V10
+results_T5 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/fwdpy11_sim1_IBGS_T113.txt', sep='\t',skip=28,header=F)$V10
+results_T3 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/fwdpy11_sim1_IBGS_T153.txt', sep='\t',skip=28,header=F)$V10
+results_T2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/fwdpy11_sim1_IBGS_T233.txt', sep='\t',skip=28,header=F)$V10
+results_T1 = read.table('~/Dropbox/fwdpy11_arg_example/paper/continuity_BGS_1_rec3/fwdpy11_sim1_IBGS_T492.txt', sep='\t',skip=28,header=F)$V10
+
+t_cbPalette = rev(r_cbPalette)
+t_mylabels = rev(r_mylabels)
+t_shape_list = rev(r_shape_list)
+funY <- function(y) exp(-y/(2*0.01+0.275))
+pi_T = c(results_T1, results_T2, results_T3, results_T5, results_T7, results_T11)
+u = c(rep(0.0820,each=length(results_T1)),rep(0.0388,each=length(results_T2)),rep(0.0255,each=length(results_T3)),rep(0.0188,each=length(results_T5)),rep(0.015,each=length(results_T7)),rep(0.0125,each=length(results_T11)))
+t_data = data.frame(u, pi_T)
+
+p  = ggplot(data= t_data, aes(x=u,y= pi_T)) + ggtitle("A") + theme_bw() + stat_summary(fun.data = "mean_se", geom = "point",aes(colour= as.factor(u), shape= as.factor(u)),size = 2, stroke = 1) + scale_colour_manual(values = t_cbPalette, labels = t_mylabels) + scale_shape_manual(values = t_shape_list, labels = t_mylabels) + stat_function(fun = funY, aes(linetype="theoretical\nexpectation")) + scale_linetype_manual(values = c("dotted","dashed"), guide = guide_legend(override.aes = list(color = c("#000000")))) + ylab("$\\pi/\\pi_0$") + xlab("$\\mu_d$") + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.text = element_text(size=11), axis.title=element_text(size=14),axis.title.x=element_text(face="italic"),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.75,0.75), legend.text = element_text(size=11)) + guides(color = guide_legend(ncol =2, order = 1,reverse = F,title="$\\pi/\\pi_0$")) + guides(linetype = guide_legend(title=element_blank(), keyheight  = 2)) + guides(shape = guide_legend(ncol =2, order = 1,reverse = F,title="$\\pi/\\pi_0$"))
+p
+
+p2  = ggplot(data= r_data, aes(x=r,y= pi_R)) + ggtitle("B") + theme_bw() + stat_summary(fun.data = "mean_se", geom = "point",aes(colour= as.factor(r), shape= as.factor(r)),size = 2, stroke = 1) + stat_summary(fun.data = "mean_se", geom = "errorbar",colour= r_cbPalette,size=0.6) + scale_colour_manual(values = r_cbPalette, labels = r_mylabels) + scale_shape_manual(values = r_shape_list, labels = r_mylabels) + stat_function(fun = funX, aes(linetype="theoretical\nexpectation")) + scale_linetype_manual(values = c("dotted","dashed"), guide = guide_legend(override.aes = list(color = c("#000000")))) + ylab("$\\pi/\\pi_0$") + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.text = element_text(size=11), axis.title=element_text(size=14),axis.title.x=element_text(face="italic"),legend.position="none")
+p2
+
+p3 = grid.arrange(p,p2,nrow=1)
+
+oldwd = getwd()
+setwd("~/Dropbox/fwdpy11_arg_example/paper/")
+tikz(
+  file = "plot_pi_comb.tex",
+  standAlone = T,
+  width = 10,
+  height = 5
+)
+temp = p;
+temp2 = p2;
+final = grid.arrange(temp,temp2,nrow=1)
+dev.off()
+tools::texi2pdf('plot_pi_comb.tex', clean = T)
+setwd(oldwd)
