@@ -21,7 +21,7 @@ funX <- function(x) 0.5348333333333334/exp(-0.0125/(2*0.01+x))
 shape_list <- c(0,1,2,4,5,6)
 
 fst_data = data.frame(r,Fst)
-p = ggplot(data= fst_data, aes(x=r,y=Fst)) + ggtitle("A") + theme_bw() + stat_summary(fun.data = "mean_se", geom = "point",aes(colour= as.factor(r), shape= as.factor(r)),size = 2, stroke = 1) + stat_summary(fun.data = "mean_se", geom = "errorbar",colour= cbPalette,size=0.6) + scale_colour_manual(values = cbPalette, labels = mylabels) + scale_shape_manual(values = shape_list, labels = mylabels) + geom_hline(aes(yintercept=0.5348333333333334,linetype = "neutral"))  + stat_function(fun = funX, aes(linetype="theoretical\nexpectation")) + scale_linetype_manual(values = c("dotted","dashed"), guide = guide_legend(override.aes = list(color = c("#000000")))) + ylab("$\\eta^{_{(2)}}$") + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.text = element_text(size=11), axis.title=element_text(size=14),axis.title.x=element_text(face="italic"),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.70,0.7), legend.text = element_text(size=11)) + guides(color = guide_legend(ncol =2, order = 1,reverse = F,title="$\\pi/\\pi_0$")) + guides(linetype = guide_legend(title=element_blank())) + guides(shape = guide_legend(ncol =2, order = 1,reverse = F,title="$\\pi/\\pi_0$"))  
+p = ggplot(data= fst_data, aes(x=r,y=Fst)) + ggtitle("A") + theme_bw() + stat_summary(fun.data = "mean_se", geom = "point",aes(colour= as.factor(r), shape= as.factor(r)),size = 2, stroke = 1) + stat_summary(fun.data = "mean_se", geom = "errorbar",colour= cbPalette,size=0.6) + scale_colour_manual(values = cbPalette, labels = mylabels) + scale_shape_manual(values = shape_list, labels = mylabels) + geom_hline(aes(yintercept=0.5348333333333334,linetype = "neutral"))  + stat_function(fun = funX, aes(linetype="theoretical\nexpectation")) + scale_linetype_manual(values = c("dotted","dashed"), guide = guide_legend(override.aes = list(color = c("#000000")))) + ylab("$\\eta^{_{(2)}}$") + theme(plot.title = element_text(hjust = 0, size = 18, face = "bold"), axis.text = element_text(size=11), axis.title=element_text(size=14),axis.title.x=element_text(face="italic"),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.70,0.7), legend.text = element_text(size=11)) + guides(color = guide_legend(ncol =2, order = 1,reverse = F,title="$\\pi/\\pi_0$")) + guides(linetype = guide_legend(title=element_blank(), keyheight  = 2)) + guides(shape = guide_legend(ncol =2, order = 1,reverse = F,title="$\\pi/\\pi_0$"))  
 
 results_R1 = read.table('~/Dropbox/fwdpy11_arg_example/paper/BGS_2B/fwdpy11_sim2B_IBGS_R1.txt', sep='\t',skip=28,header=F)$V3
 results_R2 = read.table('~/Dropbox/fwdpy11_arg_example/paper/BGS_2B/fwdpy11_sim2B_IBGS_R2.txt', sep='\t',skip=28,header=F)$V3
@@ -43,7 +43,7 @@ setwd("~/Dropbox/fwdpy11_arg_example/paper/BGS_1/")
 tikz(
   file = "plot_BGS_both.tex",
   standAlone = T,
-  width = 7.5,
+  width = 10,
   height = 5
 )
 temp = p

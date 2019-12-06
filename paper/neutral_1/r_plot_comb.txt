@@ -48,8 +48,8 @@ setwd("~/Dropbox/fwdpy11_arg_example/paper/neutral_1/")
 tikz(
   file = "plot_comb.tex",
   standAlone = T,
-  width = 7.5,
-  height = 7.5
+  width = 10,
+  height = 10
 )
 temp = p
 temp2 = p2;
