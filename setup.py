@@ -74,11 +74,8 @@ ext_modules = [
         Extension(
             'fwdpy11_arg_example.wfarg',
             ['fwdpy11_arg_example/wfarg.cc',
-                'fwdpy11_arg_example/wright_fisher_single_thread.cc',
-                'fwdpy11_arg_example/wright_fisher_async.cc',
-                'fwdpy11_arg_example/wright_fisher_queue.cc',
-                'fwdpy11_arg_example/handle_recombination.cc',
-                'fwdpy11_arg_example/evolve_generation.cc'
+                'fwdpy11_arg_example/evolve.cc',
+                'fwdpy11_arg_example/handle_mut_rec.cc'
                 ],
             depends = glob.glob('fwdpy11_arg_example/*.hpp'),
             library_dirs=LIBRARY_DIRS,
@@ -209,7 +206,7 @@ setup(
     data_files=[('fwdpy11', ['COPYING', 'README.rst'])],
     long_description=long_desc,
     ext_modules=ext_modules,
-    install_requires=['pybind11>=2.1.0', 'fwdpy11>=0.1.2', 'msprime'],
+    install_requires=['pybind11>=2.1.0', 'fwdpy11>=0.1.5', 'msprime'],
     cmdclass={'build_ext': BuildExt},
     packages=PKGS,
     package_data=generated_package_data,

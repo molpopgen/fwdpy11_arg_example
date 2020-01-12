@@ -11,7 +11,7 @@ GPLv3 or later (see COPYING)
 Overview
 ----------------------------------
 
-We define a C++ class called "ancestry_tracker", which stores nodes and edges as they appear forwards in time.  These data structures, and their updating, are non-intrusive, meaning that they don't care about any of the fwdpp_ internals.  Rather, we simply have to define a new "iterate a generation" function that uses both fwdpp_ machinery and updates an ancestry_tracker as appropriate.
+We define a C++ class called "ancestry_tracker", which stores nodes, edges, and mutations as they appear forwards in time.  These data structures, and their updating, are non-intrusive, meaning that they don't care about any of the fwdpp_ internals.  Rather, we simply have to define a new "iterate a generation" function that uses both fwdpp_ machinery and updates an ancestry_tracker as appropriate.
 
 Using pybind11_, we make ancestry_trackers visible to Python as an AncestryTracker class.  The Python class has access to the nodes and edges as NumPy structured arrays, which can be viewed "for free", meaning that no copy from C++ to Python is required to look at them.
 
@@ -49,7 +49,13 @@ Make a local build and run the unit tests:
     #on Linux.
     python setup.py build_ext -i --gcc
     python -m unittest discover tests
+    
+Changelog
+----------------------------------
 
+Version 0.0.2: Removed multi-threaded versions of simulation in order to implement mutation and ancient sample tracking.  The multi-threaded versions may or may not return in a later release. Requires fwdpy11 0.1.4.
+
+Version 0.0.1: Release version used in Kelleher et al.
 
 Test simulation
 +++++++++++++++++++++++++++++++++

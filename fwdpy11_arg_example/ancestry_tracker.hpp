@@ -17,122 +17,99 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
-#include <map>
+#include <set>
 #include <limits>
 #include <cstdint>
 #include <atomic>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
+#include <fwdpy11/types/SlocusPop.hpp>
 
 #include "node.hpp"
 #include "edge.hpp"
+#include "mutation.hpp"
 
-
-inline void
-reverse_time(std::vector<node>& nodes)
-{
-    if (nodes.empty())
-        return;
-
-    //convert forward time to backwards time
-    auto max_gen = nodes.back().generation;
-
-    for (auto& n : nodes)
-        {
-            n.generation -= max_gen;
-            n.generation *= -1.0;
-        }
-}
-
-inline void
-update_indexes(std::vector<edge>& edges,
-               std::vector<decltype(edge::parent)>& offspring_indexes,
-               const decltype(edge::parent) delta,
-               const decltype(edge::parent) mindex,
-               const decltype(edge::parent) maxdex)
-{
-    for (auto& e : edges)
-        {
-            e.child -= delta;
-            if (!(e.parent < mindex) && !(e.parent > maxdex))
-                {
-                    e.parent -= delta;
-                }
-        }
-    for (auto& i : offspring_indexes)
-        i -= delta;
-}
-
-struct ancestry_data
-{
-    using integer_type = decltype(edge::parent);
-    /// Nodes:
-    std::vector<node> nodes;
-    /// The ARG:
-    std::vector<edge> edges;
-    std::vector<integer_type> samples;
-    pybind11::object lock_;
-    ancestry_data() : nodes{}, edges{}, samples{}, lock_{}
-    {
-        pybind11::module threading = pybind11::module::import("threading");
-        lock_ = threading.attr("Lock")();
-    }
-};
+// struct ancestry_data
+// {
+//     using integer_type = decltype(edge::parent);
+//     /// Nodes:
+//     std::vector<node> nodes;
+//     /// The ARG:
+//     std::vector<edge> edges;
+//     /// Mutations:
+//     std::vector<mutation> mutations;
+//     std::vector<integer_type> samples;
+//     pybind11::object lock_;
+//     ancestry_data() : nodes{}, edges{}, mutations{}, samples{}, lock_{}
+//     {
+//         pybind11::module threading = pybind11::module::import("threading");
+//         lock_ = threading.attr("Lock")();
+//     }
+// };
 
 struct ancestry_tracker
 {
     using integer_type = decltype(edge::parent);
+    using index_pair = std::pair<integer_type,integer_type>;
+    using mut_index_set = std::unordered_set<std::uint32_t>;
     /// Nodes:
     std::vector<node> nodes;
     /// The ARG:
     std::vector<edge> edges;
     /// The edges generated for each generation:
     std::vector<edge> temp;
-    /// This is used as the sample indexes for msprime:
-    std::vector<integer_type> offspring_indexes;
-    integer_type generation, next_index, first_parental_index;
-    std::uint32_t lastN;
-    decltype(node::generation) last_gc_time;
-    ancestry_tracker(const integer_type N, const bool init_with_TreeSequence,
-                     const integer_type next_index_)
-        : nodes{ std::vector<node>() }, edges{ std::vector<edge>() },
-          temp{ std::vector<edge>() },
-          offspring_indexes{ std::vector<integer_type>() }, generation{ 1 },
-          next_index{ next_index_ }, first_parental_index{ 0 },
-          lastN{ static_cast<std::uint32_t>(N) }, last_gc_time{ 0.0 }
+    /// Mutations:
+    std::vector<mutation> mutations;
+    /// start-end node IDs for a generation:
+    index_pair node_indexes;
+    /// indices of mutations to preserve in the simulation
+    mut_index_set preserve_mutation_index;
+    /// current generation, total generation, next node ID to use, current index generation
+    integer_type generation, total_generations, next_index;
+    ancestry_tracker(const integer_type N, 
+                     const integer_type next_index_,
+                     const integer_type total_generations_)
+        : nodes{ }, edges{ }, temp{ }, mutations{ }, preserve_mutation_index{ }, 
+          generation{ 1 }, total_generations{ total_generations_ },
+          next_index{ next_index_ }
     {
         nodes.reserve(2 * N);
         edges.reserve(2 * N);
         temp.reserve(N);
-
-        //Initialize 2N nodes for the generation 0
-        if (init_with_TreeSequence == false)
+        //no need to reserve mutation space
+		
+        //if next_index == 0, then did not initialize with tree sequence
+        //so emplace back 2N nodes for the generation 0 and set next_index to 2N
+        if (next_index == 0)
             {
                 for (integer_type i = 0; i < 2 * N; ++i)
                     {
                         //ID, time 0, population 0
-                        nodes.emplace_back(make_node(i, 0.0, 0));
+                        double rev_gen = total_generations;
+                        nodes.emplace_back(node{i, 0, rev_gen});
                     }
+                next_index = 2 * N;
             }
+        node_indexes = std::make_pair(0,next_index);
     }
 
     std::tuple<integer_type, integer_type>
     get_parent_ids(const std::uint32_t p, const int did_swap)
     {
         return std::make_tuple(
-            first_parental_index + 2 * static_cast<integer_type>(p) + did_swap,
-            first_parental_index + 2 * static_cast<integer_type>(p)
-                + !did_swap);
+            node_indexes.first + 2 * static_cast<integer_type>(p) + did_swap, // node_indexes.first == first_parental_index
+            node_indexes.first + 2 * static_cast<integer_type>(p)+ !did_swap);
     }
 
     std::tuple<integer_type, integer_type>
-    get_next_indexes()
+    get_next_indexes(const std::int32_t population)
     {
         auto rv = std::make_tuple(next_index, next_index + 1);
+        double rev_gen = total_generations - generation;
+        nodes.emplace_back(node{std::get<0>(rv), population, rev_gen});
+        nodes.emplace_back(node{std::get<1>(rv), population, rev_gen});
         next_index += 2;
-        offspring_indexes.push_back(std::get<0>(rv));
-        offspring_indexes.push_back(std::get<1>(rv));
         return rv;
     }
 
@@ -142,54 +119,78 @@ struct ancestry_tracker
     {
         for (auto&& bi : breakpoints)
             {
-                temp.emplace_back(
-                    make_edge(bi.first, bi.second, parent, child));
+                temp.emplace_back(edge{bi.first, bi.second, parent, child});
             }
+    }
+
+    template <typename mcont_t>
+    void
+    add_mutations(const std::vector<std::uint32_t>& mutation_ids, mcont_t &popmut, const integer_type node_id)
+    {
+        for (auto&& mut_id : mutation_ids)
+            {
+                mutations.emplace_back(mutation{node_id, popmut[mut_id].pos, mut_id});
+            }
+    }
+    
+    void
+    preserve_mutations_sample(const pybind11::array_t<integer_type> & indiv_samples, fwdpy11::SlocusPop& pop)
+    {
+    	for(auto i : indiv_samples){
+    		int index = i.cast<integer_type>();
+    		auto g1 = pop.diploids[index].first;
+    		auto g2 = pop.diploids[index].second;
+    		
+    		preserve_mutation_index.insert(pop.gametes[g1].smutations.begin(),pop.gametes[g1].smutations.end());
+    		preserve_mutation_index.insert(pop.gametes[g2].smutations.begin(),pop.gametes[g2].smutations.end());
+    	}
+    }
+    
+    void
+    preserve_fixation(const std::uint32_t & mutation_id)
+    {
+    	preserve_mutation_index.insert(mutation_id);
     }
 
     void
     finish_generation()
     {
-        for (auto&& oi : offspring_indexes)
-            {
-                nodes.emplace_back(make_node(oi, generation, 0));
-            }
         edges.insert(edges.end(), temp.begin(), temp.end());
-        lastN = next_index - first_parental_index;
-        first_parental_index = offspring_indexes.front();
-
         temp.clear();
+        node_indexes.first = node_indexes.second;
+        node_indexes.second = next_index; 
         ++generation;
     }
-
+    
     void
-    post_process_gc(pybind11::tuple t, const bool clear = true)
+    pre_process_gc(fwdpy11::SlocusPop& pop)
     {
-        pybind11::bool_ gc = t[0].cast<bool>();
-        if (!gc)
-            return;
-
-        last_gc_time = generation;
-        next_index = t[1].cast<integer_type>();
-        // establish last parental index:
-        first_parental_index = 0;
-        if (clear)
-            {
-                nodes.clear();
-                edges.clear();
-            }
+        mutations.erase(std::remove_if(mutations.begin(),mutations.end(),[&pop](const mutation & m) { return (pop.mutations[m.mutation_id].pos != m.pos); }), mutations.end());
     }
 
     void
-    exchange_for_async(ancestry_data& a)
+    post_process_gc(integer_type _next_index)
     {
-        nodes.swap(a.nodes);
-        edges.swap(a.edges);
-        a.samples.assign(offspring_indexes.begin(), offspring_indexes.end());
+        next_index = _next_index;
+        node_indexes.first = 0;
+        node_indexes.second = next_index; 
+           
         nodes.clear();
         edges.clear();
-        first_parental_index = 0;
+        mutations.clear();
     }
+
+//     void
+//     exchange_for_async(ancestry_data& a)
+//     {
+//         nodes.swap(a.nodes);
+//         edges.swap(a.edges);
+//         mutations.swap(a.mutations);
+//         a.samples.assign(offspring_indexes.begin(), offspring_indexes.end());
+//         nodes.clear();
+//         edges.clear();
+//         first_parental_index = 0;
+//     }
 };
 
 #endif

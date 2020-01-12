@@ -1,0 +1,54 @@
+Neutral Simulation plan (organized by figure/group):
+
+Most ancient genomes seem to be within the last 15,000 years ... with a rough generation time of 15 years ... I think sampling at 1,000 generations seems to be a good idea (may not be enough time to generate an Fst substantially different from 0). 
+
+So except where noted: population 2 splits from population 1, no migration, simulation 2000 generations, split at generation 1, population 2 ends at generation 1001, sample both populations at generation 1000 (10 individuals each), sample population 1 at modern day (100 individuals)
+
+10,000 replicates
+
+1: 
+
+constant population size across all populations, duplication split
+parameters: 3,000 individuals (pop 1 & 2), duplication split, 5,920 generations, split generation 1, sample both populations at generation 500 (10 individuals), sample population 1 modern day (100 individuals)  
+
+slatkin expectation
+msprime
+fwdpy11
+
+2:
+
+A: population 2 smaller than population 1, duplication split
+parameters: 10,000 individuals (population 1), 500 individuals (population 2)
+
+msprime
+fwdpy11
+
+B: population 2 smaller than population 1, combined population size is constant 10,000, non-duplication, expected size split
+parameters: 10,000 individuals (before split population 1), 9,500 individuals (after split population 1), 500 individuals (population 2)
+
+msprime
+fwdpy11
+
+C: population 2 smaller than population 1, duplication split
+parameters: 10,000 individuals (population 1), 5000 individuals (population 2)
+
+msprime
+fwdpy11
+
+D: combined population size is constant 10,000, non-duplication, expected size split
+parameters: 10,000 individuals (before split population 1), 5,000 individuals (after split population 1), 5000 individuals (population 2)
+
+msprime
+fwdpy11
+
+E: population 2 smaller than population 1, combined population size is constant 15,000, non-duplication, expected size split
+parameters: 15,000 individuals (before split population 1), 10,000 individuals (after split population 1), 5000 individuals (population 2)
+
+msprime
+fwdpy11
+
+3: Tenneson exponential growth model of a single population (5,920 generations), sample population 1 at generation 4919 (5 individuals) and modern day (100 individuals)
+
+msprime
+fwdpy11
+

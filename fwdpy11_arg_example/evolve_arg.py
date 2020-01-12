@@ -1,11 +1,27 @@
 import fwdpy11
-import fwdpy11.fitness
 import fwdpy11.model_params
+import fwdpy11.genetic_values
 import numpy as np
 import msprime
 
+class sampler(object):
+    def __init__(self, samples_pop1, samples_pop2):
+        self.__samples_pop1 = samples_pop1
+        self.__samples_pop2 = samples_pop2
+        self.__samples_index_pop1 = 0
+        self.__samples_index_pop2 = 0
 
-def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, msprime_seed=None, async=False, use_queue=False, qsize=2, wthreads=2):
+    def __call__(self, generation, pop_size1, pop_size2, params, total_generations):
+        samples = np.array([],dtype=np.int64)
+        if(self.__samples_index_pop1+1 < len(self.__samples_pop1) and generation == self.__samples_pop1[self.__samples_index_pop1]):
+        	samples = np.append(samples,np.random.choice(int(pop_size1), self.__samples_pop1[self.__samples_index_pop1+1], replace=False))
+        	self.__samples_index_pop1 += 2
+        if(self.__samples_index_pop2+1 < len(self.__samples_pop2) and generation == self.__samples_pop2[self.__samples_index_pop2]):
+        	samples = np.append(samples,(np.random.choice(int(pop_size2), self.__samples_pop2[self.__samples_index_pop2+1], replace=False)+int(pop_size1)))
+        	self.__samples_index_pop2 += 2
+        return samples
+
+def evolve_track(rng, args, pop, params, seeds, init_with_TreeSequence):
     """
     Evolve a population and track its ancestry using msprime.
 
@@ -16,7 +32,7 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
 
     :rtype: tuple
 
-    :return: An instance of ARGsimplifier, an instance of AncestryTracker, and the total time spent simulating.
+    :return: An instance of ARGsimplifier.
     """
     import warnings
     # Test parameters while suppressing warnings
@@ -24,9 +40,6 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
         warnings.simplefilter("ignore")
         # Will throw exception if anything is wrong:
         params.validate()
-
-    if async is True and use_queue is True:
-        raise ValueError("async and use_queue cannot both be True")
 
     # Enforce min left end of 0.0, which is an msprime
     # requirement:
@@ -39,72 +52,23 @@ def evolve_track(rng, pop, params, gc_interval, init_with_TreeSequence=False, ms
     if any(i.b < 0.0 for i in params.sregions) is True:
         raise RuntimeError("Minimum possible position is 0.0")
 
-    from fwdpy11.internal import makeMutationRegions, makeRecombinationRegions
-    mm = makeMutationRegions(params.nregions, params.sregions)
-    rm = makeRecombinationRegions(params.recregions)
-
-    from .wfarg import evolve_singlepop_regions_track_ancestry, AncestryTracker
-    from .wfarg import evolve_singlepop_regions_track_ancestry_async
-    from .wfarg import evolve_singlepop_regions_track_ancestry_python_queue
-    from .argsimplifier import ArgSimplifier
+    from .argevolver import ArgEvolver
     initial_TreeSequence = None
-    next_index = 2 * pop.N
+       
     if init_with_TreeSequence is True:
-        if msprime_seed is None:
-            import warnings
-            warnings.warn(
-                "msprime_seed is None. Results will not be reprodicible.")
         initial_TreeSequence = msprime.simulate(
-            2 * pop.N, recombination_rate=params.recrate / 2.0, Ne=pop.N, random_seed=msprime_seed)
-        next_index = initial_TreeSequence.num_nodes
-    simplifier = ArgSimplifier(gc_interval, initial_TreeSequence)
-    atracker = AncestryTracker(pop.N, init_with_TreeSequence, next_index)
-    if async is False and use_queue is False:
-        tsim = evolve_singlepop_regions_track_ancestry(rng, pop, atracker, simplifier,
-                                                       params.demography,
-                                                       params.mutrate_s,
-                                                       params.recrate, mm, rm,
-                                                       params.gvalue, params.pself)
-    elif async is True:
-        tsim = evolve_singlepop_regions_track_ancestry_async(rng, pop, atracker, simplifier,
-                                                             gc_interval,
-                                                             params.demography,
-                                                             params.mutrate_s,
-                                                             params.recrate, mm, rm,
-                                                             params.gvalue, params.pself)
-    else:
-        import threading
-        import queue
-        q = queue.Queue(qsize)
-
-        def worker():
-            while True:
-                data = q.get()
-                if data is None:
-                    break
-                simplifier(data[0], data[1])
-                q.task_done()
-        t = threading.Thread(target=worker)
-        t.start()
-        tsim = evolve_singlepop_regions_track_ancestry_python_queue(rng, pop, atracker, q,
-                                                                    gc_interval,
-                                                                    params.demography, params.mutrate_s,
-                                                                    params.recrate, mm, rm,
-                                                                    params.gvalue, params.pself, wthreads)
-        q.put(None)
-        t.join()
-
-    if len(atracker.nodes) > 0:
-        # TODO
-        # The + 1 is b/c we have a bit of a book-keeping
-        # thing that we need to document...
-        simplifier.simplify(pop.generation + 1, atracker)
-    return (simplifier, atracker, tsim)
+            2 * pop.N, recombination_rate=params.recrate / 2.0, Ne=pop.N, random_seed=seeds[1])
+    
+    samples_pop1 =[] 
+    samples_pop2 =[] 
+    if(hasattr(args, 'anc_sam1')): 
+        samples_pop1 = args.anc_sam1
+    if(hasattr(args, 'anc_sam2')):
+        samples_pop2 = args.anc_sam2
+    return ArgEvolver(rng, args, pop, params, sampler(samples_pop1,samples_pop2), initial_TreeSequence)
 
 
-def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
-                         gc_interval=10,
-                         dfe=fwdpy11.ConstantS(0, 1, 1, -0.025, 1.0)):
+def evolve_track_wrapper(args, demography, seeds):
     """
     Wrapper around evolve_track to facilitate testing.
 
@@ -119,23 +83,38 @@ def evolve_track_wrapper(popsize=1000, rho=10000.0, mu=1e-2, seed=42,
 
     :return: See evolve_track for details.
     """
-    if isinstance(dfe, fwdpy11.Sregion) is False:
+    
+    initial_popsize = demography[0]
+    pop = fwdpy11.SlocusPop(initial_popsize)
+    recrate = float(args.rho) / (4.0 * float(initial_popsize))
+    mu = float(args.theta) / (4.0 * float(initial_popsize))
+    
+    dfe = [fwdpy11.ConstantS(0, 1, 1, args.selection, 1.0)]
+    
+    if(not(args.single_locus)):
+    	dfe = [fwdpy11.ConstantS(0, args.region_breaks[0], 1, args.selection, 1.0),
+    		   fwdpy11.ConstantS(args.region_breaks[1], 1, 1, args.selection, 1.0)]
+    
+    if isinstance(dfe[0], fwdpy11.Sregion) is False:
         raise TypeError("dfe must be a fwdpy11.Sregion")
-
-    if dfe.b != 0.0 or dfe.e != 1.0:
-        raise ValueError("DFE beg/end must be 0.0/1.0, repsectively")
-
-    pop = fwdpy11.SlocusPop(popsize)
-    recrate = float(rho) / (4.0 * float(popsize))
-
-    pdict = {'rates': (0.0, mu, recrate),
-             'nregions': [],
-             'sregions': [dfe],
-             'recregions': [fwdpy11.Region(0, 1, 1)],
-             'gvalue': fwdpy11.fitness.SlocusMult(2.0),
-             'demography': np.array([popsize] * 20 * popsize, dtype=np.uint32)
-             }
-
-    params = fwdpy11.model_params.SlocusParams(**pdict)
-    rng = fwdpy11.GSLrng(seed)
-    return evolve_track(rng, pop, params, gc_interval)
+    if(not(args.single_locus)):
+        if isinstance(dfe[1], fwdpy11.Sregion) is False:
+        	raise TypeError("dfe must be a fwdpy11.Sregion")
+        	
+    recregion = [fwdpy11.Region(0, 1, 1)]
+    if(not(args.single_locus)):
+        recregion = [fwdpy11.Region(0, args.region_breaks[0], 1),
+        			 fwdpy11.Region(args.region_breaks[1], 1, 1)]
+    
+    pdict = {'nregions': [],
+                'sregions': dfe,
+                'recregions': recregion,
+                'rates': (0.0, mu, recrate),
+                'demography': demography,
+                'gvalue': fwdpy11.genetic_values.SlocusMult(2.0) #this value does not get used, this is set in evolve.cc: const auto ff = fwdpp::multiplicative_diploid(fwdpp::fitness(2.0)); 
+            }
+            
+    params = fwdpy11.model_params.ModelParams(**pdict)
+    rng = fwdpy11.GSLrng(seeds[0])
+    
+    return evolve_track(rng, args, pop, params, seeds, args.init_tree)

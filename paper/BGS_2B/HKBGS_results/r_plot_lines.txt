@@ -1,0 +1,10 @@
+library(ggplot2)
+library("reshape2")
+library(scales)
+fst_data = read.table('~/Dropbox/fwdpy11_arg_example/paper/BGS_2C/Fst_BGS_R.csv', sep=',', header= T)
+cbPalette <- c("#CC79A7", "#009E73", "#E69F00", "#009E73", "#F0E442", "#56B4E9", "#CC79A7", "#E69F00", "#009E73", "#F0E442")
+
+p = ggplot(data= fst_data, aes(x=Rec_rate,y=Fst, color= BGS_model)) + theme_bw() + geom_point()+ geom_errorbar(aes(ymin=Fst-sd_e, ymax=Fst+ sd_e), show.legend = FALSE) +  geom_hline(aes(yintercept= 0.5496549733620931, linetype="neutral\nexpectation"), colour="#D55E00") + scale_y_continuous(name="Fst", expand=c(0,0), limits = c(0.52,0.9)) + scale_x_continuous(name="Recombination rate", limits = c(500,12000), breaks = c(0,3000,6000,9000,12000)) + scale_colour_manual(values= cbPalette) + theme(axis.text = element_text(size=11), axis.title=element_text(size=14),legend.spacing.x = unit(0.1, 'cm'),legend.spacing.y = unit(0.0, 'cm'), legend.position=c(0.8,0.8),legend.title = element_blank(), legend.text = element_text(size=11)) + guides(color = guide_legend(reverse = T)) 
+p
+
+ggsave(plot = p, width = 5, height = 5, dpi = 300, filename = "~/Dropbox/fwdpy11_arg_example/paper/BGS_2C/Rplot_BGS_means.pdf")

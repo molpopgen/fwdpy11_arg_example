@@ -1,0 +1,9 @@
+*.o
+*.so
+*.pyc
+*.numbers
+*.pdf
+*.tiff
+*.jpg
+*.pptx
+*.tex

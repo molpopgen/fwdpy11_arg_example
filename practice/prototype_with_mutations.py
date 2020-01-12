@@ -144,7 +144,8 @@ def wf(N, tracker, ngens):
             # Crossing-over and edges due to
             # contribution from parent 1
             breakpoint = random_loc()
-            mutation_pos = random_loc()
+            mutation_pos = 0.5 #= random_loc() #
+            
             # Add the edges. Parent 1 will contribute [0,breakpoint)
             # from p1g1 and [breakpoint,1.0) from p1g2. Note that
             # we've already done the Mendel thing above. Both of these
@@ -165,7 +166,7 @@ def wf(N, tracker, ngens):
             # Repeat process for parent 2's contribution.
             # Stuff is now being inherited by node next_id + 1
             breakpoint = random_loc()
-            mutation_pos = random_loc()
+            mutation_pos = 0.5 #= random_loc() #
             
             tracker.edges[edge_index + 2] = (0.0, breakpoint, p2g1, next_id + 1)
             tracker.edges[edge_index + 3] = (breakpoint, 1.0, p2g2, next_id + 1)
@@ -246,7 +247,23 @@ def expensive_check(popsize, edges, nodes):
             raise RuntimeError("Bad child")
     assert(float(gen) == nodes['generation'].max())
 
-
+def merge_sites(sTable, mTable):
+    #sTable = SiteTable, mTable = MutationTable
+    temp_sites = msprime.SiteTable()
+    temp_mutation = msprime.MutationTable()
+    
+    site_shift = 0
+    for index, site in enumerate(sTable):
+        if(index == 0 or site.position != sTable.position[index-1]):
+            temp_sites.add_row(site.position, site.ancestral_state, site.metadata)
+        elif(site.position == sTable.position[index-1]):
+            site_shift += 1
+        if(len(mTable.metadata) > 0):
+        	temp_mutation.add_row(mTable.site[index]-site_shift,mTable.node[index],mTable.derived_state[index],mTable.parent[index],mTable.metadata[index])
+        else:
+        	temp_mutation.add_row(mTable.site[index]-site_shift,mTable.node[index],mTable.derived_state[index],mTable.parent[index])
+    return (temp_sites,temp_mutation)
+    
 if __name__ == "__main__":
     popsize = int(sys.argv[1])
     theta = float(sys.argv[2])
@@ -297,15 +314,16 @@ if __name__ == "__main__":
                    child=edges['child'])
     
     st = msprime.SiteTable()
+    s = len(mutas['position'])
     st.set_columns(position=mutas['position'],
-                   ancestral_state=np.zeros(len(mutas['position']),np.int8),
-                   ancestral_state_length=np.ones(len(mutas['position']),np.uint32))
+                   ancestral_state=np.zeros(s, np.int8) + ord('0'),
+                   ancestral_state_offset=np.arange(s + 1, dtype=np.uint32))
     
     mt = msprime.MutationTable()
-    mt.set_columns(site=np.arange(len(mutas['node_id']),dtype=np.int32),
+    mt.set_columns(site=np.arange(s,dtype=np.int32),
                    node=mutas['node_id'],
-                   derived_state=np.ones(len(mutas['node_id']),np.int8),
-                   derived_state_length=np.ones(len(mutas['node_id']),np.uint32))
+                   derived_state=np.ones(s, np.int8) + ord('0'),
+                   derived_state_offset=np.arange(s + 1, dtype=np.uint32))
 
     # Sort
     msprime.sort_tables(nodes=nt, edges=es, sites=st, mutations=mt)
@@ -317,33 +335,34 @@ if __name__ == "__main__":
     es_c = es.copy()
     st_c = st.copy()
     mt_c = mt.copy()
-    node_map = np.empty(len(nodes), dtype=np.int32)
-    msprime.simplify_tables(samples=samples.tolist(), nodes=nt_c, edges=es_c, sites=st_c, mutations=mt_c, node_map=node_map)
+    node_map = msprime.simplify_tables(samples=samples.tolist(), nodes=nt_c, edges=es_c, sites=st_c, mutations=mt_c)
     print("num simplified mutations: ", st_c.num_rows)
-    map_nodes = np.empty(len(nt_c), dtype=np.int32)
-    for index in range(len(node_map)):
-        if(node_map[index] > -1): 
-            map_nodes[node_map[index]] = index
     
-    for index in range(st_c.num_rows):
-         if(mt_c.node[index] < 2*popsize):
-             for index2 in range(mt.num_rows):
-                 if(mt.node[index2] == map_nodes[mt_c.node[index]]):
-                    print(mt_c.node[index], st_c.position[index], mt.node[index2], st.position[index2], index, index2) 
-                    break
-    
-    print("\n\n")
-    for index in range(st.num_rows):
-         if(mt.node[index] >= 2*SIMLEN*popsize*popsize):		
-                 for index2 in range(mt_c.num_rows):		
-                       if(mt_c.node[index2] == node_map[mt.node[index]]):  
-                            print(mt_c.node[index2], st_c.position[index2], mt.node[index], st.position[index], index, index2) 
-                            break
+    (st_c2,mt_c2) = merge_sites(st_c, mt_c)
+#     map_nodes = np.empty(len(nt_c), dtype=np.int32)
+#     for index in range(len(node_map)):
+#         if(node_map[index] > -1): 
+#             map_nodes[node_map[index]] = index
+#     
+#     for index in range(st_c.num_rows):
+#          if(mt_c.node[index] < 2*popsize):
+#              for index2 in range(mt.num_rows):
+#                  if(mt.node[index2] == map_nodes[mt_c.node[index]]):
+#                     print(mt_c.node[index], st_c.position[index], mt.node[index2], st.position[index2], index, index2) 
+#                     break
+#     
+#     print("\n\n")
+#     for index in range(st.num_rows):
+#          if(mt.node[index] >= 2*SIMLEN*popsize*popsize):		
+#                  for index2 in range(mt_c.num_rows):		
+#                        if(mt_c.node[index2] == node_map[mt.node[index]]):  
+#                             print(mt_c.node[index2], st_c.position[index2], mt.node[index], st.position[index], index, index2) 
+#                             break
                             
     # Create a tree sequence
-    x = msprime.load_tables(nodes=nt_c, edges=es_c, sites=st_c, mutations=mt_c)   
+    x = msprime.load_tables(nodes=nt_c, edges=es_c, sites=st_c2, mutations=mt_c2)   
     
-    print(max(mt_c.node))
+    print(max(mt_c2.node))
     print(nt_c.num_rows)
     
     nt_s = nt_c.copy()

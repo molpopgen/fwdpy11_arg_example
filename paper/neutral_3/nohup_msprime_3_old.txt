@@ -1,0 +1,45 @@
+_frozen_importlib:219: RuntimeWarning: numpy.dtype size changed, may indicate binary incompatibility. Expected 96, got 88
+=============================
+Epoch: 0 -- 205.0 generations
+=============================
+     start     end      growth_rate |     0    
+   -------- --------       -------- | -------- 
+0 |5.12e+05  9.3e+03         0.0196 |     0    
+
+Events @ generation 205.0
+   - Population parameter change for 0: initial_size -> 9300 growth_rate -> 0.003074847 
+=================================
+Epoch: 205.0 -- 920.0 generations
+=================================
+     start     end      growth_rate |     0    
+   -------- --------       -------- | -------- 
+0 | 9.3e+03 1.03e+03        0.00307 |     0    
+
+Events @ generation 920.0
+   - Population parameter change for 0: initial_size -> 1861 growth_rate -> 0 
+==================================
+Epoch: 920.0 -- 2040.0 generations
+==================================
+     start     end      growth_rate |     0    
+   -------- --------       -------- | -------- 
+0 |1.86e+03 1.86e+03              0 |     0    
+
+Events @ generation 2040.0
+   - Population parameter change for 0: initial_size -> 14474 growth_rate -> 0 
+===================================
+Epoch: 2040.0 -- 5920.0 generations
+===================================
+     start     end      growth_rate |     0    
+   -------- --------       -------- | -------- 
+0 |1.45e+04 1.45e+04              0 |     0    
+
+Events @ generation 5920.0
+   - Population parameter change for 0: initial_size -> 7310 growth_rate -> 0 
+================================
+Epoch: 5920.0 -- inf generations
+================================
+     start     end      growth_rate |     0    
+   -------- --------       -------- | -------- 
+0 |7.31e+03 7.31e+03              0 |     0    
+
+>>> 

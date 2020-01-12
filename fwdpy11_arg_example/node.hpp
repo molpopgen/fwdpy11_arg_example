@@ -11,16 +11,6 @@ struct node
 	double generation;
 };
 
-inline node
-make_node(std::uint32_t id, double generation, std::int32_t population)
-{
-    node n;
-    n.id = id;
-    n.generation = generation;
-    n.population = population;
-    return n;
-}
-
 inline auto
 get_tied_node(const node& n) -> decltype(std::tie(n.generation, n.population, n.id))
 {
